@@ -1,0 +1,9 @@
+#! /bin/csh -vf
+
+#Release/cc1.exe "$LANG_PROJECT_ROOT"/cc1/test/17_heap/1000.c \
+#--generator "$LANG_PROJECT_ROOT"/intel/src_new/intel.dll 
+#gprof cc1.exe > prof.log
+
+Release/cc1.exe --no_generator sample.txt
+
+

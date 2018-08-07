@@ -1,0 +1,9 @@
+b generator.cpp:34
+command
+b scope.cpp:375
+c
+end
+
+run --generator ../../30_intel/src/intel.dll --generator-option \( --debug --ms \) sample.txt
+
+

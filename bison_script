@@ -1,0 +1,18 @@
+#! /bin/csh -f
+
+set path = ( /bin /usr/bin )
+
+bison -p c_compiler_ -d $argv[1] |& perl filter_vc.pl
+if ( $status != 0 ) then
+  exit 1
+endif
+mv c.tab.c "$argv[1]:r"_y.cpp
+mv c.tab.h "$argv[1]:r"_y.h
+perl bison_conv.pl "$argv[1]:r"_y.cpp > "$argv[1]:r"_y.cpp.$$
+if ( $status != 0 ) then
+  echo "Error detected at $0"
+  rm "$argv[1]:r"_y.cpp
+  rm "$argv[1]:r"_y.cpp.$$
+  exit $status
+endif
+mv "$argv[1]:r"_y.cpp.$$ "$argv[1]:r"_y.cpp

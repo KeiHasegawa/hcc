@@ -1,0 +1,12 @@
+#! /bin/csh -f
+
+set path = ( /bin /usr/bin )
+
+flex -Pc_compiler_ -t -L $argv[1] > "$argv[1]:r"_l.cpp
+if ( $status != 0 ) then
+  exit 1
+endif
+echo '#include "stdafx.h"' > "$argv[1]:r"_l.cpp.$$
+echo '#include "yy.h"' >> "$argv[1]:r"_l.cpp.$$
+cat "$argv[1]:r"_l.cpp >> "$argv[1]:r"_l.cpp.$$
+mv "$argv[1]:r"_l.cpp.$$ "$argv[1]:r"_l.cpp

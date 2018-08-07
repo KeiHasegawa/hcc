@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{4015FDD9-1C2B-45A7-BF02-261E4E9C9196}</ProjectGuid>
+    <RootNamespace>hcc1</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <CustomBuildStep>
+      <Outputs>c_y.cpp c_y.h</Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="cmdline.cpp" />
+    <ClCompile Include="c_l.cpp" />
+    <ClCompile Include="c_y.cpp" />
+    <ClCompile Include="decl.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/w %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/w %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="dump.cpp" />
+    <ClCompile Include="error.cpp" />
+    <ClCompile Include="expr0.cpp" />
+    <ClCompile Include="expr1.cpp" />
+    <ClCompile Include="expr2.cpp" />
+    <ClCompile Include="expr3.cpp" />
+    <ClCompile Include="expr4.cpp" />
+    <ClCompile Include="expr5.cpp" />
+    <ClCompile Include="expr6.cpp" />
+    <ClCompile Include="generator.cpp" />
+    <ClCompile Include="initializer.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="optimize.cpp" />
+    <ClCompile Include="prof.cpp" />
+    <ClCompile Include="scope.cpp" />
+    <ClCompile Include="scope2.cpp" />
+    <ClCompile Include="stmt.cpp" />
+    <ClCompile Include="type.cpp" />
+    <ClCompile Include="warning.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="c_core.h" />
+    <ClInclude Include="c_y.h" />
+    <ClInclude Include="misc.h" />
+    <ClInclude Include="parse.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="yy.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bison_conv.pl" />
+    <None Include="bison_script" />
+    <CustomBuild Include="c.l">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(CYGWINDIR)\bin\tcsh -f flex_script c.l</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c_l.cpp</Outputs>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</TreatOutputAsContent>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatOutputAsContent>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c_l.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CYGWINDIR)\bin\tcsh -f flex_script c.l</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c.l -&gt; c_l.cpp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(CYGWINDIR)\bin\tcsh -f flex_script c.l</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(CYGWINDIR)\bin\tcsh -f flex_script c.l</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c.l -&gt; c_l.cpp</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c.l -&gt; c_l.cpp</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c.l -&gt; c_l.cpp</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c_l.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c_l.cpp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">flex_script</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">flex_script</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">flex_script</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">flex_script</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include="c.y">
+      <FileType>Document</FileType>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c_y.cpp;c_y.h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(CYGWINDIR)\bin\tcsh -f bison_script c.y</Command>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</TreatOutputAsContent>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatOutputAsContent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CYGWINDIR)\bin\tcsh -f bison_script c.y</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c_y.cpp;c_y.h</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c.y -&gt; c_y.cpp c_y.h</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">c.y -&gt; c_y.cpp c_y.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(CYGWINDIR)\bin\tcsh -f bison_script c.y</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(CYGWINDIR)\bin\tcsh -f bison_script c.y</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c.y -&gt; c_y.cpp c_y.h</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c.y -&gt; c_y.cpp c_y.h</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">c_y.cpp;c_y.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c_y.cpp;c_y.h</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bison_script</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bison_script;bison_conv.pl</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bison_script;bison_conv.pl</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bison_script;bison_conv.pl</AdditionalInputs>
+    </CustomBuild>
+    <None Include="flex_script" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="todo.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

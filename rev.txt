@@ -1,0 +1,70 @@
+1.3 :
+(1) Visual Studio 6.0 -> Visual Studio 2017
+
+1.2 :
+(1) `is_external_declaration' is defined in c_core.h
+(2) Unreferenced string literal is removed from symbol table when optimized.
+
+1.1 :
+(1) enum_type shall not be any integer type.
+(2) Fix compatibility with old style function declaration or definition and new style
+    function declaration. change ellipsis_type.
+(3) Member designator also must be applied to qualified structure or union.
+(4) Refine code about initializer.
+(5) `struct ref' is derived from var with `virtual'. It shouldn't be. Fixed.
+(6) Add `struct refimm' for representing the result of some operator which is applied
+    to constant<void*>.
+(7) const_type::create, volatile_type::create, restrict_type::create is fixed for
+    temporary type.
+(8) Non-integer bit filed can be declared. Fixed.
+(9) `basic_block::devide' makes the same leader. Fixed.
+(10) Add `dealloc3ac'. Variable length array is allocated by `alloc3ac', but it
+     isn't dellocated. Fixed.
+(11) loff3ac `a[i] = b' and roff3ac `b = a[i]' where `i' was constant integer.
+     But `i' should be `var*'. Code generation was changed. And class
+     `refsomewhre' derived from `ref' is added. For example,
+
+     extern int a[];
+
+     int f(int i, int j)
+     {
+       return a[i] = a[j];
+     }
+
+     For above program, 3 address codes became like bellow.
+
+     f:
+       t0 := 4 * i
+       t1 := &a
+       t2 := t1 + t0
+       t3 := 4 * j
+       t4 := &a
+       t5 := t4 + t3
+       t6 := *t5
+       *t2 := t6
+       return t6
+
+     But now, 3 address codes become like bellow.
+
+     f:
+       t0 := 4 * i
+       t1 := 4 * j
+       t2 := a[t1]
+       a[t0] := t2
+       return t2
+
+ (12) var01::end_do was declared with virtual. Fixed.
+ (13) Add `var01::sweep()'. If `var01' or `log01' are used in the expression of
+
+      if statement
+      while statement
+      do-while statement
+      for statement
+      conditional operator
+
+      they are not necessary to be in symbol table. `var01::sweep()' erase
+      them from symbol table.
+  (14) Make the next of `return3ac' the leader of basic block.
+  (15) Create the `copy' of the parameter scope of the inline functoin.
+
+1.0 : First release
