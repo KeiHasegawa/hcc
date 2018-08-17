@@ -57,11 +57,42 @@ namespace floating {
   usr* create(unsigned char*);
 }
 
-namespace pointer {
-  usr* create(const type*, void*);
-}
-
 extern std::string new_name(std::string);
+
+namespace pointer {
+  template<class V> usr* create(const type* T, V v);
+#if 0  
+  {
+    using namespace std;
+    bool temp = T->temporary(false);
+    typedef pair<const type*, V> KEY;
+    KEY key(T, v);
+    typedef map<KEY, constant<V>*> table_t;
+    static table_t table;
+    if (!temp) {
+      typename table_t::const_iterator p = table.find(key);
+      if (p != table.end())
+	return p->second;
+    }
+    string name = new_name(".pointer");
+    constant<void*>* c = new constant<V>(name, T, usr::CONST_PTR, parse::position);
+    if (!temp)
+      table[key] = c;
+    c->m_value = v;
+
+    if (temp) {
+      map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+      usrs[name].push_back(c);
+    }
+    else {
+      c->m_scope = &scope::root;
+      map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+      usrs[name].push_back(c);
+    }
+    return c;
+  }
+#endif
+}
 
 namespace conversion {
   const type* arithmetic(var**, var**);
@@ -329,13 +360,58 @@ struct refbit : refaddr {
   static usr* mask(int, int);
 };
 
-struct refimm : ref {
-  void* m_addr;
-  refimm(const pointer_type* pt, void* addr) : ref(pt), m_addr(addr) {}
-  var* rvalue();
-  var* address();
-  var* assign(var*);
-};
+extern std::vector<tac*> code;
+
+template<class V> struct refimm : ref {
+  V m_addr;
+  refimm(const pointer_type* pt, V addr) : ref(pt), m_addr(addr) {}
+  var* rvalue()
+  {
+    using namespace std;
+    if ( scope::current->m_id == scope::BLOCK ){
+      vector<var*>& v = garbage;
+      vector<var*>::reverse_iterator p = find(v.rbegin(),v.rend(),this);
+      assert(p != v.rend());
+      v.erase(p.base()-1);
+      block* b = static_cast<block*>(scope::current);
+      b->m_vars.push_back(this);
+      var* tmp;
+      if (sizeof(void*) == sizeof(int)) {
+	int i = (int)(__int64)m_addr;
+	tmp = integer::create(i);
+      }
+      else
+	tmp = integer::create((__int64)m_addr);
+      code.push_back(new assign3ac(this, tmp));
+    }
+    return ref::rvalue();
+  }
+  var* address()
+  {
+    return pointer::create(m_type, m_addr);
+  }
+  var* assign(var* op)
+  {
+    using namespace std;
+    if ( scope::current->m_id == scope::BLOCK ){
+      vector<var*>& v = garbage;
+      vector<var*>::reverse_iterator p = find(v.rbegin(),v.rend(),this);
+      assert(p != v.rend());
+      v.erase(p.base()-1);
+      block* b = static_cast<block*>(scope::current);
+      b->m_vars.push_back(this);
+      var* tmp;
+      if (sizeof(void*) == sizeof(int)) {
+	int i = (int)(__int64)m_addr;
+	tmp = integer::create(i);
+      }
+      else
+	tmp = integer::create((__int64)m_addr);
+      code.push_back(new assign3ac(this, tmp));
+    }
+    return ref::assign(op);
+  }
+ };
 
 struct refsomewhere : ref {
   var* m_ref;
@@ -708,8 +784,6 @@ namespace initializer_list {
     int operator()(parse::ppair<parse::designation*, parse::initializer*>*);
   };
 } // end of namespace initializer_list
-
-extern std::vector<tac*> code;
 
 namespace optimize {
   extern void action(const fundef* fdef, std::vector<tac*>& v);

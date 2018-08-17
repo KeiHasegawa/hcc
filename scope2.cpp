@@ -115,9 +115,6 @@ c_compiler::usr* c_compiler::floating::new_obj(std::string name)
     T = const_type::create(T);
     constant<float>* c = new constant<float>(name,T,usr::NONE,parse::position);
     c->m_value = x;
-#if 0
-    constant<float>::table[x] = c;
-#endif
     return c;
   }
   else if ( suffix == 'l' || suffix == 'L' ){
@@ -131,9 +128,6 @@ c_compiler::usr* c_compiler::floating::new_obj(std::string name)
       c->b = new unsigned char[sz];
       (*generator::long_double->bit)(c->b,name.c_str());
     }
-#if 0
-    constant<long double>::table[x] = c;
-#endif
     return c;
   }
   else {
@@ -142,9 +136,6 @@ c_compiler::usr* c_compiler::floating::new_obj(std::string name)
     T = const_type::create(T);
     constant<double>* c = new constant<double>(name,T,usr::NONE,parse::position);
     c->m_value = x;
-#if 0
-    constant<double>::table[x] = c;
-#endif
     return c;
   }
 }
@@ -201,40 +192,70 @@ template<class T> T c_compiler::floating_impl::value<T>::hex(std::string name)
   return res;
 }
 
-#if 0
-std::pair<std::map<std::pair<const c_compiler::type*, void*>, c_compiler::constant<void*>*>, std::map<std::pair<const c_compiler::type*, void*>, c_compiler::constant<void*>*> >
-c_compiler::constant<void*>::table;
-#endif
-
-c_compiler::usr* c_compiler::pointer::create(const type* T, void* v)
-{
-  using namespace std;
-  bool tmp = T->temporary(false);
-  typedef pair<const type*, void*> KEY;
-  KEY key(T, v);
-  typedef map<KEY, constant<void*>*> table_t;
-  static table_t table;
-  if (!tmp) {
-	  table_t::const_iterator p = table.find(key);
-	  if (p != table.end())
-		  return p->second;
-  }
-  string name = new_name(".pointer");
-  constant<void*>* u = new constant<void*>(name,T,usr::CONST_PTR,parse::position);
-  if (!tmp)
-    table[key] = u;
-  u->m_value = v;
-  if (tmp) {
-    map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-    usrs[name].push_back(u);
-  }
-  else {
-    u->m_scope = &scope::root;
-    map<string, vector<usr*> >& usrs = scope::root.m_usrs;
-    usrs[name].push_back(u);
-  }
-  return u;
-}
+namespace c_compiler {
+  namespace pointer {
+    template<> usr* create<void*>(const type* T, void* v)
+    {
+      using namespace std;
+      typedef void* X;
+      bool temp = T->temporary(false);
+      typedef pair<const type*, X> KEY;
+      KEY key(T, v);
+      typedef map<KEY, constant<X>*> table_t;
+      static table_t table;
+      if (!temp) {
+	table_t::const_iterator p = table.find(key);
+	if (p != table.end())
+	  return p->second;
+      }
+      string name = new_name(".pointer");
+      constant<X>* c = new constant<X>(name, T, usr::CONST_PTR, parse::position);
+      if (!temp)
+	table[key] = c;
+      c->m_value = v;
+      if (temp) {
+	map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+	usrs[name].push_back(c);
+      }
+      else {
+	c->m_scope = &scope::root;
+	map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+	usrs[name].push_back(c);
+      }
+      return c;
+    }
+    template<> usr* create<__int64>(const type* T, __int64 v)
+    {
+      using namespace std;
+      typedef __int64 X;
+      bool temp = T->temporary(false);
+      typedef pair<const type*,X> KEY;
+      KEY key(T, v);
+      typedef map<KEY, constant<X>*> table_t;
+      static table_t table;
+      if (!temp) {
+	table_t::const_iterator p = table.find(key);
+	if (p != table.end())
+	  return p->second;
+      }
+      string name = new_name(".pointer");
+      constant<X>* c = new constant<X>(name, T, usr::CONST_PTR, parse::position);
+      if (!temp)
+	table[key] = c;
+      c->m_value = v;
+      if (temp) {
+	map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+	usrs[name].push_back(c);
+      }
+      else {
+	c->m_scope = &scope::root;
+	map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+	usrs[name].push_back(c);
+      }
+      return c;
+    }
+  } // end of namespace pointer
+} // end of namespace c_compiler
 
 namespace c_compiler { namespace literal { namespace string_impl {
   usr* new_obj(std::string);

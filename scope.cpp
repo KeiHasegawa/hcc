@@ -265,23 +265,24 @@ namespace c_compiler { namespace integer_impl {
   usr* uint_(std::string, unsigned int, std::string);
   usr* long_long_(std::string, __int64, std::string);
   usr* ulong_long_(std::string, unsigned __int64, std::string);
-  int expressible_int(std::string name, char** end);
-  unsigned int expressible_uint(std::string name, char** end);
+  int expressible_int(const char* name, char** end);
+  unsigned int expressible_uint(const char* name, char** end);
 } } // end of namespace integer_impl and c_compiler
 
 c_compiler::usr* c_compiler::integer::new_obj(std::string name)
 {
   using namespace std;
   errno = 0;
-  char* end;
-  int i = integer_impl::expressible_int(name,&end);
+  char* end = 0;
+  const char* tmp = name.c_str();
+  int i = integer_impl::expressible_int(tmp,&end);
   if ( errno != ERANGE ){
     string suffix = end;
     return integer_impl::int_(name,i,suffix);
   }
   if ( name[0] == '0' || *end == 'u' || *end == 'U' ){
     errno = 0;
-    unsigned int ui = integer_impl::expressible_uint(name,&end);
+    unsigned int ui = integer_impl::expressible_uint(tmp,&end);
     if ( errno != ERANGE ){
       string suffix = end;
       return integer_impl::uint_(name,ui,suffix);
@@ -323,9 +324,9 @@ c_compiler::usr* c_compiler::integer::new_obj(std::string name)
   }
 }
 
-int c_compiler::integer_impl::expressible_int(std::string name, char** end)
+int c_compiler::integer_impl::expressible_int(const char* name, char** end)
 {
-  long int x = strtol(name.c_str(),end,0);  
+  long int x = strtol(name,end,0);  
   if (sizeof(long) == sizeof(int))
     return x;
   assert(sizeof(long) == sizeof(long long) && sizeof(int) == 4);
@@ -334,9 +335,9 @@ int c_compiler::integer_impl::expressible_int(std::string name, char** end)
   return x;
 }
 
-unsigned int c_compiler::integer_impl::expressible_uint(std::string name, char** end)
+unsigned int c_compiler::integer_impl::expressible_uint(const char* name, char** end)
 {
-  unsigned long int x = strtoul(name.c_str(),end,0);  
+  unsigned long int x = strtoul(name,end,0);  
   if (sizeof(long) == sizeof(int))
     return x;
   assert(sizeof(long) == sizeof(long long));

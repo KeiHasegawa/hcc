@@ -213,9 +213,19 @@ c_compiler::var* c_compiler::constant<void*>::offref(const type* T, var* offset)
     int off = offset->value();
     unsigned char* p = reinterpret_cast<unsigned char*>(m_value);
     p += off;
-    var* ret = new refimm(pointer_type::create(T),reinterpret_cast<void*>(p));
-    garbage.push_back(ret);
-    return ret;
+    const pointer_type* pt = pointer_type::create(T);
+    if (sizeof(void*) >= pt->size()) {
+      void* pp = reinterpret_cast<void*>(p);
+      var* ret = new refimm<void*>(pt, pp);
+      garbage.push_back(ret);
+      return ret;
+    }
+    else {
+      __int64 lli = (__int64)p;
+      var* ret = new refimm<__int64>(pt, lli);
+      garbage.push_back(ret);
+      return ret;
+    }
   }
   return var::offref(T,offset);
 }
@@ -1245,11 +1255,6 @@ c_compiler::var* c_compiler::refbit::address()
   return refaddr::address();
 }
 
-c_compiler::var* c_compiler::refimm::address()
-{
-  return pointer::create(m_type,m_addr);
-}
-
 c_compiler::var* c_compiler::refsomewhere::address()
 {
   using namespace std;
@@ -1326,7 +1331,7 @@ c_compiler::var* c_compiler::constant<void*>::indirection()
 {
   typedef const pointer_type PT;
   PT* pt = static_cast<PT*>(m_type);
-  var* ret = new refimm(pt,m_value);
+  var* ret = new refimm<void*>(pt,m_value);
   garbage.push_back(ret);
   return ret;
 }
@@ -1645,33 +1650,6 @@ c_compiler::usr* c_compiler::refbit::mask(int n, int pos)
   n <<= pos;
   n = ~n;
   return integer::create(n);
-}
-
-c_compiler::var* c_compiler::refimm::rvalue()
-{
-  using namespace std;
-  if ( scope::current->m_id == scope::BLOCK ){
-    vector<var*>& v = garbage;
-    vector<var*>::reverse_iterator p = find(v.rbegin(),v.rend(),this);
-    assert(p != v.rend());
-    v.erase(p.base()-1);
-    block* b = static_cast<block*>(scope::current);
-    b->m_vars.push_back(this);
-    union {
-      void* v;
-	  int i;
-      __int64 lli;
-    } tmp = { m_addr };
-	if (sizeof(tmp.v) == sizeof(tmp.i)) {
-		var* i = integer::create(tmp.i);
-		code.push_back(new assign3ac(this, i));
-	}
-	else {
-		var* lli = integer::create(tmp.lli);
-		code.push_back(new assign3ac(this, lli));
-	}
-  }
-  return ref::rvalue();
 }
 
 c_compiler::var* c_compiler::refsomewhere::rvalue()

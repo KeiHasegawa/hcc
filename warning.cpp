@@ -234,24 +234,6 @@ void c_compiler::warning::generator::option(std::string option, int n, std::stri
   ++counter;
 }
 
-#if 0
-void c_compiler::warning::generator::open_file(std::string fn)
-{
-  using namespace std;
-  using namespace error;
-  string prog = c_compiler::cmdline::prog;
-  switch ( lang ){
-  case jpn:
-    cerr << prog << ": `generator_open_file' ‚ª " << fn << " ‚©‚çŒ©‚Â‚©‚è‚Ü‚¹‚ñ.\n";
-    break;
-  default:
-    cerr << prog << ": cannot find symbol `generator_open_file' from " << fn << ".\n";
-    break;
-  }
-  ++counter;
-}
-#endif // #if 0
-
 void c_compiler::warning::generator::generate(std::string fn)
 {
   using namespace std;
@@ -267,24 +249,6 @@ void c_compiler::warning::generator::generate(std::string fn)
   }
   ++counter;
 }
-
-#if 0
-void c_compiler::warning::generator::close_file(std::string fn)
-{
-  using namespace std;
-  using namespace error;
-  string prog = c_compiler::cmdline::prog;
-  switch ( lang ){
-  case jpn:
-    cerr << prog << ": `generator_close_file' ‚ª " << fn << " ‚©‚çŒ©‚Â‚©‚è‚Ü‚¹‚ñ.\n";
-    break;
-  default:
-    cerr << prog << ": cannot find symbol `generator_close_file' from " << fn << ".\n";
-    break;
-  }
-  ++counter;
-}
-#endif // #if 0
 
 void c_compiler::warning::expr::call::implicit(const usr* u)
 {

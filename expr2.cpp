@@ -176,6 +176,12 @@ c_compiler::var* c_compiler::var::mulr(constant<long double>* y){ return var_imp
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* mul(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::mul(y, z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::mul(y, z);
     return integer::create(y->m_value * z->m_value); 
   }
   template<class A, class B> var* fop1(constant<A>* y, constant<B>* z,
@@ -759,6 +765,12 @@ c_compiler::var* c_compiler::var::divr(constant<long double>* y){ return var_imp
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* div(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::div(y,z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::div(y,z);
     if ( z->m_value )
       return integer::create(y->m_value / z->m_value);
     else
@@ -1279,6 +1291,12 @@ c_compiler::var* c_compiler::var::modr(constant<unsigned __int64>* y){ return va
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* mod(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::mod(y,z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::mod(y,z);    
     if ( z->m_value )
       return integer::create(y->m_value % z->m_value); 
     else
@@ -1647,9 +1665,49 @@ c_compiler::var* c_compiler::var::addr(constant<void*>* y){ return var_impl::add
 c_compiler::var* c_compiler::var::addr(addrof* y){ return var_impl::add(y,this); }
 
 namespace c_compiler { namespace constant_impl {
+  template<class C> var* padd(constant<__int64>* y, constant<C>* z)
+  {
+    const type* T = y->m_type;
+    assert(T->m_id == type::POINTER);
+    typedef const pointer_type* PT;
+    PT pt = static_cast<PT>(T);
+    int psz = pt->size();
+    assert(sizeof(void*) < psz);
+    assert(psz == sizeof(__int64));
+    T = pt->referenced_type();
+    int size = T->size();
+    if ( !size )
+      return var_impl::add(y,z);
+    __int64 v = y->m_value;
+    int n = z->m_value;
+    v += size * n;
+    return pointer::create(pt, v);
+  }
   template<class A, class B> var* add(constant<A>* y, constant<B>* z)
   {
-    return integer::create(y->m_value + z->m_value); 
+    const type* Ty = y->m_type;
+    const type* Tz = z->m_type;
+    if (Ty->integer() && Tz->integer())
+      return integer::create(y->m_value + z->m_value); 
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR) {
+      if (Tz->integer()) {
+	constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
+	return padd(yy, z);
+      }
+      else
+	return var_impl::add(y,z);
+    }
+    else {
+      usr::flag fz = z->m_flag;
+      assert(fz & usr::CONST_PTR);
+      if (Ty->integer()) {
+	constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
+	return padd(zz, y);
+      }
+      else
+	return var_impl::add(y,z);
+    }
   }
   template<class A, class B> var* fadd1(constant<A>* y, constant<B>* z)
   {
@@ -1689,13 +1747,17 @@ namespace c_compiler { namespace constant_impl {
     int n = z->m_value;
     const type* T = y->m_type;
     typedef const pointer_type PT;
+    assert(T->m_id == type::POINTER);
     PT* pt = static_cast<PT*>(T);
     T = pt->referenced_type();
     int size = T->size();
     if ( !size )
       return var_impl::add(y,z);
     p += size * n;
-    return pointer::create(pt,(void*)p);
+    if (sizeof(void*) >= pt->size())
+      return pointer::create(pt,(void*)p);
+    else
+      return pointer::create(pt,(__int64)p);
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -2414,9 +2476,41 @@ namespace c_compiler {
 } // end of namespace c_compiler
 
 namespace c_compiler { namespace constant_impl {
+  template<class C> var* psub(constant<__int64>* y, constant<C>* z)
+  {
+    const type* T = y->m_type;
+    typedef const pointer_type PT;
+    assert(T->m_id == type::POINTER);
+    PT* pt = static_cast<PT*>(T);
+    assert(sizeof(void*) < pt->size());
+    T = pt->referenced_type();
+    int size = T->size();
+    if ( !size )
+      return var_impl::sub(y,z);
+    __int64 v = y->m_value;    
+    int n = z->m_value;
+    v -= size * n;
+    return pointer::create(pt,v);
+  }
+  var* pointer_pointer(constant<__int64>* y, constant<__int64>* z);
   template<class A, class B> var* sub(constant<A>* y, constant<B>* z)
   {
-    return integer::create(y->m_value - z->m_value); 
+    const type* Ty = y->m_type;
+    const type* Tz = z->m_type;
+    if (Ty->integer() && Tz->integer())
+      return integer::create(y->m_value - z->m_value);
+    usr::flag fy = y->m_flag;
+    usr::flag fz = z->m_flag;
+    if (fy & usr::CONST_PTR) {
+      constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
+      if (Tz->integer())
+	return psub(yy, z);
+      assert(fz & usr::CONST_PTR);
+      constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
+      return pointer_pointer(yy, zz);
+    }
+    else
+      return var_impl::sub(y, z);
   }
   template<class A, class B> var* fsub1(constant<A>* y, constant<B>* z)
   {
@@ -2462,7 +2556,10 @@ namespace c_compiler { namespace constant_impl {
     if ( !size )
       return var_impl::sub(y,z);
     p -= size * n;
-    return pointer::create(pt,(void*)p);
+    if (sizeof(void*) >= pt->size())
+      return pointer::create(pt,(void*)p);
+    else
+      return pointer::create(pt,(__int64)p);
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -2904,3 +3001,26 @@ c_compiler::var* c_compiler::constant<void*>::subr(constant<void*>* that)
   __int64 z = (__int64)this->m_value;
   return integer::create((long int)((y - z)/size));
 }
+
+namespace c_compiler {
+  namespace constant_impl {
+    var* pointer_pointer(constant<__int64>* y, constant<__int64>* z)
+    {
+      const type* Ty = y->m_type;
+      const type* Tz = z->m_type;
+      if ( !Ty->compatible(Tz) )
+	return var_impl::sub(y, z);
+      typedef const pointer_type PT;
+      assert(Ty->m_id == type::POINTER);
+      PT* pt = static_cast<PT*>(Ty);
+      assert(sizeof(void*) < pt->size());
+      const type* T = pt->referenced_type();
+      int size = T->size();
+      if ( !size )
+	return var_impl::sub(y, z);
+      __int64 vy = y->m_value;
+      __int64 vz = z->m_value;
+      return integer::create((long int)((y - z)/size));
+    }
+  } // end of namespace constant_impl
+} // end of namespace c_compiler

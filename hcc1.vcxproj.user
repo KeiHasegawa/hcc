@@ -4,7 +4,7 @@
     <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>d:/home/khasegawa/lang/41_ISO_IEC_9899/6_Language/1_Lexical_elements/1_Keywords/1_ok/test000.i --generator ../../30_intel/src/x64/Debug/intel.dll --generator-option ( --debug --ms )</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--generator d:\home\khasegawa\lang\bin\intel.dll sample.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -16,7 +16,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>sample.txt --generator ../../37_tacsim/src/x64/Debug/tacsim.dll --output-medium --simple-medium</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>sample.txt --generator ../../37_tacsim/src/x64/Debug/tacsim.dll</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

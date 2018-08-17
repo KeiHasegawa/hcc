@@ -139,8 +139,12 @@ namespace c_compiler { namespace constant_impl {
       return floating::create((double)y->m_value);
     else if ( type->compatible(long_double_type::create()) )
       return cast_ld(y->m_value);
-    else if ( type->m_id == type::POINTER )
-      return pointer::create(type,(void*)y->m_value);
+    else if ( type->m_id == type::POINTER ) {
+      if (sizeof(void*) >= type->size())
+	return pointer::create(type,(void*)y->m_value);
+      else
+	return pointer::create(type,(__int64)y->m_value);
+    }
     else if ( type->m_id == type::ENUM ){
       typedef const enum_type ET;
       ET* et = static_cast<ET*>(type);
@@ -217,8 +221,12 @@ namespace c_compiler { namespace constant_impl {
       return integer::create((__int64)(y->m_value));
     else if ( type->compatible(ulong_long_type::create()) )
       return integer::create((unsigned __int64)y->m_value);
-    else if ( type->m_id == type::POINTER )
-      return pointer::create(type,(void*)y->m_value);
+    else if ( type->m_id == type::POINTER ) {
+      if (sizeof(void*) >= type->size())
+	return pointer::create(type,(void*)y->m_value);
+      else
+	return pointer::create(type,(__int64)y->m_value);
+    }
     else if ( type->m_id == type::ENUM ){
       typedef const enum_type ET;
       ET* et = static_cast<ET*>(type);
@@ -261,8 +269,12 @@ namespace c_compiler { namespace constant_impl {
       return floating::create((double)(__int64)y->m_value);
     else if ( type->compatible(long_double_type::create()) )
       return cast_ld((__int64)y->m_value);
-    else if ( type->m_id == type::POINTER )
-      return pointer::create(type,(void*)y->m_value);
+    else if ( type->m_id == type::POINTER ) {
+      if (sizeof(void*) >= type->size())
+	return pointer::create(type,(void*)y->m_value);
+      else
+	return pointer::create(type,(__int64)y->m_value);
+    }
     else if ( type->m_id == type::ENUM ){
       typedef const enum_type ET;
       ET* et = static_cast<ET*>(type);

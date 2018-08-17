@@ -174,33 +174,6 @@ c_compiler::var* c_compiler::refbit::assign(var* op)
   return x;
 }
 
-c_compiler::var* c_compiler::refimm::assign(var* op)
-{
-  using namespace std;
-  if ( scope::current->m_id == scope::BLOCK ){
-    vector<var*>& v = garbage;
-    vector<var*>::reverse_iterator p = find(v.rbegin(),v.rend(),this);
-    assert(p != v.rend());
-    v.erase(p.base()-1);
-    block* b = static_cast<block*>(scope::current);
-    b->m_vars.push_back(this);
-    union {
-      void *v;
-      int i;
-	  __int64 lli;
-    } tmp = { m_addr };
-	if (sizeof(tmp.v) == sizeof(tmp.i)) {
-		var* i = integer::create(tmp.i);
-		code.push_back(new assign3ac(this, i));
-	}
-	else {
-		var* lli = integer::create(tmp.lli);
-		code.push_back(new assign3ac(this, lli));
-	}
-  }
-  return ref::assign(op);
-}
-
 c_compiler::var* c_compiler::refsomewhere::assign(var* op)
 {
   op = op->rvalue();
