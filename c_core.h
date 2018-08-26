@@ -53,8 +53,8 @@ struct tag {
   std::pair<const type*, const type*> m_types;
   scope* m_scope;
   static std::string keyword(kind);
-  tag(kind kind, std::string name, const file_t& file)
-    : m_kind(kind), m_name(name), m_scope(scope::current)
+  tag(kind kd, std::string name, const file_t& file)
+    : m_kind(kd), m_name(name), m_scope(scope::current)
   {
     m_file.push_back(file);
   }
@@ -1814,9 +1814,16 @@ public:
 
 struct tac {
   enum id_t {
-    NONE, ASSIGN, ADD, SUB, MUL, DIV, MOD, LSH, RSH, AND, OR, XOR, UMINUS, TILDE, CAST,
-	PARAM, CALL, RETURN, GOTO, TO, ADDR, INVLADDR, INVRADDR, LOFF, ROFF,
-	ALLOC, DEALLOC, ASM, VASTART, VAARG, VAEND
+    NONE,
+    ASSIGN,
+    ADD, SUB, MUL, DIV, MOD, LSH, RSH, AND, OR, XOR,
+    UMINUS, TILDE, CAST,
+    PARAM, CALL, RETURN,
+    GOTO, TO,
+    ADDR, INVLADDR, INVRADDR, LOFF, ROFF,
+    ALLOC, DEALLOC,
+    ASM,
+    VASTART, VAARG, VAEND
   };
   id_t id;
   var* x;
@@ -1984,8 +1991,8 @@ struct va_arg3ac : tac {
 };
 
 struct va_end3ac : tac {
-	va_end3ac(var* y) : tac(VAEND, 0, y, 0) {}
-	tac* new3ac() { return new va_end3ac(*this); }
+ va_end3ac(var* y) : tac(VAEND, 0, y, 0) {}
+  tac* new3ac() { return new va_end3ac(*this); }
 };
 
 namespace generator {
@@ -2007,8 +2014,8 @@ namespace generator {
     bool (*cmp)(goto3ac::op, const unsigned char*, const unsigned char*);
   };
   struct wrap_interface_t {
-	  const scope* m_root;
-	  const std::vector<std::pair<const fundef*, std::vector<tac*> > >* m_funcs;
+    const scope* m_root;
+    const std::vector<std::pair<const fundef*, std::vector<tac*> > >* m_funcs;
   };
 } // end of namespace generator
 
