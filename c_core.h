@@ -377,8 +377,8 @@ struct usr : var {
     BIT_FIELD   = 1 << 8,
     MSB_FIELD   = 1 << 9,
     VL          = 1 << 10,
-	CONST_PTR   = 1 << 11,
-	WITH_INI    = 1 << 12,
+    CONST_PTR   = 1 << 11,
+    WITH_INI    = 1 << 12,
   };
   flag m_flag;
   file_t m_file;
@@ -391,10 +391,11 @@ struct usr : var {
     : var(type), m_name(name), m_flag(flag), m_file(file) {}
 };
 
-template<class T> struct constant : usr {
-  T m_value;
-  // static std::map<T, constant<T>*> table;
+template<class V> struct constant : usr {
+  V m_value;
   bool lvalue() const { return false; }
+  var* offref(const type* T, var* v);
+  var* indirection();
   var* mul(var* z){ return z->mulr(this); }
   var* mulr(constant<char>*);
   var* mulr(constant<signed char>*);
@@ -626,8 +627,14 @@ template<class T> struct constant : usr {
   var* logic1(bool, int, var*);
   var* logic2(bool, const type*);
   var* cond(int, int, var*, var*);
-
-  var* plus(){ return promotion(); }
+  var* plus()
+  {
+    if (m_flag & CONST_PTR) {
+      // assert(sizeof(void*) < m_type->size());
+      return var::plus();
+    }
+    return promotion();
+  }
   var* minus();
   var* tilde();
   var* cast(const type*);
@@ -650,7 +657,6 @@ template<class T> struct constant : usr {
 
 template<> struct constant<float> : usr {
   float m_value;
-  // static std::map<float, constant<float>*> table;
   bool lvalue() const { return false; }
   var* plus(){ return this; }
   var* minus();
@@ -827,7 +833,6 @@ template<> struct constant<float> : usr {
 
 template<> struct constant<double> : usr {
   double m_value;
-  // static std::map<double, constant<double>*> table;
   bool lvalue() const { return false; }
   var* plus(){ return this; }
   var* minus();
@@ -1005,7 +1010,6 @@ template<> struct constant<double> : usr {
 template<> struct constant<long double> : usr {
   long double m_value;
   unsigned char* b;
-  // static std::map<long double, constant<long double>*> table;
   bool lvalue() const { return false; }
   var* plus(){ return this; }
   var* minus();

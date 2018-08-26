@@ -207,6 +207,44 @@ c_compiler::var* c_compiler::genaddr::subscripting(var* y)
   return offref(T,offset);
 }
 
+namespace c_compiler {
+  template<> var* constant<char>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<signed char>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }    
+  template<> var* constant<unsigned char>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<short int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<unsigned short int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<unsigned int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<long int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<unsigned long int>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+  template<> var* constant<__int64>::offref(const type* T, var* offset)
+  {
+    if (m_flag & CONST_PTR) {
+      assert(sizeof(void*) < m_type->size());
+      if (offset->isconstant()) {
+	int off = offset->value();
+	void* p = reinterpret_cast<void*>(m_value + off);
+	const pointer_type* pt = pointer_type::create(T);
+	var* ret = new refimm<void*>(pt, p);
+	garbage.push_back(ret);
+	return ret;
+      }
+    }
+    return var::offref(T, offset);
+  }
+  template<> var* constant<unsigned __int64>::offref(const type* T, var* offset)
+  { return var::offref(T, offset); }
+} // end of namespace c_compiler
+  
 c_compiler::var* c_compiler::constant<void*>::offref(const type* T, var* offset)
 {
   if ( offset->isconstant() ){
@@ -214,6 +252,7 @@ c_compiler::var* c_compiler::constant<void*>::offref(const type* T, var* offset)
     unsigned char* p = reinterpret_cast<unsigned char*>(m_value);
     p += off;
     const pointer_type* pt = pointer_type::create(T);
+#if 0
     if (sizeof(void*) >= pt->size()) {
       void* pp = reinterpret_cast<void*>(p);
       var* ret = new refimm<void*>(pt, pp);
@@ -226,6 +265,13 @@ c_compiler::var* c_compiler::constant<void*>::offref(const type* T, var* offset)
       garbage.push_back(ret);
       return ret;
     }
+#else
+    assert(sizeof(void*) >= pt->size());
+    void* pp = reinterpret_cast<void*>(p);
+    var* ret = new refimm<void*>(pt, pp);
+    garbage.push_back(ret);
+    return ret;
+#endif
   }
   return var::offref(T,offset);
 }
@@ -1327,6 +1373,41 @@ c_compiler::var* c_compiler::genaddr::indirection()
   return addrof::indirection();
 }
 
+namespace c_compiler {
+  template<> var* constant<char>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<signed char>::indirection()
+  { return var::indirection(); }    
+  template<> var* constant<unsigned char>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<short int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<unsigned short int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<unsigned int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<long int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<unsigned long int>::indirection()
+  { return var::indirection(); }
+  template<> var* constant<__int64>::indirection()
+  {
+    if (m_flag & CONST_PTR) {
+      assert(sizeof(void*) < m_type->size());
+      typedef const pointer_type PT;
+      PT* pt = static_cast<PT*>(m_type);
+      var* ret = new refimm<__int64>(pt,m_value);
+      garbage.push_back(ret);
+      return ret;
+    }
+    return var::indirection();
+  }
+  template<> var* constant<unsigned __int64>::indirection()
+  { return var::indirection(); }
+} // end of namespace c_compiler
+
 c_compiler::var* c_compiler::constant<void*>::indirection()
 {
   typedef const pointer_type PT;
@@ -1420,20 +1501,20 @@ c_compiler::var* c_compiler::var::minus()
 namespace c_compiler { namespace constant_impl {
 	template<class T> var* minus(constant<T>* p)
 	{
-		return integer::create(-p->m_value);
+	  return integer::create(-p->m_value);
 	}
 #ifdef _MSC_VER
 	template<> var* minus(constant<unsigned int>* p)
 	{
-		return integer::create((unsigned int)(-(int)p->m_value));
+	  return integer::create((unsigned int)(-(int)p->m_value));
 	}
 	template<> var* minus(constant<unsigned long int>* p)
 	{
-		return integer::create((unsigned long int)(-(long int)p->m_value));
+	  return integer::create((unsigned long int)(-(long int)p->m_value));
 	}
 	template<> var* minus(constant<unsigned __int64>* p)
 	{
-		return integer::create((unsigned __int64)(-(__int64)p->m_value));
+	  return integer::create((unsigned __int64)(-(__int64)p->m_value));
 	}
 #endif // _MSC_VER
 } } // end of constant_impl and c_compiler
@@ -1458,7 +1539,13 @@ namespace c_compiler {
   template<> var* constant<unsigned long int>::minus()
   { return constant_impl::minus(this); }
   template<> var* constant<__int64>::minus()
-  { return constant_impl::minus(this); }
+  {
+    if (m_flag & CONST_PTR) {
+      assert(sizeof(void*) < m_type->size());
+      return var::minus();
+    }
+    return constant_impl::minus(this);
+  }
   template<> var* constant<unsigned __int64>::minus()
   { return constant_impl::minus(this); }
 } // end of namespace c_compiler
@@ -1533,7 +1620,13 @@ namespace c_compiler {
   template<> var* constant<unsigned long int>::tilde()
   { return constant_impl::tilde(this); }
   template<> var* constant<__int64>::tilde()
-  { return constant_impl::tilde(this); }
+  {
+    if (m_flag & CONST_PTR) {
+      assert(sizeof(void*) < m_type->size());
+      return var::tilde();
+    }
+    return constant_impl::tilde(this);
+  }
   template<> var* constant<unsigned __int64>::tilde()
   { return constant_impl::tilde(this); }
 } // end of namespace c_compiler

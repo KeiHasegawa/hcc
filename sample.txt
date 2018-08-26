@@ -1,7 +1,2 @@
-int printf(const char*, ...);
-
-int main()
-{
-  printf("hello world\n");
-  return 0;
-}
+int n010_2 = (int*)0 == 0;
+int n010_3 = (int*)0 != 0;

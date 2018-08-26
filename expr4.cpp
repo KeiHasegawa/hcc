@@ -61,6 +61,12 @@ c_compiler::var* c_compiler::var::bit_andr(constant<unsigned __int64>* y){ retur
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_and(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::bit_and(y,z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::bit_and(y,z);
     return integer::create(y->m_value & z->m_value);
   }
 } } // end of namespace constant_impl and c_compiler
@@ -335,6 +341,12 @@ c_compiler::var* c_compiler::var::bit_xorr(constant<unsigned __int64>* y){ retur
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_xor(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::bit_xor(y,z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::bit_xor(y,z);
     return integer::create(y->m_value ^ z->m_value);
   }
 } } // end of namespace constant_impl and c_compiler
@@ -609,6 +621,12 @@ c_compiler::var* c_compiler::var::bit_orr(constant<unsigned __int64>* y){ return
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_or(constant<A>* y, constant<B>* z)
   {
+    usr::flag fy = y->m_flag;
+    if (fy & usr::CONST_PTR)
+      return var_impl::bit_or(y,z);
+    usr::flag fz = z->m_flag;
+    if (fz & usr::CONST_PTR)
+      return var_impl::bit_or(y,z);
     return integer::create(y->m_value | z->m_value);
   }
 } } // end of namespace constant_impl and c_compiler

@@ -2504,7 +2504,7 @@ namespace c_compiler { namespace constant_impl {
     if (fy & usr::CONST_PTR) {
       constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
       if (Tz->integer())
-	return psub(yy, z);
+		  return psub(yy, z);
       assert(fz & usr::CONST_PTR);
       constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
       return pointer_pointer(yy, zz);
@@ -3009,7 +3009,7 @@ namespace c_compiler {
       const type* Ty = y->m_type;
       const type* Tz = z->m_type;
       if ( !Ty->compatible(Tz) )
-	return var_impl::sub(y, z);
+		  return var_impl::sub(y, z);
       typedef const pointer_type PT;
       assert(Ty->m_id == type::POINTER);
       PT* pt = static_cast<PT*>(Ty);
@@ -3017,10 +3017,16 @@ namespace c_compiler {
       const type* T = pt->referenced_type();
       int size = T->size();
       if ( !size )
-	return var_impl::sub(y, z);
+		  return var_impl::sub(y, z);
       __int64 vy = y->m_value;
       __int64 vz = z->m_value;
-      return integer::create((long int)((y - z)/size));
+	  const long_type* lt = long_type::create();
+	  if (lt->size() == sizeof(long))
+		  return integer::create((long int)((vy - vz)/size));
+	  assert(lt->size() == 8 && sizeof(long) == 4);
+	  var* ret = integer::create((vy - vz) / size);
+	  ret->m_type = const_type::create(lt);
+	  return ret;
     }
   } // end of namespace constant_impl
 } // end of namespace c_compiler
