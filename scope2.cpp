@@ -204,23 +204,23 @@ namespace c_compiler {
       typedef map<KEY, constant<X>*> table_t;
       static table_t table;
       if (!temp) {
-	table_t::const_iterator p = table.find(key);
-	if (p != table.end())
-	  return p->second;
+        table_t::const_iterator p = table.find(key);
+        if (p != table.end())
+          return p->second;
       }
       string name = new_name(".pointer");
       constant<X>* c = new constant<X>(name, T, usr::CONST_PTR, parse::position);
       if (!temp)
-	table[key] = c;
+        table[key] = c;
       c->m_value = v;
       if (temp) {
-	map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-	usrs[name].push_back(c);
+        map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+        usrs[name].push_back(c);
       }
       else {
-	c->m_scope = &scope::root;
-	map<string, vector<usr*> >& usrs = scope::root.m_usrs;
-	usrs[name].push_back(c);
+        c->m_scope = &scope::root;
+        map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+        usrs[name].push_back(c);
       }
       return c;
     }
@@ -234,23 +234,23 @@ namespace c_compiler {
       typedef map<KEY, constant<X>*> table_t;
       static table_t table;
       if (!temp) {
-	table_t::const_iterator p = table.find(key);
-	if (p != table.end())
-	  return p->second;
+        table_t::const_iterator p = table.find(key);
+        if (p != table.end())
+          return p->second;
       }
       string name = new_name(".pointer");
       constant<X>* c = new constant<X>(name, T, usr::CONST_PTR, parse::position);
       if (!temp)
-	table[key] = c;
+        table[key] = c;
       c->m_value = v;
       if (temp) {
-	map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-	usrs[name].push_back(c);
+        map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+        usrs[name].push_back(c);
       }
       else {
-	c->m_scope = &scope::root;
-	map<string, vector<usr*> >& usrs = scope::root.m_usrs;
-	usrs[name].push_back(c);
+        c->m_scope = &scope::root;
+        map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+        usrs[name].push_back(c);
       }
       return c;
     }

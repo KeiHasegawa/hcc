@@ -7,6 +7,7 @@ namespace c_compiler {
   namespace generator {
     void (*generate)(const interface_t*);
     long_double_t* long_double;
+    type::id sizeof_type = type::UINT;
     bool require_align = true;
     int (*close_file)();
     void (*wrap)(const wrap_interface_t*);
@@ -85,14 +86,14 @@ void c_compiler::generator::initialize()
   }
 
   int (*of)(const char*) = (int (*)(const char*))dlsym(m_module,"generator_open_file");
-  if ( of ){
-    if ( !cmdline::output.empty() )
-      if ( (*of)(cmdline::output.c_str()) )
+  if (of){
+    if (!cmdline::output.empty())
+      if ((*of)(cmdline::output.c_str()))
         return;
   }
 
   void (*spell)(void*) = (void (*)(void*))dlsym(m_module,"generator_spell");
-  if ( spell ){
+  if (spell) {
     void* magic[] = {
       (void*)&tac_impl::dump,
     };
@@ -103,9 +104,12 @@ void c_compiler::generator::initialize()
 
   int (*size)(const type*) = (int (*)(const type*))dlsym(m_module,"generator_sizeof");
   type_impl::update(size);
+  type::id (*szof_tp)() = (type::id (*)())dlsym(m_module,"generator_sizeof_type");
+  if (szof_tp)
+    sizeof_type = (*szof_tp)();
   bool (*ra)() = (bool (*)())dlsym(m_module,"generator_require_align");
-  if ( ra )
-    require_align = ra();
+  if (ra)
+    require_align = (*ra)();
 
   if ( long_double_t* (*pf)() = (long_double_t* (*)())dlsym(m_module,"generator_long_double") )
     long_double = (*pf)();

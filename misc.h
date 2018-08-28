@@ -61,37 +61,6 @@ extern std::string new_name(std::string);
 
 namespace pointer {
   template<class V> usr* create(const type* T, V v);
-#if 0  
-  {
-    using namespace std;
-    bool temp = T->temporary(false);
-    typedef pair<const type*, V> KEY;
-    KEY key(T, v);
-    typedef map<KEY, constant<V>*> table_t;
-    static table_t table;
-    if (!temp) {
-      typename table_t::const_iterator p = table.find(key);
-      if (p != table.end())
-	return p->second;
-    }
-    string name = new_name(".pointer");
-    constant<void*>* c = new constant<V>(name, T, usr::CONST_PTR, parse::position);
-    if (!temp)
-      table[key] = c;
-    c->m_value = v;
-
-    if (temp) {
-      map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-      usrs[name].push_back(c);
-    }
-    else {
-      c->m_scope = &scope::root;
-      map<string, vector<usr*> >& usrs = scope::root.m_usrs;
-      usrs[name].push_back(c);
-    }
-    return c;
-  }
-#endif
 }
 
 namespace conversion {
@@ -180,28 +149,28 @@ namespace stmt {
   void _break();
   void _return(var*);
   namespace _asm_ {
-	  struct operand {
-		  var* m_specifier;
-		  var* m_expr;
-		  operand(var* spec, var* expr) : m_specifier(spec), m_expr(expr) {}
-	  };
-	  struct operands : std::vector<operand*> {
-	    ~operands()
-	     {
-	       using namespace std;
-	       for_each(begin(), end(), deleter<operand>());
-	     }
-	  };
-	  typedef std::vector<var*> reg_list;
-	  struct operand_list {
-		  operands* m_output;
-		  operands* m_input;
-		  reg_list* m_work;
-		  operand_list(operands* output, operands* input, reg_list* work) : m_output(output), m_input(input), m_work(work) {}
-		  ~operand_list() { delete m_output; delete m_input; delete m_work; }
-	  };
-	  void action(var*);
-	  void action(var*, operand_list*);
+          struct operand {
+                  var* m_specifier;
+                  var* m_expr;
+                  operand(var* spec, var* expr) : m_specifier(spec), m_expr(expr) {}
+          };
+          struct operands : std::vector<operand*> {
+            ~operands()
+             {
+               using namespace std;
+               for_each(begin(), end(), deleter<operand>());
+             }
+          };
+          typedef std::vector<var*> reg_list;
+          struct operand_list {
+                  operands* m_output;
+                  operands* m_input;
+                  reg_list* m_work;
+                  operand_list(operands* output, operands* input, reg_list* work) : m_output(output), m_input(input), m_work(work) {}
+                  ~operand_list() { delete m_output; delete m_input; delete m_work; }
+          };
+          void action(var*);
+          void action(var*, operand_list*);
   } // end of namespace _asm_
 } // end of namespace stmt
 
@@ -222,7 +191,7 @@ namespace tac_impl {
 }
 
 namespace scope_impl {
-  extern int dump(scope* = &scope::root, int = 0);
+  extern void dump(scope* = &scope::root, int = 0);
 }
 
 extern void destroy_temporary();
@@ -250,24 +219,24 @@ namespace function_definition {
 #endif // _DEBUG
     };
     extern skipped_t skipped;
-	namespace just_refed {
-		struct info {
-			file_t m_file;
-			usr::flag m_flag;
-			usr* m_func;
-			info(file_t file, usr::flag flag, usr* u)
-				: m_file(file), m_flag(flag), m_func(u) {}
-		};
-		struct table_t : std::map<std::string, info*> {
+        namespace just_refed {
+                struct info {
+                        file_t m_file;
+                        usr::flag m_flag;
+                        usr* m_func;
+                        info(file_t file, usr::flag flag, usr* u)
+                                : m_file(file), m_flag(flag), m_func(u) {}
+                };
+                struct table_t : std::map<std::string, info*> {
 #ifdef _DEBUG
-			~table_t() { std::for_each(begin(), end(), deleter2<std::string, info>()); }
+                        ~table_t() { std::for_each(begin(), end(), deleter2<std::string, info>()); }
 #endif // _DEBUG
-		};
-		extern table_t table;
-		void nodef(const std::pair<std::string, info*>&);
-	}  // end of namespace just_refed
-	void check_skipped(tac*);
-	void gencode(info*);
+                };
+                extern table_t table;
+                void nodef(const std::pair<std::string, info*>&);
+        }  // end of namespace just_refed
+        void check_skipped(tac*);
+        void gencode(info*);
   } // end of namespace static_inline
   namespace Inline {
     extern std::map<std::string, std::vector<usr*> > decled;
@@ -364,6 +333,7 @@ extern std::vector<tac*> code;
 
 template<class V> struct refimm : ref {
   V m_addr;
+  var* common();
   refimm(const pointer_type* pt, V addr) : ref(pt), m_addr(addr) {}
   var* rvalue()
   {
@@ -375,14 +345,7 @@ template<class V> struct refimm : ref {
       v.erase(p.base()-1);
       block* b = static_cast<block*>(scope::current);
       b->m_vars.push_back(this);
-      var* tmp;
-      if (sizeof(void*) == sizeof(int)) {
-	int i = (int)(__int64)m_addr;
-	tmp = integer::create(i);
-      }
-      else
-	tmp = integer::create((__int64)m_addr);
-      code.push_back(new assign3ac(this, tmp));
+      code.push_back(new assign3ac(this, common()));
     }
     return ref::rvalue();
   }
@@ -400,14 +363,7 @@ template<class V> struct refimm : ref {
       v.erase(p.base()-1);
       block* b = static_cast<block*>(scope::current);
       b->m_vars.push_back(this);
-      var* tmp;
-      if (sizeof(void*) == sizeof(int)) {
-	int i = (int)(__int64)m_addr;
-	tmp = integer::create(i);
-      }
-      else
-	tmp = integer::create((__int64)m_addr);
-      code.push_back(new assign3ac(this, tmp));
+      code.push_back(new assign3ac(this, common()));
     }
     return ref::assign(op);
   }
@@ -756,6 +712,7 @@ namespace generator {
   extern int (*close_file)();
   extern void terminate();
   extern long_double_t* long_double;
+  extern type::id sizeof_type;
   extern void(*wrap)(const wrap_interface_t*);
 } // end of namespace generator
 

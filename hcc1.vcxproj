@@ -203,8 +203,10 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bison_script;bison_conv.pl</AdditionalInputs>
     </CustomBuild>
     <None Include="flex_script" />
+    <None Include="sample.s" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="sample.txt" />
     <Text Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

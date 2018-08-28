@@ -1165,17 +1165,37 @@ c_compiler::var* c_compiler::expr::size(const type* T)
 {
   using namespace std;
   T = T->complete_type();
-  if ( var* size = T->vsize() )
+  if (var* size = T->vsize())
     return size;
-  else {
-    unsigned int n = T->size();
-    if ( !n ){
-      using namespace error::expr::size;
-      invalid(parse::position,T);
-      n = 1;
-    }
-    return integer::create(n);
+  int n = T->size();
+  if (!n) {
+    using namespace error::expr::size;
+    invalid(parse::position,T);
+    n = 1;
   }
+  switch (generator::sizeof_type) {
+  case type::UINT:
+    {
+      typedef unsigned int X;
+      return integer::create((X)n);
+    }
+  case type::ULONG:
+    {
+      typedef unsigned long int X;
+      const type* XX = ulong_type::create();
+      if (XX->size() == sizeof(X))
+	return integer::create((X)n);
+      assert(sizeof(X) == sizeof(long long));
+      var* ret = integer::create((X)n);
+      ret->m_type = XX;
+      return ret;
+    }
+  default:
+    {
+      typedef unsigned long long int X;
+      return integer::create((X)n);
+    }
+  }    
 }
 
 c_compiler::var* c_compiler::var::address()

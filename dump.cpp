@@ -9,7 +9,7 @@ namespace c_compiler { namespace scope_impl {
   int dump_var(var*, int);
 } } // end of namespace scope_impl and c_compiler
 
-int c_compiler::scope_impl::dump(scope* ptr, int ntab)
+void c_compiler::scope_impl::dump(scope* ptr, int ntab)
 {
   using namespace std;
   const map<string, vector<usr*> >& u = ptr->m_usrs;
@@ -23,7 +23,6 @@ int c_compiler::scope_impl::dump(scope* ptr, int ntab)
   }
   const vector<scope*>& c = ptr->m_children;
   for_each(c.begin(),c.end(),bind2nd(ptr_fun(scope_impl::dump),ntab+1));
-  return 0;
 }
 
 namespace c_compiler { namespace scope_impl {
@@ -176,16 +175,16 @@ int c_compiler::scope_impl::dump_var(var* v, int ntab)
 }
 
 namespace c_compiler { namespace tac_impl {
-  struct table : std::map<std::string, void (*)(std::ostream&, const tac*)> {
-    table();
-  } m_table;
+  struct table_t : std::map<tac::id_t, void (*)(std::ostream&, const tac*)> {
+    table_t();
+  } table;
 } } // end of namespace tac_impl and c_compiler
 
 void c_compiler::tac_impl::dump(std::ostream& os, const tac* ptr)
 {
-  using namespace std;
-  string name = typeid(*ptr).name();
-  m_table[name](os,ptr);
+  table_t::const_iterator p = table.find(ptr->id);
+  assert(p != table.end());
+  (p->second)(os, ptr);
 }
 
 namespace c_compiler { namespace tac_impl {
@@ -221,38 +220,38 @@ namespace c_compiler { namespace tac_impl {
   void dump_asm(std::ostream&, const tac*);
 } } // end of namespace tac_impl and c_compiler
 
-c_compiler::tac_impl::table::table()
+c_compiler::tac_impl::table_t::table_t()
 {
-  (*this)[typeid(assign3ac).name()] = dump_assign;
-  (*this)[typeid(mul3ac).name()] = dump_mul;
-  (*this)[typeid(div3ac).name()] = dump_div;
-  (*this)[typeid(mod3ac).name()] = dump_mod;
-  (*this)[typeid(add3ac).name()] = dump_add;
-  (*this)[typeid(sub3ac).name()] = dump_sub;
-  (*this)[typeid(lsh3ac).name()] = dump_lsh;
-  (*this)[typeid(rsh3ac).name()] = dump_rsh;
-  (*this)[typeid(and3ac).name()] = dump_and;
-  (*this)[typeid(or3ac).name()] = dump_or;
-  (*this)[typeid(xor3ac).name()] = dump_xor;
-  (*this)[typeid(param3ac).name()] = dump_param;
-  (*this)[typeid(call3ac).name()] = dump_call;
-  (*this)[typeid(return3ac).name()] = dump_return;
-  (*this)[typeid(addr3ac).name()] = dump_addr;
-  (*this)[typeid(invraddr3ac).name()] = dump_invraddr;
-  (*this)[typeid(invladdr3ac).name()] = dump_invladdr;
-  (*this)[typeid(uminus3ac).name()] = dump_uminus;
-  (*this)[typeid(tilde3ac).name()] = dump_tilde;
-  (*this)[typeid(cast3ac).name()] = dump_cast;
-  (*this)[typeid(goto3ac).name()] = dump_goto;
-  (*this)[typeid(to3ac).name()] = dump_to;
-  (*this)[typeid(loff3ac).name()] = dump_loff;
-  (*this)[typeid(roff3ac).name()] = dump_roff;
-  (*this)[typeid(alloc3ac).name()] = dump_alloc;
-  (*this)[typeid(dealloc3ac).name()] = dump_dealloc;
-  (*this)[typeid(va_start3ac).name()] = dump_va_start;
-  (*this)[typeid(va_arg3ac).name()] = dump_va_arg;
-  (*this)[typeid(va_end3ac).name()] = dump_va_end;
-  (*this)[typeid(asm3ac).name()] = dump_asm;
+  (*this)[tac::ASSIGN] = dump_assign;
+  (*this)[tac::MUL] = dump_mul;
+  (*this)[tac::DIV] = dump_div;
+  (*this)[tac::MOD] = dump_mod;
+  (*this)[tac::ADD] = dump_add;
+  (*this)[tac::SUB] = dump_sub;
+  (*this)[tac::LSH] = dump_lsh;
+  (*this)[tac::RSH] = dump_rsh;
+  (*this)[tac::AND] = dump_and;
+  (*this)[tac::OR] = dump_or;
+  (*this)[tac::XOR] = dump_xor;
+  (*this)[tac::PARAM] = dump_param;
+  (*this)[tac::CALL] = dump_call;
+  (*this)[tac::RETURN] = dump_return;
+  (*this)[tac::ADDR] = dump_addr;
+  (*this)[tac::INVRADDR] = dump_invraddr;
+  (*this)[tac::INVLADDR] = dump_invladdr;
+  (*this)[tac::UMINUS] = dump_uminus;
+  (*this)[tac::TILDE] = dump_tilde;
+  (*this)[tac::CAST] = dump_cast;
+  (*this)[tac::GOTO] = dump_goto;
+  (*this)[tac::TO] = dump_to;
+  (*this)[tac::LOFF] = dump_loff;
+  (*this)[tac::ROFF] = dump_roff;
+  (*this)[tac::ALLOC] = dump_alloc;
+  (*this)[tac::DEALLOC] = dump_dealloc;
+  (*this)[tac::VASTART] = dump_va_start;
+  (*this)[tac::VAARG] = dump_va_arg;
+  (*this)[tac::VAEND] = dump_va_end;
+  (*this)[tac::ASM] = dump_asm;
 }
 
 void c_compiler::tac_impl::dump_assign(std::ostream& os, const tac* ptr)

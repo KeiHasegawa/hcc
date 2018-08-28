@@ -97,26 +97,26 @@ namespace c_compiler { namespace constant_impl {
   template<class T> var* cast(const type* type, constant<T>* y)
   {
     using namespace std;
-    if ( type->compatible(y->m_type) )
+    if (type->compatible(y->m_type))
       return y;
-    else if ( type->compatible(char_type::create()) )
+    else if (type->compatible(char_type::create()))
       return integer::create((char)(y->m_value));
-    else if ( type->compatible(schar_type::create()) )
+    else if (type->compatible(schar_type::create()))
       return integer::create((signed char)(y->m_value));
-    else if ( type->compatible(uchar_type::create()) )
+    else if (type->compatible(uchar_type::create()))
       return integer::create((unsigned char)(y->m_value));
-    else if ( type->compatible(short_type::create()) )
+    else if (type->compatible(short_type::create()))
       return integer::create((short int)(y->m_value));
-    else if ( type->compatible(ushort_type::create()) )
+    else if (type->compatible(ushort_type::create()))
       return integer::create((unsigned short int)(y->m_value));
-    else if ( type->compatible(int_type::create()) )
+    else if (type->compatible(int_type::create()))
       return integer::create((int)(y->m_value));
-    else if ( type->compatible(uint_type::create()) )
+    else if (type->compatible(uint_type::create()))
       return integer::create((unsigned int)(y->m_value));
     else if (type->compatible(long_type::create())) {
 	typedef long int X;
 	if (type->size() <= sizeof(X))
-		return integer::create((X)(y->m_value));
+	  return integer::create((X)(y->m_value));
 	typedef long long int XX;
 	assert(type->size() == sizeof(XX));
 	return integer::create((XX)(y->m_value));
@@ -124,28 +124,28 @@ namespace c_compiler { namespace constant_impl {
     else if (type->compatible(ulong_type::create())) {
 	typedef unsigned long int X;
 	if (type->size() <= sizeof(X))
-		return integer::create((X)(y->m_value));
+	  return integer::create((X)(y->m_value));
 	typedef unsigned long long int XX;
 	assert(type->size() == sizeof(XX));
 	return integer::create((XX)(y->m_value));
     }
-    else if ( type->compatible(long_long_type::create()) )
+    else if (type->compatible(long_long_type::create()))
       return integer::create((__int64)(y->m_value));
-    else if ( type->compatible(ulong_long_type::create()) )
+    else if (type->compatible(ulong_long_type::create()))
       return integer::create((unsigned __int64)(y->m_value));
-    else if ( type->compatible(float_type::create()) )
+    else if (type->compatible(float_type::create()))
       return floating::create((float)y->m_value);
-    else if ( type->compatible(double_type::create()) )
+    else if (type->compatible(double_type::create()))
       return floating::create((double)y->m_value);
-    else if ( type->compatible(long_double_type::create()) )
+    else if (type->compatible(long_double_type::create()))
       return cast_ld(y->m_value);
-    else if ( type->m_id == type::POINTER ) {
+    else if (type->m_id == type::POINTER ){
       if (sizeof(void*) >= type->size())
 	return pointer::create(type,(void*)y->m_value);
       else
 	return pointer::create(type,(__int64)y->m_value);
     }
-    else if ( type->m_id == type::ENUM ){
+    else if (type->m_id == type::ENUM){
       typedef const enum_type ET;
       ET* et = static_cast<ET*>(type);
       return cast(et->get_integer(),y);
@@ -380,7 +380,23 @@ c_compiler::var* c_compiler::expr::_va_arg(var* v, const type* T)
 
 c_compiler::var* c_compiler::expr::_va_end(var* y)
 {
-	y = y->rvalue();
-	code.push_back(new va_end3ac(y));
-	return y;
+  y = y->rvalue();
+  code.push_back(new va_end3ac(y));
+  return y;
 }
+
+namespace c_compiler {
+  template<> var* refimm<void*>::common()
+  {
+    if (sizeof(void*) == sizeof(int)) {
+      int i = (int)(__int64)m_addr;
+      return integer::create(i);
+    }
+    return integer::create((__int64)m_addr);
+  }
+  template<> var* refimm<__int64>::common()
+  {
+    return integer::create(m_addr);
+  }
+} // end of namespace c_compiler
+
