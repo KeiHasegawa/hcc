@@ -893,12 +893,12 @@ namespace c_compiler { namespace SUB_CONST_LONG_impl {
     if (!(fy & usr::SUB_CONST_LONG) && !(fz & usr::SUB_CONST_LONG))
       return 0;
 
-	const type* Ty = y->m_type;
-	const type* Tz = z->m_type;
-	const type* Tyq = Ty->unqualified();
-	const type* Tzq = Tz->unqualified();
-	type::id iy = Tyq->m_id;
-	type::id iz = Tzq->m_id;
+    const type* Ty = y->m_type;
+    const type* Tz = z->m_type;
+    const type* Tyq = Ty->unqualified();
+    const type* Tzq = Tz->unqualified();
+    type::id iy = Tyq->m_id;
+    type::id iz = Tzq->m_id;
 
     if ((fy & usr::SUB_CONST_LONG) && (fz & usr::SUB_CONST_LONG)) {
       if (iy == type::ULONG)

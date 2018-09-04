@@ -1248,7 +1248,7 @@ void c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc
 #endif
           }
           else if (!generator::last)
-	    return static_inline::remember(vc);
+            return static_inline::remember(vc);
         }
   }
 

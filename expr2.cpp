@@ -2519,7 +2519,7 @@ namespace c_compiler { namespace constant_impl {
     if (fy & usr::CONST_PTR) {
       constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
       if (Tz->integer())
-	return psub(yy, z);
+        return psub(yy, z);
       assert(fz & usr::CONST_PTR);
       constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
       return pointer_pointer(yy, zz);

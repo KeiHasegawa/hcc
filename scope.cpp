@@ -755,7 +755,7 @@ c_compiler::usr* c_compiler::character_impl::universal(std::string name)
   unsigned int n = strtoul(&name[3],0,16);
   if ( name[2] == 'u' ){
     typedef wchar_typedef X;
-    const type* T = ushort_type::create();
+    const type* T = literal::wchar_type::create();
     T = const_type::create(T);
     constant<X>* c = new constant<X>(name,T,usr::NONE,parse::position);
     c->m_value = n;
@@ -783,25 +783,25 @@ namespace c_compiler {
 
 c_compiler::usr* c_compiler::character_impl::wide(std::string name)
 {
-        using namespace std;
-        using namespace literal;
-        if (name[0] != 'L')
-                return 0;
-        int v = wide_impl::value(name);
-        typedef wchar_typedef X;
-        const type* T = ushort_type::create();
-        T = const_type::create(T);
-        constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
-        c->m_value = v;
-        return c;
+  using namespace std;
+  using namespace literal;
+  if (name[0] != 'L')
+    return 0;
+  int v = wide_impl::value(name);
+  typedef wchar_typedef X;
+  const type* T = literal::wchar_type::create();
+  T = const_type::create(T);
+  constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+  c->m_value = v;
+  return c;
 }
 
 namespace c_compiler {
-        namespace character_impl {
-                namespace wide_impl {
-                        bool jis(std::string);
-                }
-        }
+  namespace character_impl {
+    namespace wide_impl {
+      bool jis(std::string);
+    }
+  }
 } // end of namespace wide_impl, character_impl and c_compiler
 
 int c_compiler::character_impl::wide_impl::value(std::string name)
@@ -862,15 +862,15 @@ bool c_compiler::character_impl::wide_impl::jis(std::string name)
 
 c_compiler::usr* c_compiler::character_impl::normal(std::string name)
 {
-        assert(name[0] == '\'');
-        if (name[2] != '\'') {
-                using namespace error::literal::character;
-                invalid(parse::position, name, char_type::create());
-        }
-        typedef char X;
-        const type* T = char_type::create();
-        T = const_type::create(T);
-        constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
-        c->m_value = name[1];
-        return c;
+  assert(name[0] == '\'');
+  if (name[2] != '\'') {
+    using namespace error::literal::character;
+    invalid(parse::position, name, char_type::create());
+  }
+  typedef char X;
+  const type* T = char_type::create();
+  T = const_type::create(T);
+  constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+  c->m_value = name[1];
+  return c;
 }
