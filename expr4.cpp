@@ -67,7 +67,10 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_and(y,z);
-    return integer::create(y->m_value & z->m_value);
+    usr* ret = integer::create(y->m_value & z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret;
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -347,7 +350,10 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_xor(y,z);
-    return integer::create(y->m_value ^ z->m_value);
+    usr* ret = integer::create(y->m_value ^ z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret;
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -627,7 +633,10 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_or(y,z);
-    return integer::create(y->m_value | z->m_value);
+    usr* ret = integer::create(y->m_value | z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret;
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -875,3 +884,40 @@ namespace c_compiler {
   template<> var* constant<unsigned __int64>::bit_orr(constant<unsigned __int64>* y)
   { return constant_impl::bit_or(y,this); }
 } // end of namespace c_comiler
+
+namespace c_compiler { namespace SUB_CONST_LONG_impl {
+  const type* propagation(const usr* y, const usr* z)
+  {
+    usr::flag fy = y->m_flag;
+    usr::flag fz = z->m_flag;
+    if (!(fy & usr::SUB_CONST_LONG) && !(fz & usr::SUB_CONST_LONG))
+      return 0;
+
+	const type* Ty = y->m_type;
+	const type* Tz = z->m_type;
+	const type* Tyq = Ty->unqualified();
+	const type* Tzq = Tz->unqualified();
+	type::id iy = Tyq->m_id;
+	type::id iz = Tzq->m_id;
+
+    if ((fy & usr::SUB_CONST_LONG) && (fz & usr::SUB_CONST_LONG)) {
+      if (iy == type::ULONG)
+        return Ty;
+      if (iz == type::ULONG)
+        return Tz;
+      assert(iy == type::LONG && iz == type::LONG);
+      return Ty;
+    }
+    
+    if (fz & usr::SUB_CONST_LONG)
+      return propagation(z, y);
+    
+    assert(fy & usr::SUB_CONST_LONG);
+    assert(!(fz & usr::SUB_CONST_LONG));
+    assert(Tz->integer());
+    if (iz == type::ULONGLONG || iz == type::LONGLONG)
+      return 0;
+    assert(iz != type::ULONG && iz != type::LONG);
+    return Ty;
+  }
+} } // end of namespace SUB_CONST_LONG_impl and c_compiler

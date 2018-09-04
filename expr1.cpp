@@ -114,20 +114,26 @@ namespace c_compiler { namespace constant_impl {
     else if (type->compatible(uint_type::create()))
       return integer::create((unsigned int)(y->m_value));
     else if (type->compatible(long_type::create())) {
-	typedef long int X;
-	if (type->size() <= sizeof(X))
-	  return integer::create((X)(y->m_value));
-	typedef long long int XX;
-	assert(type->size() == sizeof(XX));
-	return integer::create((XX)(y->m_value));
+        typedef long int X;
+        if (type->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef long long int XX;
+        assert(type->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = type;
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
     }
     else if (type->compatible(ulong_type::create())) {
-	typedef unsigned long int X;
-	if (type->size() <= sizeof(X))
-	  return integer::create((X)(y->m_value));
-	typedef unsigned long long int XX;
-	assert(type->size() == sizeof(XX));
-	return integer::create((XX)(y->m_value));
+        typedef unsigned long int X;
+        if (type->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef unsigned long long int XX;
+        assert(type->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = type;
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
     }
     else if (type->compatible(long_long_type::create()))
       return integer::create((__int64)(y->m_value));
@@ -141,9 +147,9 @@ namespace c_compiler { namespace constant_impl {
       return cast_ld(y->m_value);
     else if (type->m_id == type::POINTER ){
       if (sizeof(void*) >= type->size())
-	return pointer::create(type,(void*)y->m_value);
+        return pointer::create(type,(void*)y->m_value);
       else
-	return pointer::create(type,(__int64)y->m_value);
+        return pointer::create(type,(__int64)y->m_value);
     }
     else if (type->m_id == type::ENUM){
       typedef const enum_type ET;
@@ -223,9 +229,9 @@ namespace c_compiler { namespace constant_impl {
       return integer::create((unsigned __int64)y->m_value);
     else if ( type->m_id == type::POINTER ) {
       if (sizeof(void*) >= type->size())
-	return pointer::create(type,(void*)y->m_value);
+        return pointer::create(type,(void*)y->m_value);
       else
-	return pointer::create(type,(__int64)y->m_value);
+        return pointer::create(type,(__int64)y->m_value);
     }
     else if ( type->m_id == type::ENUM ){
       typedef const enum_type ET;
@@ -271,9 +277,9 @@ namespace c_compiler { namespace constant_impl {
       return cast_ld((__int64)y->m_value);
     else if ( type->m_id == type::POINTER ) {
       if (sizeof(void*) >= type->size())
-	return pointer::create(type,(void*)y->m_value);
+        return pointer::create(type,(void*)y->m_value);
       else
-	return pointer::create(type,(__int64)y->m_value);
+        return pointer::create(type,(__int64)y->m_value);
     }
     else if ( type->m_id == type::ENUM ){
       typedef const enum_type ET;

@@ -182,7 +182,10 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::mul(y, z);
-    return integer::create(y->m_value * z->m_value); 
+    usr* ret = integer::create(y->m_value * z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret; 
   }
   template<class A, class B> var* fop1(constant<A>* y, constant<B>* z,
                                        void (*pf)(unsigned char*, const unsigned char*))
@@ -191,7 +194,7 @@ namespace c_compiler { namespace constant_impl {
     if ( y->m_type->compatible(long_double_type::create()) ){
       int sz = long_double_type::create()->size();
       unsigned char* p = new unsigned char[sz];
-	  constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
+          constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
       memcpy(p,yy->b,sz);
       auto_ptr<unsigned char> q = auto_ptr<unsigned char>(new unsigned char[sz]);
 #ifndef _MSC_VER
@@ -227,7 +230,7 @@ namespace c_compiler { namespace constant_impl {
 #else // _MSC_VER
       (*generator::long_double->from_double)(p,(__int64)y->m_value);
 #endif // _MSC_VER
-	  constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
+          constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
       (*pf)(p,zz->b);
       return floating::create(p);
     }
@@ -252,7 +255,7 @@ namespace c_compiler { namespace constant_impl {
     int sz = long_double_type::create()->size();
     if ( y->m_type->compatible(long_double_type::create()) ){
       unsigned char* p = new unsigned char[sz];
-	  constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
+          constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
       memcpy(p,yy->b,sz);
       if ( z->m_type->compatible(long_double_type::create()) ){
         constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
@@ -267,7 +270,7 @@ namespace c_compiler { namespace constant_impl {
     if ( z->m_type->compatible(long_double_type::create()) ){
       unsigned char* p = new unsigned char[sz];
       (*generator::long_double->from_double)(p,y->m_value);
-	  constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
+          constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
       (*pf)(p,zz->b);
       return floating::create(p);
     }
@@ -771,10 +774,12 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::div(y,z);
-    if ( z->m_value )
-      return integer::create(y->m_value / z->m_value);
-    else
-      return var_impl::div(y,z);
+    if (!z->m_value)
+      return var_impl::div(y, z);
+    usr* ret = integer::create(y->m_value / z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret;
   }
   template<class A, class B> var* fdiv1(constant<A>* y, constant<B>* z)
   {
@@ -1297,10 +1302,12 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::mod(y,z);    
-    if ( z->m_value )
-      return integer::create(y->m_value % z->m_value); 
-    else
-      return var_impl::mod(y,z);
+    if (!z->m_value)
+      return var_impl::mod(y, z);
+    usr* ret = integer::create(y->m_value % z->m_value);
+    if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+      ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+    return ret;
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -1687,26 +1694,30 @@ namespace c_compiler { namespace constant_impl {
   {
     const type* Ty = y->m_type;
     const type* Tz = z->m_type;
-    if (Ty->integer() && Tz->integer())
-      return integer::create(y->m_value + z->m_value); 
     usr::flag fy = y->m_flag;
+    usr::flag fz = z->m_flag;
+    if (Ty->integer() && Tz->integer()) {
+      usr* ret = integer::create(y->m_value + z->m_value);
+      if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+        ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+      return ret;
+    }
     if (fy & usr::CONST_PTR) {
       if (Tz->integer()) {
-	constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
-	return padd(yy, z);
+        constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
+        return padd(yy, z);
       }
       else
-	return var_impl::add(y,z);
+        return var_impl::add(y,z);
     }
     else {
-      usr::flag fz = z->m_flag;
       assert(fz & usr::CONST_PTR);
       if (Ty->integer()) {
-	constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
-	return padd(zz, y);
+        constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
+        return padd(zz, y);
       }
       else
-	return var_impl::add(y,z);
+        return var_impl::add(y,z);
     }
   }
   template<class A, class B> var* fadd1(constant<A>* y, constant<B>* z)
@@ -2497,14 +2508,18 @@ namespace c_compiler { namespace constant_impl {
   {
     const type* Ty = y->m_type;
     const type* Tz = z->m_type;
-    if (Ty->integer() && Tz->integer())
-      return integer::create(y->m_value - z->m_value);
     usr::flag fy = y->m_flag;
     usr::flag fz = z->m_flag;
+    if (Ty->integer() && Tz->integer()) {
+      usr* ret = integer::create(y->m_value - z->m_value);
+      if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
+        ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
+      return ret;
+    }
     if (fy & usr::CONST_PTR) {
       constant<__int64>* yy = reinterpret_cast<constant<__int64>*>(y);
       if (Tz->integer())
-		  return psub(yy, z);
+	return psub(yy, z);
       assert(fz & usr::CONST_PTR);
       constant<__int64>* zz = reinterpret_cast<constant<__int64>*>(z);
       return pointer_pointer(yy, zz);
@@ -3009,7 +3024,7 @@ namespace c_compiler {
       const type* Ty = y->m_type;
       const type* Tz = z->m_type;
       if ( !Ty->compatible(Tz) )
-		  return var_impl::sub(y, z);
+        return var_impl::sub(y, z);
       typedef const pointer_type PT;
       assert(Ty->m_id == type::POINTER);
       PT* pt = static_cast<PT*>(Ty);
@@ -3017,16 +3032,17 @@ namespace c_compiler {
       const type* T = pt->referenced_type();
       int size = T->size();
       if ( !size )
-		  return var_impl::sub(y, z);
+        return var_impl::sub(y, z);
       __int64 vy = y->m_value;
       __int64 vz = z->m_value;
-	  const long_type* lt = long_type::create();
-	  if (lt->size() == sizeof(long))
-		  return integer::create((long int)((vy - vz)/size));
-	  assert(lt->size() == 8 && sizeof(long) == 4);
-	  var* ret = integer::create((vy - vz) / size);
-	  ret->m_type = const_type::create(lt);
-	  return ret;
+      const long_type* lt = long_type::create();
+      if (lt->size() == sizeof(long))
+        return integer::create((long int)((vy - vz)/size));
+      assert(lt->size() == 8 && sizeof(long) == 4);
+      usr* ret = integer::create((vy - vz) / size);
+      ret->m_type = const_type::create(lt);
+      ret->m_flag = usr::SUB_CONST_LONG;
+      return ret;
     }
   } // end of namespace constant_impl
 } // end of namespace c_compiler

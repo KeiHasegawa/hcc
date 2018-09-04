@@ -379,6 +379,7 @@ struct usr : var {
     VL          = 1 << 10,
     CONST_PTR   = 1 << 11,
     WITH_INI    = 1 << 12,
+    SUB_CONST_LONG = 1 << 13,
   };
   flag m_flag;
   file_t m_file;
@@ -1328,11 +1329,11 @@ class varray_type;
 
 struct type {
   enum id {
-	  OTHER,
-	  CHAR, SCHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, LONGLONG, ULONGLONG,
-	  FLOAT, DOUBLE, LONG_DOUBLE,
-	  BACKPATCH, POINTER, ARRAY, FUNC, RECORD, ENUM, BIT_FIELD, ELLIPSIS,
-	  INCOMPLETE_TAGGED, VARRAY
+          OTHER,
+          CHAR, SCHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, LONGLONG, ULONGLONG,
+          FLOAT, DOUBLE, LONG_DOUBLE,
+          BACKPATCH, POINTER, ARRAY, FUNC, RECORD, ENUM, BIT_FIELD, ELLIPSIS,
+          INCOMPLETE_TAGGED, VARRAY
   };
   id m_id;
   type(id id = OTHER) : m_id(id) {}
@@ -1996,10 +1997,11 @@ struct va_end3ac : tac {
 };
 
 namespace generator {
+  using namespace std;
   struct interface_t {
     const scope* m_root;
     const fundef* m_func;
-    const std::vector<tac*>* m_code;
+    const vector<tac*>* m_code;
   };
   struct long_double_t {
     void (*bit)(unsigned char*, const char*);
@@ -2013,9 +2015,9 @@ namespace generator {
     void (*from_double)(unsigned char*, double);
     bool (*cmp)(goto3ac::op, const unsigned char*, const unsigned char*);
   };
-  struct wrap_interface_t {
+  struct last_interface_t {
     const scope* m_root;
-    const std::vector<std::pair<const fundef*, std::vector<tac*> > >* m_funcs;
+    const vector<pair<const fundef*, vector<tac*> > >* m_funcs;
   };
 } // end of namespace generator
 

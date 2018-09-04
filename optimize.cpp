@@ -55,7 +55,7 @@ namespace c_compiler { namespace optimize { namespace live_var {
 namespace c_compiler { namespace optimize { namespace symtab {
   extern int simplify(scope*, std::vector<tac*>*);
   namespace literal {
-	  extern void simplify(const std::vector<tac*>&);
+          extern void simplify(const std::vector<tac*>&);
   } // end of namespace literal
 } } } // end of namespace symtab, optimize and c_compiler
 
@@ -951,17 +951,17 @@ int c_compiler::optimize::symtab::simplify(scope* ptr, std::vector<tac*>* res)
     vector<usr*>& vec = x->second;
     typedef vector<usr*>::iterator IT;
     for ( IT p = vec.begin() ; p != vec.end() ; ){
-		usr* u = *p;
-		if (not_referenced(u, res)) {
-			delete u;
-			p = vec.erase(p);
-		}
-		else
-			++p;
+                usr* u = *p;
+                if (not_referenced(u, res)) {
+                        delete u;
+                        p = vec.erase(p);
+                }
+                else
+                        ++p;
     }
     if ( vec.empty() ){
-		X xx = x++;
-		usrs.erase(xx);
+                X xx = x++;
+                usrs.erase(xx);
     }
     else
       ++x;
@@ -1014,63 +1014,63 @@ bool c_compiler::optimize::symtab::refs(tac* ptr, var* v)
 }
 
 namespace c_compiler { namespace optimize { namespace symtab { namespace literal {
-	using namespace std;
-	set<usr*> canbe_erased;
-	void mark1(tac*);
-	void mark2(scope*);
-	void mark3(const pair<string, vector<usr*> >&);
-	void mark4(usr*);
-	void mark5(const pair<int, var*>&);
-	void erase(usr*);
+        using namespace std;
+        set<usr*> canbe_erased;
+        void mark1(tac*);
+        void mark2(scope*);
+        void mark3(const pair<string, vector<usr*> >&);
+        void mark4(usr*);
+        void mark5(const pair<int, var*>&);
+        void erase(usr*);
 } } } } // end of namespace literal, symtab, optimize and c_compiler
 
 void c_compiler::optimize::mark(usr* u)
 {
-	symtab::literal::canbe_erased.insert(u);
+        symtab::literal::canbe_erased.insert(u);
 }
 
 void c_compiler::optimize::symtab::literal::simplify(const std::vector<tac*>& vc)
 {
-	using namespace std;
-	for_each(vc.begin(), vc.end(), mark1);
-	mark2(&scope::root);
-	for_each(canbe_erased.begin(), canbe_erased.end(), erase);
-	canbe_erased.clear();
+        using namespace std;
+        for_each(vc.begin(), vc.end(), mark1);
+        mark2(&scope::root);
+        for_each(canbe_erased.begin(), canbe_erased.end(), erase);
+        canbe_erased.clear();
 }
 
 void c_compiler::optimize::symtab::literal::mark1(tac* tac)
 {
   using namespace std;
   if (var* y = tac->y) {
-	  if (usr* u = y->usr_cast()) {
-		  if (u->isconstant() || is_string(u->m_name)) {
-			  canbe_erased.erase(u);
-		  }
-	  }
+          if (usr* u = y->usr_cast()) {
+                  if (u->isconstant() || is_string(u->m_name)) {
+                          canbe_erased.erase(u);
+                  }
+          }
   }
   if (var* z = tac->z) {
-	  if (usr* u = z->usr_cast()) {
-		  if (u->isconstant() || is_string(u->m_name)) {
-			  canbe_erased.erase(u);
-		  }
-	  }
+          if (usr* u = z->usr_cast()) {
+                  if (u->isconstant() || is_string(u->m_name)) {
+                          canbe_erased.erase(u);
+                  }
+          }
   }
 }
 
 void c_compiler::optimize::symtab::literal::mark2(scope* ptr)
 {
-	using namespace std;
-	map<string, vector<usr*> >& usrs = ptr->m_usrs;
-	for_each(usrs.begin(), usrs.end(), mark3);
-	vector<scope*>& children = ptr->m_children;
-	for_each(children.begin(), children.end(), mark2);
+        using namespace std;
+        map<string, vector<usr*> >& usrs = ptr->m_usrs;
+        for_each(usrs.begin(), usrs.end(), mark3);
+        vector<scope*>& children = ptr->m_children;
+        for_each(children.begin(), children.end(), mark2);
 }
 
 void c_compiler::optimize::symtab::literal::mark3(const std::pair<std::string, std::vector<usr*> >& x)
 {
-	using namespace std;
-	const vector<usr*>& vec = x.second;
-	for_each(vec.begin(), vec.end(), mark4);
+        using namespace std;
+        const vector<usr*>& vec = x.second;
+        for_each(vec.begin(), vec.end(), mark4);
 }
 
 void c_compiler::optimize::symtab::literal::mark4(usr* u)
@@ -1086,35 +1086,35 @@ void c_compiler::optimize::symtab::literal::mark4(usr* u)
 
 void c_compiler::optimize::symtab::literal::mark5(const std::pair<int, var*>& x)
 {
-	using namespace std;
-	var* v = x.second;
-	if (usr* u = v->usr_cast()) {
-		assert(u->isconstant());
-		canbe_erased.erase(u);
-	}
-	else {
-		addrof* addr = v->addrof_cast();
-		assert(addr);
-		var* ref = addr->m_ref;
-		if (usr* u = ref->usr_cast()) {
-			if (is_string(u->m_name))
-				canbe_erased.erase(u);
-		}
-	}
+        using namespace std;
+        var* v = x.second;
+        if (usr* u = v->usr_cast()) {
+                assert(u->isconstant());
+                canbe_erased.erase(u);
+        }
+        else {
+                addrof* addr = v->addrof_cast();
+                assert(addr);
+                var* ref = addr->m_ref;
+                if (usr* u = ref->usr_cast()) {
+                        if (is_string(u->m_name))
+                                canbe_erased.erase(u);
+                }
+        }
 }
 
 void c_compiler::optimize::symtab::literal::erase(usr* u)
 {
-	using namespace std;
-	map<string, vector<usr*> >& usrs = scope::root.m_usrs;
-	string name = u->m_name;
-	map<string, vector<usr*> >::iterator it = usrs.find(name);
-	assert(it != usrs.end());
-	vector<usr*>& v = it->second;
-	assert(v.size() == 1);
-	assert(v[0] == u);
-	usrs.erase(it);
-	delete u;
+        using namespace std;
+        map<string, vector<usr*> >& usrs = scope::root.m_usrs;
+        string name = u->m_name;
+        map<string, vector<usr*> >::iterator it = usrs.find(name);
+        assert(it != usrs.end());
+        vector<usr*>& v = it->second;
+        assert(v.size() == 1);
+        assert(v[0] == u);
+        usrs.erase(it);
+        delete u;
 }
 
 void c_compiler::optimize::remember_action(const std::vector<tac*>& vc)

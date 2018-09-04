@@ -10,7 +10,7 @@ namespace c_compiler {
     type::id sizeof_type = type::UINT;
     bool require_align = true;
     int (*close_file)();
-    void (*wrap)(const wrap_interface_t*);
+    void (*last)(const last_interface_t*);
     void* m_module;
   } // end of namespace generator
 } // end of namespace c_compiler
@@ -116,7 +116,7 @@ void c_compiler::generator::initialize()
 
   close_file = (int (*)())dlsym(m_module,"generator_close_file");
 
-  wrap = (void (*)(const wrap_interface_t*))dlsym(m_module, "generator_wrap");
+  last = (void (*)(const last_interface_t*))dlsym(m_module, "generator_last");
 }
 
 void c_compiler::generator::terminate()

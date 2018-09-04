@@ -238,7 +238,7 @@ const c_compiler::type* c_compiler::expr::assign_impl::valid(const type* T, var*
         if ( lp->include_cvr(rp) )
           return lp;
         else {
-		  if (discard)
+                  if (discard)
             *discard = true;
           return 0;
         }
@@ -247,7 +247,7 @@ const c_compiler::type* c_compiler::expr::assign_impl::valid(const type* T, var*
         if ( lp->include_cvr(rp) )
           return lp;
         else {
-		  if (discard)
+                  if (discard)
             *discard = true;
           return 0;
         }

@@ -1411,7 +1411,7 @@ void c_compiler::stmt::_break()
 }
 
 namespace c_compiler {
-	void copy_dealloc();
+        void copy_dealloc();
 }  // end of namespace c_compiler
 
 void c_compiler::stmt::_return(var* expr)
@@ -1447,14 +1447,14 @@ void c_compiler::stmt::_return(var* expr)
 
 void c_compiler::copy_dealloc()
 {
-	using namespace std;
-	scope* p = scope::current;
-	while (p->m_id != scope::PARAM) {
-		c_compiler::block* b = static_cast<c_compiler::block*>(p);
-		vector<tac*>& v = b->m_dealloc;
-		transform(v.rbegin(), v.rend(), back_inserter(code), mem_fun(&tac::new3ac));
-		p = p->m_parent;
-	}
+        using namespace std;
+        scope* p = scope::current;
+        while (p->m_id != scope::PARAM) {
+                c_compiler::block* b = static_cast<c_compiler::block*>(p);
+                vector<tac*>& v = b->m_dealloc;
+                transform(v.rbegin(), v.rend(), back_inserter(code), mem_fun(&tac::new3ac));
+                p = p->m_parent;
+        }
 }
 
 void c_compiler::stmt::_asm_::action(var* v)
@@ -1471,7 +1471,7 @@ void c_compiler::stmt::_asm_::action(var* v)
 
 void c_compiler::stmt::_asm_::action(var* v, operand_list* p)
 {
-	// not implemented
-	delete p;
-	action(v);
+        // not implemented
+        delete p;
+        action(v);
 }

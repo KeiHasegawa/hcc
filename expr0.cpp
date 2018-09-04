@@ -231,12 +231,12 @@ namespace c_compiler {
     if (m_flag & CONST_PTR) {
       assert(sizeof(void*) < m_type->size());
       if (offset->isconstant()) {
-	int off = offset->value();
-	void* p = reinterpret_cast<void*>(m_value + off);
-	const pointer_type* pt = pointer_type::create(T);
-	var* ret = new refimm<void*>(pt, p);
-	garbage.push_back(ret);
-	return ret;
+        int off = offset->value();
+        void* p = reinterpret_cast<void*>(m_value + off);
+        const pointer_type* pt = pointer_type::create(T);
+        var* ret = new refimm<void*>(pt, p);
+        garbage.push_back(ret);
+        return ret;
       }
     }
     return var::offref(T, offset);
@@ -695,9 +695,9 @@ c_compiler::var* c_compiler::genaddr::call(std::vector<var*>* arg)
         b->m_vars.push_back(ret);
       return ret;
     }
-	else {
-		assert(0);
-		function_definition::static_inline::todo::lists.insert(name);
+        else {
+                assert(0);
+                function_definition::static_inline::todo::lists.insert(name);
   }
 #endif
   }
@@ -705,15 +705,15 @@ c_compiler::var* c_compiler::genaddr::call(std::vector<var*>* arg)
 }
 
 namespace c_compiler {
-	bool take_va(const func_type* ft)
-	{
-		using namespace std;
-		const vector<const type*>& param = ft->param();
-		if (param.empty())
-			return false;
-		const type* T = param.back();
-		return T->m_id == type::ELLIPSIS;
-	}
+        bool take_va(const func_type* ft)
+        {
+                using namespace std;
+                const vector<const type*>& param = ft->param();
+                if (param.empty())
+                        return false;
+                const type* T = param.back();
+                return T->m_id == type::ELLIPSIS;
+        }
 } // end of namespace c_compiler
 
 c_compiler::var*
@@ -833,21 +833,21 @@ void c_compiler::genaddr::mark()
     if ( p != function_definition::table.end() ){
       const function_definition::static_inline::skipped_t& m =
         function_definition::static_inline::skipped;
-	  if (m.find(name) != m.end()) {
-		  usr::flag cflag = fundef::current->m_usr->m_flag;
-		  usr::flag mask = usr::flag(usr::INLINE | usr::STATIC);
-		  if (cflag & mask) {
-			  string curr = fundef::current->m_usr->m_name;
-			  function_definition::static_inline::todo::chain[curr].insert(name);
-		  }
-		  else
-			  function_definition::static_inline::todo::lists.insert(name);
-	  }
+          if (m.find(name) != m.end()) {
+                  usr::flag cflag = fundef::current->m_usr->m_flag;
+                  usr::flag mask = usr::flag(usr::INLINE | usr::STATIC);
+                  if (cflag & mask) {
+                          string curr = fundef::current->m_usr->m_name;
+                          function_definition::static_inline::todo::chain[curr].insert(name);
+                  }
+                  else
+                          function_definition::static_inline::todo::lists.insert(name);
+          }
     }
     else {
-		using namespace function_definition::static_inline;
-		just_refed::table[name] = new just_refed::info(parse::position, flag, fundef::current->m_usr);
-	}
+                using namespace function_definition::static_inline;
+                just_refed::table[name] = new just_refed::info(parse::position, flag, fundef::current->m_usr);
+        }
   }
 #endif
 }
@@ -1183,11 +1183,14 @@ c_compiler::var* c_compiler::expr::size(const type* T)
     {
       typedef unsigned long int X;
       const type* XX = ulong_type::create();
+      XX = const_type::create(XX);
       if (XX->size() == sizeof(X))
-	return integer::create((X)n);
-      assert(sizeof(X) == sizeof(long long));
-      var* ret = integer::create((X)n);
+        return integer::create((X)n);
+      typedef unsigned long long int Y;
+      assert(XX->size() == sizeof(Y));
+      usr* ret = integer::create((Y)n);
       ret->m_type = XX;
+      ret->m_flag = usr::SUB_CONST_LONG;
       return ret;
     }
   default:
@@ -1519,23 +1522,35 @@ c_compiler::var* c_compiler::var::minus()
 }
 
 namespace c_compiler { namespace constant_impl {
-	template<class T> var* minus(constant<T>* p)
-	{
-	  return integer::create(-p->m_value);
-	}
+        template<class T> var* minus(constant<T>* p)
+        {
+          usr* ret = integer::create(-p->m_value);
+          usr::flag f = p->m_flag;
+          if (f & usr::SUB_CONST_LONG) {
+            ret->m_type = p->m_type;
+            ret->m_flag = usr::SUB_CONST_LONG;
+          }
+          return ret;
+        }
 #ifdef _MSC_VER
-	template<> var* minus(constant<unsigned int>* p)
-	{
-	  return integer::create((unsigned int)(-(int)p->m_value));
-	}
-	template<> var* minus(constant<unsigned long int>* p)
-	{
-	  return integer::create((unsigned long int)(-(long int)p->m_value));
-	}
-	template<> var* minus(constant<unsigned __int64>* p)
-	{
-	  return integer::create((unsigned __int64)(-(__int64)p->m_value));
-	}
+        template<> var* minus(constant<unsigned int>* p)
+        {
+          return integer::create((unsigned int)(-(int)p->m_value));
+        }
+        template<> var* minus(constant<unsigned long int>* p)
+        {
+          return integer::create((unsigned long int)(-(long int)p->m_value));
+        }
+        template<> var* minus(constant<unsigned __int64>* p)
+        {
+          usr* ret = integer::create((unsigned __int64)(-(__int64)p->m_value));
+          usr::flag f = p->m_flag;
+          if (f & usr::SUB_CONST_LONG) {
+            ret->m_type = p->m_type;
+            ret->m_flag = usr::SUB_CONST_LONG;
+          }
+          return ret;
+        }
 #endif // _MSC_VER
 } } // end of constant_impl and c_compiler
 
@@ -1616,7 +1631,13 @@ c_compiler::var* c_compiler::var::tilde()
 namespace c_compiler { namespace constant_impl {
   template<class T> var* tilde(constant<T>* y)
   {
-    return integer::create(~y->m_value);
+    usr* ret = integer::create(~y->m_value);
+    usr::flag f = y->m_flag;
+    if (f & usr::SUB_CONST_LONG) {
+      ret->m_type = y->m_type;
+      ret->m_flag = usr::SUB_CONST_LONG;
+    }
+    return ret;
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -1672,22 +1693,22 @@ c_compiler::var* c_compiler::refaddr::rvalue()
 }
 
 namespace c_compiler {
-	const type* unsigned_type(const type* T)
-	{
-		if (T->compatible(char_type::create()))
-			return uchar_type::create();
-		if (T->compatible(schar_type::create()))
-			return uchar_type::create();
-		if (T->compatible(short_type::create()))
-			return ushort_type::create();
-		if (T->compatible(int_type::create()))
-			return uint_type::create();
-		if (T->compatible(long_type::create()))
-			return ulong_type::create();
-		if (T->compatible(long_long_type::create()))
-			return ulong_long_type::create();
-		return 0;
-	}
+        const type* unsigned_type(const type* T)
+        {
+                if (T->compatible(char_type::create()))
+                        return uchar_type::create();
+                if (T->compatible(schar_type::create()))
+                        return uchar_type::create();
+                if (T->compatible(short_type::create()))
+                        return ushort_type::create();
+                if (T->compatible(int_type::create()))
+                        return uint_type::create();
+                if (T->compatible(long_type::create()))
+                        return ulong_type::create();
+                if (T->compatible(long_long_type::create()))
+                        return ulong_long_type::create();
+                return 0;
+        }
 }  // end of namespace c_compiler
 
 c_compiler::var* c_compiler::refbit::rvalue()
@@ -1795,17 +1816,17 @@ c_compiler::var* c_compiler::refsomewhere::rvalue()
 
 void c_compiler::decl::check(var* v)
 {
-	using namespace std;
-	using namespace error;
-	const type* T = v->m_type;
-	if (T->m_id == type::BACKPATCH) {
-		usr* u = static_cast<usr*>(v);
-		string name = u->m_name;
-		undeclared(u->m_file, name);
-		map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-		u->m_type = int_type::create();
-		usrs[name].push_back(u);
-	}
+        using namespace std;
+        using namespace error;
+        const type* T = v->m_type;
+        if (T->m_id == type::BACKPATCH) {
+                usr* u = static_cast<usr*>(v);
+                string name = u->m_name;
+                undeclared(u->m_file, name);
+                map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+                u->m_type = int_type::create();
+                usrs[name].push_back(u);
+        }
 }
 
 c_compiler::var* c_compiler::var::size(int n)

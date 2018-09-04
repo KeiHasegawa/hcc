@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   cmdline::setup(argc,argv);
   if ( !cmdline::input.empty() ){
 #ifdef _MSC_VER
-	fopen_s(&c_compiler_in, cmdline::input.c_str(), "r");
+        fopen_s(&c_compiler_in, cmdline::input.c_str(), "r");
 #else // _MSC_VER
     c_compiler_in = fopen(cmdline::input.c_str(),"r");
 #endif // _MSC_VER
@@ -32,14 +32,14 @@ int main(int argc, char** argv)
   parse::delete_buffer();
 #endif // _DEBUG
   if (!error::counter) {
-	  if (generator::wrap) {
-		  transform(funcs.begin(), funcs.end(), back_inserter(scope::root.m_children), get_pm);
-		  generator::wrap_interface_t tmp = {
-			  &scope::root,
-			  &funcs
-		  };
-		  generator::wrap(&tmp);
-	  }
+    if (generator::last) {
+      transform(funcs.begin(), funcs.end(), back_inserter(scope::root.m_children), get_pm);
+      generator::last_interface_t tmp = {
+        &scope::root,
+        &funcs
+      };
+      generator::last(&tmp);
+    }
   }
   generator::terminate();
 #ifdef USE_PROFILE

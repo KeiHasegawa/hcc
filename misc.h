@@ -43,7 +43,11 @@ namespace integer {
   usr* create(unsigned long int);
   usr* create(__int64);
   usr* create(unsigned __int64);
-}
+} // end of namespace integer
+
+namespace SUB_CONST_LONG_impl {
+  const type* propagation(const usr* y, const usr* z);
+} // end of namespace SUB_CONST_LONG_impl
 
 namespace character {
   usr* create(std::string);
@@ -55,7 +59,7 @@ namespace floating {
   usr* create(double);
   usr* create(long double);
   usr* create(unsigned char*);
-}
+} // end of namespace floating
 
 extern std::string new_name(std::string);
 
@@ -713,21 +717,22 @@ namespace generator {
   extern void terminate();
   extern long_double_t* long_double;
   extern type::id sizeof_type;
-  extern void(*wrap)(const wrap_interface_t*);
+  extern void (*last)(const last_interface_t*);
 } // end of namespace generator
 
 namespace initializer {
+  using namespace std;
   struct argument {
     static usr* dst;
     const type* T;
-    std::map<int, var*>& V;
+    map<int, var*>& V;
     int off;
     int off_max;
     int nth;
     int nth_max;
     int list_pos;
     int list_len;
-    argument(const type* t, std::map<int,var*>& v, int o, int omax, int n, int nmax, int pos, int len)
+    argument(const type* t, map<int,var*>& v, int o, int omax, int n, int nmax, int pos, int len)
       : T(t), V(v), off(o), off_max(omax), nth(n), nth_max(nmax), list_pos(pos), list_len(len) {}
   };
   int eval(parse::initializer*, argument&);
@@ -750,10 +755,11 @@ namespace optimize {
 
 namespace names {
   void reset();
-} // end of namespace medium_name
+} // end of namespace names
 
 namespace live_var {
-  void dump(std::string, const std::map<optimize::basic_block::info*, std::set<var*> >&);
+  using namespace std;
+  void dump(string, const map<optimize::basic_block::info*, set<var*> >&);
 } // end of namespace live_var
 
 #ifdef USE_PROFILE

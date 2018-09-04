@@ -1,4 +1,11 @@
-void f(void)
+int printf(const char*, ...);
+
+void test03(unsigned long int a)
 {
-  *(int*)0x123456780 = 123;
+  printf("%lu\n", a * 7UL);
+  printf("%lu\n", (-8UL) * a);
+  printf("%lu\n", a / 9UL);
+  printf("%lu\n", (-10UL) / a);
+  printf("%lu\n", a % 11UL);
+  printf("%lu\n", (-12UL) % a);
 }

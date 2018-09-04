@@ -84,7 +84,7 @@ void c_compiler::declaration2(usr* curr, parse::initializer* ini)
 }
 
 namespace c_compiler {
-	void check_skipped2(const std::pair<int, var*>&);
+        void check_skipped2(const std::pair<int, var*>&);
 } // end of namespace c_compiler
 
 int c_compiler::declaration3(usr* curr, parse::initializer* ini)
@@ -109,8 +109,8 @@ int c_compiler::declaration3(usr* curr, parse::initializer* ini)
 #endif // _DEBUG
     if ( scope::current != &scope::root )
       expr::constant_flag = false;
-	map<int, var*>& v = wi->m_value;
-	for_each(v.begin(), v.end(), check_skipped2);
+        map<int, var*>& v = wi->m_value;
+        for_each(v.begin(), v.end(), check_skipped2);
     return n;
   }
   else {
@@ -128,15 +128,15 @@ int c_compiler::declaration3(usr* curr, parse::initializer* ini)
 
 void c_compiler::check_skipped2(const std::pair<int, var*>& x)
 {
-	using namespace std;
-	var* v = x.second;
-	addrof * a = v->addrof_cast();
-	if (!a)
-		return;
-	var* r = a->m_ref;
-	usr* u = r->usr_cast();
-	call3ac dummy(0, u);
-	function_definition::static_inline::check_skipped(&dummy);
+        using namespace std;
+        var* v = x.second;
+        addrof * a = v->addrof_cast();
+        if (!a)
+                return;
+        var* r = a->m_ref;
+        usr* u = r->usr_cast();
+        call3ac dummy(0, u);
+        function_definition::static_inline::check_skipped(&dummy);
 }
 
 
@@ -698,7 +698,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
   if ( b ){
     usr::flag mask = usr::flag(usr::STATIC | usr::EXTERN);
     if ( flag & mask ){
-	  usr::flag& fun_flag = fundef::current->m_usr->m_flag;
+          usr::flag& fun_flag = fundef::current->m_usr->m_flag;
       if ( fun_flag & usr::INLINE ){
         using namespace error::decl::func_spec;
         static_storage(curr);
@@ -793,27 +793,27 @@ c_compiler::usr* c_compiler::decl_impl::install2(usr* curr)
   map<string, vector<usr*> >::const_iterator p = usrs.find(name);
   if ( p != usrs.end() ){
     const vector<usr*>& v = p->second;
-	vector<usr*>::const_iterator q = find_if(v.begin(), v.end(), bind2nd(ptr_fun(conflict1),curr));
+        vector<usr*>::const_iterator q = find_if(v.begin(), v.end(), bind2nd(ptr_fun(conflict1),curr));
     if ( q != v.end() ){
       using namespace error::decl;
-	  usr* prev = *q;
+          usr* prev = *q;
       redeclaration(prev,curr,false);
     }
-	else {
-		usr* prev = v.back();
-		usr::flag flag = curr->m_flag;
- 		if ((flag & usr::FUNCTION) && (flag & usr::EXTERN)){
-			using namespace function_definition::static_inline;
-			skipped_t::iterator r = skipped.find(prev);
-			if (r != skipped.end()) {
-				info* i = r->second;
-				usr::flag& f = i->m_fundef->m_usr->m_flag;
-				f = usr::flag(f | usr::EXTERN);
-				skipped.erase(r);
-				gencode(i);
-			}
-		}
-	}
+        else {
+                usr* prev = v.back();
+                usr::flag flag = curr->m_flag;
+                 if ((flag & usr::FUNCTION) && (flag & usr::EXTERN)){
+                        using namespace function_definition::static_inline;
+                        skipped_t::iterator r = skipped.find(prev);
+                        if (r != skipped.end()) {
+                                info* i = r->second;
+                                usr::flag& f = i->m_fundef->m_usr->m_flag;
+                                f = usr::flag(f | usr::EXTERN);
+                                skipped.erase(r);
+                                gencode(i);
+                        }
+                }
+        }
   }
   usr::flag flag = curr->m_flag;
   if ( (flag & usr::INLINE) && (flag & usr::FUNCTION) ){
@@ -858,82 +858,82 @@ bool c_compiler::decl_impl::conflict1(usr* x, usr* y)
 // doesn't satisfy it. But I intentionally do this.
 bool c_compiler::decl_impl::conflict(usr::flag x, usr::flag y)
 {
-	if ((x & usr::FUNCTION) != (y & usr::FUNCTION))
-		return true;
-	usr::flag xx = usr::flag(x & (usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO | usr::REGISTER));
-	usr::flag yy = usr::flag(y & (usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO | usr::REGISTER));
+        if ((x & usr::FUNCTION) != (y & usr::FUNCTION))
+                return true;
+        usr::flag xx = usr::flag(x & (usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO | usr::REGISTER));
+        usr::flag yy = usr::flag(y & (usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO | usr::REGISTER));
 
-	if (x & usr::FUNCTION) {
-		if (scope::current == &scope::root) {
-			if (xx == usr::TYPEDEF && yy == usr::NONE)
-				return true;
-			if (xx == usr::NONE && yy == usr::TYPEDEF)
-				return true;
-			if (xx == usr::NONE && yy == usr::STATIC)
-				return true;
-			if (xx == usr::STATIC && yy == usr::NONE)
-				return true;
-			if (xx == usr::STATIC && yy == usr::EXTERN)
-				return true;
-			if (xx == usr::EXTERN && yy == usr::STATIC)
-				return true;
-			if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
-				return true;
-			return false;
-		}
+        if (x & usr::FUNCTION) {
+                if (scope::current == &scope::root) {
+                        if (xx == usr::TYPEDEF && yy == usr::NONE)
+                                return true;
+                        if (xx == usr::NONE && yy == usr::TYPEDEF)
+                                return true;
+                        if (xx == usr::NONE && yy == usr::STATIC)
+                                return true;
+                        if (xx == usr::STATIC && yy == usr::NONE)
+                                return true;
+                        if (xx == usr::STATIC && yy == usr::EXTERN)
+                                return true;
+                        if (xx == usr::EXTERN && yy == usr::STATIC)
+                                return true;
+                        if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
+                                return true;
+                        return false;
+                }
 
-		if (xx == usr::TYPEDEF && yy == usr::NONE)
-			return true;
-		if (xx == usr::NONE && yy == usr::TYPEDEF)
-			return true;
-		if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
-			return true;
-		if (xx == usr::STATIC && yy == usr::NONE)
-			return true;
-		if (xx == usr::STATIC && yy == usr::EXTERN)
-			return true;
-		if (xx == usr::EXTERN && yy == usr::STATIC)
-			return true;
-		return false;
-	}
+                if (xx == usr::TYPEDEF && yy == usr::NONE)
+                        return true;
+                if (xx == usr::NONE && yy == usr::TYPEDEF)
+                        return true;
+                if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
+                        return true;
+                if (xx == usr::STATIC && yy == usr::NONE)
+                        return true;
+                if (xx == usr::STATIC && yy == usr::EXTERN)
+                        return true;
+                if (xx == usr::EXTERN && yy == usr::STATIC)
+                        return true;
+                return false;
+        }
 
-	// not function
-	if (scope::current == &scope::root) {
-		if (xx == usr::TYPEDEF && yy == usr::NONE)
-			return true;
-		if (xx == usr::NONE && yy == usr::TYPEDEF)
-			return true;
-		if (xx == usr::STATIC && yy == usr::NONE)
-			return true;
-		if (xx == usr::STATIC && yy == usr::EXTERN)
-			return true;
-		if (xx == usr::NONE && yy == usr::STATIC)
-			return true;
-		if (xx == usr::EXTERN && yy == usr::STATIC)
-			return true;
-		if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
-			return true;
-		return false;
-	}
+        // not function
+        if (scope::current == &scope::root) {
+                if (xx == usr::TYPEDEF && yy == usr::NONE)
+                        return true;
+                if (xx == usr::NONE && yy == usr::TYPEDEF)
+                        return true;
+                if (xx == usr::STATIC && yy == usr::NONE)
+                        return true;
+                if (xx == usr::STATIC && yy == usr::EXTERN)
+                        return true;
+                if (xx == usr::NONE && yy == usr::STATIC)
+                        return true;
+                if (xx == usr::EXTERN && yy == usr::STATIC)
+                        return true;
+                if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
+                        return true;
+                return false;
+        }
 
-	// not external, not function
-	if (xx == usr::NONE && yy == usr::NONE)
-		return true;
-	if (xx == usr::TYPEDEF && yy == usr::NONE)
-		return true;
-	if (xx == usr::NONE && yy == usr::TYPEDEF)
-		return true;
-	if (xx == usr::STATIC && yy == usr::NONE)
-		return true;
-	if (xx == usr::STATIC && yy == usr::EXTERN)
-		return true;
-	if (xx == usr::NONE && yy == usr::STATIC)
-		return true;
-	if (xx == usr::EXTERN && yy == usr::STATIC)
-		return true;
-	if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
-		return true;
-	return false;
+        // not external, not function
+        if (xx == usr::NONE && yy == usr::NONE)
+                return true;
+        if (xx == usr::TYPEDEF && yy == usr::NONE)
+                return true;
+        if (xx == usr::NONE && yy == usr::TYPEDEF)
+                return true;
+        if (xx == usr::STATIC && yy == usr::NONE)
+                return true;
+        if (xx == usr::STATIC && yy == usr::EXTERN)
+                return true;
+        if (xx == usr::NONE && yy == usr::STATIC)
+                return true;
+        if (xx == usr::EXTERN && yy == usr::STATIC)
+                return true;
+        if (xx == usr::TYPEDEF && yy == usr::TYPEDEF)
+                return true;
+        return false;
 }
 
 const c_compiler::type* c_compiler::decl::declarator::func(const type* T, parse::parameter_list* pl, usr* u)
@@ -1098,8 +1098,8 @@ void c_compiler::destroy_temporary()
   code.clear();
   error::headered = false;
   stmt::label::data.clear();
-  if (!generator::wrap)
-	  type::destroy_temporary();
+  if (!generator::last)
+    type::destroy_temporary();
   vector<string>& v = decl::declarator::func_impl::old_style::il;
   if ( !v.empty() ){
     using namespace error::decl::declarator::func;
@@ -1107,10 +1107,6 @@ void c_compiler::destroy_temporary()
     v.clear();
   }
   stmt::label::vm.clear();
-#if 0
-  if (!generator::wrap)
-	  constant<void*>::destroy_temporary();
-#endif
   if ( cmdline::simple_medium )
     names::reset();
 }
@@ -1124,23 +1120,23 @@ c_compiler::function_definition::static_inline::info::~info()
   delete m_fundef;
 }
 
-c_compiler::function_definition::static_inline::skipped_t
-c_compiler::function_definition::static_inline::skipped;
-
 namespace c_compiler {
-	namespace function_definition {
-		extern void just_remember(std::vector<tac*>& v);
-	}
-} // end of namespace function_definition and c_compiler
+  namespace function_definition {
+    namespace static_inline {
+      skipped_t skipped;
+    } // end of namespace static_inline
+    extern void just_remember(std::vector<tac*>& v);
+  } // end of namespace function_definition
+} // end of namespace c_compiler
 
 void c_compiler::function_definition::static_inline::gencode(info* info)
 {
-	if (generator::wrap)
-		return;
-	scope* param = info->m_fundef->m_param;
-	scope::root.m_children.push_back(param);
-	function_definition::action(info->m_fundef, info->m_code, false);
-	scope::root.m_children.pop_back();
+  if (generator::last)
+    return;
+  scope* param = info->m_fundef->m_param;
+  scope::root.m_children.push_back(param);
+  function_definition::action(info->m_fundef, info->m_code, false);
+  scope::root.m_children.pop_back();
 }
 
 void c_compiler::function_definition::static_inline::just_refed::nodef(const std::pair<std::string,just_refed::info*>& p)
@@ -1226,34 +1222,34 @@ void c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc
 {
   using namespace std;
   if (skip){
-	map<string, vector<stmt::label::used_t> >& m = stmt::label::used;
-	for_each(m.begin(), m.end(), stmt::label_blame);
-	m.clear();
+        map<string, vector<stmt::label::used_t> >& m = stmt::label::used;
+        for_each(m.begin(), m.end(), stmt::label_blame);
+        m.clear();
 #if 0
-	if (!Inline::after::lists.empty())
-	  return Inline::remember::action(vc);
+        if (!Inline::after::lists.empty())
+          return Inline::remember::action(vc);
 #endif
-	if (!error::counter)
-	  optimize::action(fdef, vc);
-	usr::flag flag = fdef->m_usr->m_flag;
-	usr::flag mask = usr::flag(usr::INLINE | usr::STATIC);
-	if (flag & mask){
-	  string name = fdef->m_usr->m_name;
-	  using namespace static_inline;
-	  just_refed::table_t::iterator p = just_refed::table.find(name);
-	  if (p != just_refed::table.end()) {
-		  just_refed::info* info = p->second;
-		  usr::flag prev = info->m_func->m_flag;
-		  delete info;
-		  just_refed::table.erase(p);
+        if (!error::counter)
+          optimize::action(fdef, vc);
+        usr::flag flag = fdef->m_usr->m_flag;
+        usr::flag mask = usr::flag(usr::INLINE | usr::STATIC);
+        if (flag & mask){
+          string name = fdef->m_usr->m_name;
+          using namespace static_inline;
+          just_refed::table_t::iterator p = just_refed::table.find(name);
+          if (p != just_refed::table.end()) {
+                  just_refed::info* info = p->second;
+                  usr::flag prev = info->m_func->m_flag;
+                  delete info;
+                  just_refed::table.erase(p);
 #if 0
-		  if ((prev & mask) && !(prev & usr::EXTSTATIC))
-			  return static_inline::remember(v);
+                  if ((prev & mask) && !(prev & usr::EXTSTATIC))
+                          return static_inline::remember(v);
 #endif
-	  }
-	  else if (!generator::wrap)
-		return static_inline::remember(vc);
-	}
+          }
+          else if (!generator::last)
+	    return static_inline::remember(vc);
+        }
   }
 
   for_each(vc.begin(), vc.end(), static_inline::check_skipped);
@@ -1272,53 +1268,53 @@ void c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc
       };
       generator::generate(&tmp);
     }
-    else if (generator::wrap) {
-	just_remember(vc);
+    else if (generator::last) {
+      just_remember(vc);
     }
   }
 }
 
 namespace c_compiler { namespace function_definition { namespace static_inline { 
-	bool cmp_name(std::pair<usr*, info*> p, std::string name)
-	{
-		return p.first->m_name == name;
-	}
+        bool cmp_name(std::pair<usr*, info*> p, std::string name)
+        {
+                return p.first->m_name == name;
+        }
 } } }  // end of namespace static_inline, function_definition and c_compiler
 
 void c_compiler::function_definition::static_inline::check_skipped(tac* tac)
 {
-	var* y = tac->y;
-	if (!y)
-		return;
-	usr* u = y->usr_cast();
-	if (!u)
-		return;
-	usr::flag flag = u->m_flag;
-	if (!(flag & usr::FUNCTION))
-		return;
-	usr::flag mask = usr::flag(usr::STATIC | usr::INLINE);
-	if (!(flag & mask))
-		return;
+        var* y = tac->y;
+        if (!y)
+                return;
+        usr* u = y->usr_cast();
+        if (!u)
+                return;
+        usr::flag flag = u->m_flag;
+        if (!(flag & usr::FUNCTION))
+                return;
+        usr::flag mask = usr::flag(usr::STATIC | usr::INLINE);
+        if (!(flag & mask))
+                return;
 
-	skipped_t::iterator p = skipped.find(u);
-	if (p != skipped.end()) {
-		info* i = p->second;
-		skipped.erase(p);
-		return gencode(i);
-	}
-	
-	using namespace std;
-	string name = u->m_name;
-	if ( function_definition::table.find(name) == function_definition::table.end() )
-		just_refed::table[name] = new just_refed::info(tac->m_file, flag, fundef::current->m_usr);
-	else {
-		p = find_if(skipped.begin(), skipped.end(), bind2nd(ptr_fun(cmp_name), name));
-		if (p != skipped.end()) {
-			info* i = p->second;
-			skipped.erase(p);
-			return gencode(i);
-		}
-	}
+        skipped_t::iterator p = skipped.find(u);
+        if (p != skipped.end()) {
+                info* i = p->second;
+                skipped.erase(p);
+                return gencode(i);
+        }
+        
+        using namespace std;
+        string name = u->m_name;
+        if ( function_definition::table.find(name) == function_definition::table.end() )
+                just_refed::table[name] = new just_refed::info(tac->m_file, flag, fundef::current->m_usr);
+        else {
+                p = find_if(skipped.begin(), skipped.end(), bind2nd(ptr_fun(cmp_name), name));
+                if (p != skipped.end()) {
+                        info* i = p->second;
+                        skipped.erase(p);
+                        return gencode(i);
+                }
+        }
 }
 
 void c_compiler::function_definition::dump(const fundef* fdef, const std::vector<tac*>& v)
@@ -1354,10 +1350,10 @@ void c_compiler::function_definition::static_inline::remember(std::vector<tac*>&
 
 void c_compiler::function_definition::just_remember(std::vector<tac*>& v)
 {
-	funcs.push_back(make_pair(fundef::current, v));
-	scope::root.m_children.clear();
-	v.clear();
-	fundef::current = 0;
+        funcs.push_back(make_pair(fundef::current, v));
+        scope::root.m_children.clear();
+        v.clear();
+        fundef::current = 0;
 }
 
 namespace c_compiler { namespace function_definition { namespace Inline { namespace remember { namespace update {
@@ -1493,18 +1489,18 @@ c_compiler::tac::tac(id_t ii, var* xx, var* yy, var* zz)
 
 bool c_compiler::internal_linkage(usr* u)
 {
-	using namespace std;
-	if (u->m_scope != &scope::root)
-		return false;
-	usr::flag f = u->m_flag;
-	if (f & usr::FUNCTION)
-		return false;
-	if (!(f & usr::STATIC))
-		return false;
-	string name = u->m_name;
-	if (name[name.length() - 1] == '"')
-		return false;
-	return true;
+        using namespace std;
+        if (u->m_scope != &scope::root)
+                return false;
+        usr::flag f = u->m_flag;
+        if (f & usr::FUNCTION)
+                return false;
+        if (!(f & usr::STATIC))
+                return false;
+        string name = u->m_name;
+        if (name[name.length() - 1] == '"')
+                return false;
+        return true;
 }
 
 void c_compiler::tac_impl::inline_code(var* v)
@@ -1567,9 +1563,9 @@ void c_compiler::parse::block::leave()
 {
   using namespace std;
   if (scope::current->m_id == scope::BLOCK) {
-	  c_compiler::block* b = static_cast<c_compiler::block*>(scope::current);
-	  vector<tac*>& v = b->m_dealloc;
-	  copy(v.rbegin(), v.rend(), back_inserter(code));
+          c_compiler::block* b = static_cast<c_compiler::block*>(scope::current);
+          vector<tac*>& v = b->m_dealloc;
+          copy(v.rbegin(), v.rend(), back_inserter(code));
   }
   scope::current = scope::current->m_parent;
   if ( scope::current->m_parent == &scope::root )

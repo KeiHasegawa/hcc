@@ -25,7 +25,7 @@ c_compiler::type_impl::sizeof_table::sizeof_table()
 void c_compiler::type_impl::update(int (*size)(const type*))
 {
   if (!size)
-	return;
+        return;
   sizeof_table[short_type::create()] = sizeof_table[ushort_type::create()] = size(short_type::create());
   sizeof_table[int_type::create()] = sizeof_table[uint_type::create()] = size(int_type::create());
   sizeof_table[long_type::create()] = sizeof_table[ulong_type::create()] = size(long_type::create());
@@ -87,16 +87,16 @@ namespace c_compiler { namespace type_impl {
 
 int c_compiler::type::align() const
 {
-	switch (size()) {
-	case 1: return 1;
-	case 2: return 2;
-	case 3:
-	case 4: return 4;
-	case 5: case 6: case 7: case 8: return 8;
-	case 9: case 10: case 11: case 12: case 13:
-	case 14: case 15: case 16:
-	default: return 16;
-	}
+        switch (size()) {
+        case 1: return 1;
+        case 2: return 2;
+        case 3:
+        case 4: return 4;
+        case 5: case 6: case 7: case 8: return 8;
+        case 9: case 10: case 11: case 12: case 13:
+        case 14: case 15: case 16:
+        default: return 16;
+        }
 }
 
 void c_compiler::type::destroy_temporary()

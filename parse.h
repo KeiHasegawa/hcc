@@ -26,7 +26,7 @@ public:
 
 template<class K, class V> struct pmap : std::map<K,V*> {
 #ifdef _DEBUG
-	~pmap() { std::for_each(std::map<K,V*>::begin(), std::map<K, V*>::end(), deleter2<K, V>()); }
+        ~pmap() { std::for_each(std::map<K,V*>::begin(), std::map<K, V*>::end(), deleter2<K, V>()); }
 #endif // _DEBUG
 };
 

@@ -66,7 +66,7 @@ int c_compiler::scope_impl::dump_usr(usr* u, int ntab)
     const type* T = u->m_type;
     T->decl(cout,name);
     if ( u->m_flag & usr::WITH_INI ){
-	  with_initial* p = static_cast<with_initial*>(u);
+          with_initial* p = static_cast<with_initial*>(u);
       cout << '\t';
       const map<int,var*>& v = p->m_value;
       transform(v.begin(),v.end(),ostream_iterator<string>(cout,","),dump_initial);
@@ -505,10 +505,10 @@ void c_compiler::tac_impl::dump_dealloc(std::ostream& os, const tac* ptr)
 
 void c_compiler::tac_impl::dump_va_start(std::ostream& os, const tac* ptr)
 {
-	using namespace std;
-	string x = names::ref(ptr->x);
-	string y = names::ref(ptr->y);
-	os << x << " := va_start " << y;
+        using namespace std;
+        string x = names::ref(ptr->x);
+        string y = names::ref(ptr->y);
+        os << x << " := va_start " << y;
 }
 
 void c_compiler::tac_impl::dump_va_arg(std::ostream& os, const tac* ptr)
@@ -524,9 +524,9 @@ void c_compiler::tac_impl::dump_va_arg(std::ostream& os, const tac* ptr)
 
 void c_compiler::tac_impl::dump_va_end(std::ostream& os, const tac* ptr)
 {
-	using namespace std;
-	string y = names::ref(ptr->y);
-	os << "va_end " << y;
+        using namespace std;
+        string y = names::ref(ptr->y);
+        os << "va_end " << y;
 }
 
 void c_compiler::tac_impl::dump_asm(std::ostream& os, const tac* ptr)

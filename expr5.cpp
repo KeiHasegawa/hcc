@@ -391,26 +391,26 @@ namespace c_compiler { namespace constant_impl {
     const type* T = cond_impl::valid(y,z);
     if ( T ){
       if ( x->zero() ){
-	// destroy y code
+        // destroy y code
         vector<tac*>::iterator p1 = code.begin() + n;
         vector<tac*>::iterator q1 = code.begin() + m;
         for_each(p1, q1, deleter<tac>());
-	vector<tac*>::iterator p2 = code.begin() + N;
-	vector<tac*>::iterator q2 = code.begin() + M;
+        vector<tac*>::iterator p2 = code.begin() + N;
+        vector<tac*>::iterator q2 = code.begin() + M;
         for_each(p2, q2, deleter<tac>());
-	code.erase(p2, q2);
+        code.erase(p2, q2);
         code.erase(p1, q1);
         return z->cast(T);
       }
       else {
-	// destroy z code
+        // destroy z code
         vector<tac*>::iterator p1 = code.begin() + m;
         vector<tac*>::iterator q1 = code.begin() + N;
         for_each(p1, q1, deleter<tac>());
-	vector<tac*>::iterator p2 = code.begin() + M;
-	vector<tac*>::iterator q2 = code.end();
+        vector<tac*>::iterator p2 = code.begin() + M;
+        vector<tac*>::iterator q2 = code.end();
         for_each(p2, q2, deleter<tac>());
-	code.erase(p2, q2);
+        code.erase(p2, q2);
         code.erase(p1, q1);
         return y->cast(T);
       }

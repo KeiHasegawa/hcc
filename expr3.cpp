@@ -56,7 +56,12 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::lsh(y, z);
-    return integer::create(y->m_value << (int)z->m_value); 
+    usr* ret = integer::create(y->m_value << (int)z->m_value);
+    if (fy & usr::SUB_CONST_LONG) {
+      ret->m_type = y->m_type;
+      ret->m_flag = usr::SUB_CONST_LONG;
+    }
+    return ret; 
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -356,7 +361,12 @@ namespace c_compiler { namespace constant_impl {
     usr::flag fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::rsh(y, z);
-    return integer::create(y->m_value >> z->m_value); 
+    usr* ret = integer::create(y->m_value >> z->m_value);
+    if (fy & usr::SUB_CONST_LONG) {
+      ret->m_type = y->m_type;
+      ret->m_flag = usr::SUB_CONST_LONG;
+    }
+    return ret; 
   }
 } } // end of namespace constant_impl and c_compiler
 
@@ -801,11 +811,11 @@ namespace c_compiler { namespace constant_impl {
     using namespace std;
     int sz = long_double_type::create()->size();
     if ( y->m_type->compatible(long_double_type::create()) ){
-	  constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
+          constant<long double>* yy = dynamic_cast<constant<long double>*>(y);
       if ( z->m_type->compatible(long_double_type::create()) ){
-	constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
-	bool b = (*generator::long_double->cmp)(op,yy->b,zz->b);
-	return b ? integer::create(1) : integer::create(0);
+        constant<long double>* zz = dynamic_cast<constant<long double>*>(z);
+        bool b = (*generator::long_double->cmp)(op,yy->b,zz->b);
+        return b ? integer::create(1) : integer::create(0);
       }
       auto_ptr<unsigned char> p = auto_ptr<unsigned char>(new unsigned char[sz]);
       (*generator::long_double->from_double)(p.get(),z->m_value);
@@ -2778,7 +2788,7 @@ c_compiler::var* c_compiler::var::eqr(addrof* y){ return var_impl::eq(y,this); }
 
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* ptr_equality(goto3ac::op op,
-					       constant<A>* y, constant<B>* z)
+                                               constant<A>* y, constant<B>* z)
   {
     assert(op == goto3ac::EQ || op == goto3ac::NE);
     usr::flag fy = y->m_flag;
@@ -2791,16 +2801,16 @@ namespace c_compiler { namespace constant_impl {
       zz = reinterpret_cast<constant<__int64>*>(z);
     if (yy && zz) {
       if (op == goto3ac::EQ)
-	return integer::create(yy->m_value == zz->m_value);
+        return integer::create(yy->m_value == zz->m_value);
       else
-	return integer::create(yy->m_value != zz->m_value);
+        return integer::create(yy->m_value != zz->m_value);
     }
     if (yy) {
       assert(z->m_type->integer() && z->zero());
       if (op == goto3ac::EQ)
-	return integer::create(yy->m_value == 0);
+        return integer::create(yy->m_value == 0);
       else
-	return integer::create(yy->m_value != 0);
+        return integer::create(yy->m_value != 0);
     }
 
     assert(zz && y->m_type->integer() && y->zero());
