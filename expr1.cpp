@@ -120,7 +120,7 @@ namespace c_compiler { namespace constant_impl {
         typedef long long int XX;
         assert(type->size() == sizeof(XX));
         usr* ret = integer::create((XX)(y->m_value));
-        ret->m_type = type;
+        ret->m_type = const_type::create(long_type::create());
         ret->m_flag = usr::SUB_CONST_LONG;
         return ret;
     }
@@ -131,7 +131,7 @@ namespace c_compiler { namespace constant_impl {
         typedef unsigned long long int XX;
         assert(type->size() == sizeof(XX));
         usr* ret = integer::create((XX)(y->m_value));
-        ret->m_type = type;
+        ret->m_type = const_type::create(ulong_type::create());
         ret->m_flag = usr::SUB_CONST_LONG;
         return ret;
     }
