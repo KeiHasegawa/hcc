@@ -317,7 +317,7 @@ c_compiler::usr* c_compiler::literal::string_impl::new_obj(std::string name)
   map<int,var*>& value = ret->m_value;
   bool wide = name[0] == '"' ? false : true;
   if ( wide ){
-    ret->m_type = wchar_type::create();
+    ret->m_type = generator::wchar::type;
     name = name.substr(2,name.length()-3);
   }
   else {
@@ -327,19 +327,19 @@ c_compiler::usr* c_compiler::literal::string_impl::new_obj(std::string name)
   calc::acc_t acc;
   int size = accumulate(name.begin(),name.end(),0,calc(value,wide,&acc));
   if ( acc.m_hex ){
-    int offset = wide ? size * sizeof(wchar_typedef) : size;
-    usr* u = wide ? integer::create((wchar_typedef)acc.m_hex) : integer::create((char)acc.m_hex);
+    int offset = wide ? size * generator::wchar::type->size() : size;
+    usr* u = character_impl::integer_create(wide, acc.m_hex);
     value.insert(make_pair(offset,u));
     ++size;
   }
   if ( acc.m_oct ){
-    int offset = wide ? size * sizeof(wchar_typedef) : size;
-    usr* u = wide ? integer::create((wchar_typedef)acc.m_oct) : integer::create((char)acc.m_oct);
+    int offset = wide ? size * generator::wchar::type->size() : size;
+    usr* u = character_impl::integer_create(wide, acc.m_oct);
     value.insert(make_pair(offset,u));
     ++size;
   }
-  int offset = wide ? size * sizeof(wchar_typedef) : size;
-  usr* u = wide ? integer::create((wchar_typedef)0) : integer::create((char)0);
+  int offset = wide ? size * generator::wchar::type->size() : size;
+  usr* u = character_impl::integer_create(wide, 0);
   value.insert(make_pair(offset,u));
   ret->m_type = array_type::create(ret->m_type,++size);
   optimize::mark(ret);
@@ -376,9 +376,8 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
       return n;
     }
     else {
-      int offset = m_wide ? n * sizeof(wchar_typedef) : n;
-      usr* u = m_wide ? integer::create((wchar_typedef)m_acc->m_hex)
-        : integer::create((char)m_acc->m_hex);
+      int offset = m_wide ? n * generator::wchar::type->size() : n;
+      usr* u = character_impl::integer_create(m_wide, m_acc->m_hex);
       m_value.insert(make_pair(offset,u));
       ++n;
       m_acc->m_hex = 0;
@@ -392,9 +391,8 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
       return n;
     }
     else {
-      int offset = m_wide ? n * sizeof(wchar_typedef) : n;
-      usr* u = m_wide ? integer::create((wchar_typedef)m_acc->m_oct)
-        : integer::create((char)m_acc->m_oct);
+      int offset = m_wide ? n * generator::wchar::type->size() : n;
+      usr* u = character_impl::integer_create(m_wide, m_acc->m_oct);
       m_value.insert(make_pair(offset,u));
       ++n;
       m_acc->m_oct = 0;
@@ -411,8 +409,8 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
     if ( m_shiftjis_state ){
       assert(64 <= c && c <= 126 || 128 <= c && c <= 252);
       m_shiftjis_state = false;
-      usr* u = integer::create((wchar_typedef)(m_prev << 8 | c));
-      m_value.insert(make_pair(n * sizeof(wchar_typedef),u));
+      usr* u = character_impl::integer_create(true, m_prev, c);
+      m_value.insert(make_pair(n * generator::wchar::type->size(),u));
       return n + 1;
     }
     if ( m_jis_state == 0 && c == 0x1b ){
@@ -438,8 +436,8 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
     }
     if ( m_jis_state == 4 ){
       m_jis_state = 3;
-      usr* u = integer::create((wchar_typedef)(m_prev << 8 | c));
-      m_value.insert(make_pair(n * sizeof(wchar_typedef),u));
+      usr* u = character_impl::integer_create(true, m_prev, c);
+      m_value.insert(make_pair(n * generator::wchar::type->size(),u));
       return n + 1;
     }
     if ( m_jis_state == 5 && c == 0x28 ){
@@ -463,12 +461,12 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
       m_euc_state = 0;
     if ( m_euc_state == 2 ){
       m_euc_state = 0;
-      usr* u = integer::create((wchar_typedef)(m_prev << 8 | c));
-      m_value.insert(make_pair(n * sizeof(wchar_typedef),u));
+      usr* u = character_impl::integer_create(true, m_prev, c);
+      m_value.insert(make_pair(n * generator::wchar::type->size(),u));
       return n + 1;
     }
   }
-  int offset = m_wide ? n * sizeof(wchar_typedef) : n;
+  int offset = m_wide ? n * generator::wchar::type->size() : n;
   if ( m_escape ){
     ostringstream os;
     if ( m_wide )
@@ -479,7 +477,7 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
     m_escape = false;
   }
   else {
-    usr* u = m_wide ? integer::create((wchar_typedef)c) : integer::create(char(c));
+    usr* u = character_impl::integer_create(m_wide, c);
     m_value.insert(make_pair(offset,u));
   }
   return n + 1;

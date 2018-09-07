@@ -687,17 +687,70 @@ void c_compiler::character_impl::simple_escape::initialize()
 
 void c_compiler::character_impl::simple_escape::helper(std::string x, std::string y, int z)
 {
-  using namespace literal;
   const type* u = char_type::create();
   u = const_type::create(u);
   constant<char>* a = new constant<char>(x,u,usr::NONE,file_t());
   (*this)[x] = a;
-  const type* v = literal::wchar_type::create();
-  v = const_type::create(v);
-  constant<wchar_typedef>* b = new constant<wchar_typedef>(y,v,usr::NONE,file_t());
-  (*this)[y] = b;
-  a->m_value = b->m_value = z;
+  const type* T = generator::wchar::type;
+  T = const_type::create(T);
+  switch (generator::wchar::id) {
+  case type::SHORT:
+    {
+      typedef short X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  case type::USHORT:
+    {
+      typedef unsigned short X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  case type::INT:
+    {
+      typedef int X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  case type::UINT:
+    {
+      typedef unsigned X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  case type::LONG:
+    {
+      typedef long X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  default:
+    {
+      assert(generator::wchar::id == type::LONG);
+      typedef unsigned long X;
+      constant<X>* b = new constant<X>(y, T, usr::NONE, file_t());
+      (*this)[y] = b;
+      a->m_value = b->m_value = z;
+      return;
+    }
+  }
 }
+
+namespace c_compiler {
+  namespace character_impl {
+    usr* cnst(std::string name, int v);
+  } // end of namespace character_impl
+} // end of namespace c_compiler
 
 c_compiler::usr* c_compiler::character_impl::escape(std::string name)
 {
@@ -728,18 +781,21 @@ c_compiler::usr* c_compiler::character_impl::escape(std::string name)
     n |= (unsigned int)c->m_value;
   }
   if ( name[0] == 'L' ){
+    return character_impl::cnst(name, n);
+    /*
     typedef literal::wchar_typedef X;
-    const type* T = literal::wchar_type::create();
+    const type* T = generator::wchar::type;
     T = const_type::create(T);
-    constant<X>* c = new constant<X>(name,T,usr::NONE,parse::position);
+    constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
     c->m_value = n;
     return c;
+    */
   }
   else {
     typedef char X;
     const type* T = char_type::create();
     T = const_type::create(T);
-    constant<X>* c = new constant<X>(name,T,usr::NONE,parse::position);
+    constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
     c->m_value = n;
     return c;
   }
@@ -747,19 +803,21 @@ c_compiler::usr* c_compiler::character_impl::escape(std::string name)
 
 c_compiler::usr* c_compiler::character_impl::universal(std::string name)
 {
-  using namespace literal;
   if ( name[1] != '\\' )
     return 0;
   if ( name[2] != 'u' && name[2] != 'U' )
     return 0;
   unsigned int n = strtoul(&name[3],0,16);
   if ( name[2] == 'u' ){
+    return character_impl::cnst(name, n);
+    /*
     typedef wchar_typedef X;
     const type* T = literal::wchar_type::create();
     T = const_type::create(T);
     constant<X>* c = new constant<X>(name,T,usr::NONE,parse::position);
     c->m_value = n;
     return c;
+    */
   }
   else {
     typedef unsigned int X;
@@ -774,26 +832,71 @@ c_compiler::usr* c_compiler::character_impl::universal(std::string name)
 
 
 namespace c_compiler {
-        namespace character_impl {
-                namespace wide_impl {
-                        int value(std::string);
-                }
-        }
-} // end of namespace wide_impl, character_impl and c_compiler
+  namespace character_impl {
+    namespace wide_impl {
+      int value(std::string);
+    } // end of namespace wide_impl
+  } // end of namespace character_impl
+} // end of namespace c_compiler
 
 c_compiler::usr* c_compiler::character_impl::wide(std::string name)
 {
   using namespace std;
-  using namespace literal;
   if (name[0] != 'L')
     return 0;
   int v = wide_impl::value(name);
-  typedef wchar_typedef X;
-  const type* T = literal::wchar_type::create();
+  return cnst(name, v);
+}
+
+c_compiler::usr* c_compiler::character_impl::cnst(std::string name, int v)
+{
+  const type* T = generator::wchar::type;
   T = const_type::create(T);
-  constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
-  c->m_value = v;
-  return c;
+  switch (generator::wchar::id) {
+  case type::SHORT:
+    {
+      typedef short X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  case type::USHORT:
+    {
+      typedef unsigned short X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  case type::INT:
+    {
+      typedef int X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  case type::UINT:
+    {
+      typedef unsigned X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  case type::LONG:
+    {
+      typedef long X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  default:
+    {
+      assert(generator::wchar::id == type::ULONG);
+      typedef unsigned long X;
+      constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
+      c->m_value = v;
+      return c;
+    }
+  }
 }
 
 namespace c_compiler {
@@ -806,58 +909,58 @@ namespace c_compiler {
 
 int c_compiler::character_impl::wide_impl::value(std::string name)
 {
-        using namespace std;
-        assert(name[0] == 'L');
-        assert(name[1] == '\'');
-        pair<unsigned char, unsigned char> v;
-        if (name[4] == '\'') { // L' normal normal '
-                v.first = name[2];
-                v.second = name[3];
-        }
-        else if (name[3] == '\'') // L' normal '
-                v.second = name[2];
-        else if (name[2] != '\\') {
-                if (jis(name)) {
-                        v.first = name[5];
-                        v.second = name[6];
-                }
-                else { // L' normal escape '
-                        v.first = name[2];
-                        name = '\'' + name.substr(3);
-                        usr* u = character::create(name);
-                        constant<char>* c = static_cast<constant<char>*>(u);
-                        v.second = c->m_value;
-                }
-        }
-        else { // L' simple-escape something '
-                string x = name.substr(1, 3);
-                x += "'";
-                usr* y = character::create(x);
-                constant<char>* a = static_cast<constant<char>*>(y);
-                v.first = a->m_value;
-                string w = "'" + name.substr(4);
-                usr* z = character::create(w);
-                constant<char>* b = static_cast<constant<char>*>(z);
-                v.second = b->m_value;
-        }
-        return v.first << 8 | v.second;
+  using namespace std;
+  assert(name[0] == 'L');
+  assert(name[1] == '\'');
+  pair<unsigned char, unsigned char> v;
+  if (name[4] == '\'') { // L' normal normal '
+    v.first = name[2];
+    v.second = name[3];
+  }
+  else if (name[3] == '\'') // L' normal '
+    v.second = name[2];
+  else if (name[2] != '\\') {
+    if (jis(name)) {
+      v.first = name[5];
+      v.second = name[6];
+    }
+    else { // L' normal escape '
+      v.first = name[2];
+      name = '\'' + name.substr(3);
+      usr* u = character::create(name);
+      constant<char>* c = static_cast<constant<char>*>(u);
+      v.second = c->m_value;
+    }
+  }
+  else { // L' simple-escape something '
+    string x = name.substr(1, 3);
+    x += "'";
+    usr* y = character::create(x);
+    constant<char>* a = static_cast<constant<char>*>(y);
+    v.first = a->m_value;
+    string w = "'" + name.substr(4);
+    usr* z = character::create(w);
+    constant<char>* b = static_cast<constant<char>*>(z);
+    v.second = b->m_value;
+  }
+  return v.first << 8 | v.second;
 }
 
 bool c_compiler::character_impl::wide_impl::jis(std::string name)
 {
-        assert(name[0] == 'L');
-        assert(name[1] == '\'');
-        if (name.length() == 11) {
-                return name[2] == 0x1b
-                        && name[3] == 0x24
-                        && name[4] == 0x42
-                        && name[7] == 0x1b
-                        && name[8] == 0x28
-                        && name[9] == 0x42
-                        && name[10] == '\'';
-        }
-        else
-                return false;
+  assert(name[0] == 'L');
+  assert(name[1] == '\'');
+  if (name.length() == 11) {
+    return name[2] == 0x1b
+      && name[3] == 0x24
+      && name[4] == 0x42
+      && name[7] == 0x1b
+      && name[8] == 0x28
+      && name[9] == 0x42
+      && name[10] == '\'';
+  }
+  else
+    return false;
 }
 
 c_compiler::usr* c_compiler::character_impl::normal(std::string name)

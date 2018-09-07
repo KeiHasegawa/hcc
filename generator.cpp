@@ -8,6 +8,10 @@ namespace c_compiler {
     void (*generate)(const interface_t*);
     long_double_t* long_double;
     type::id sizeof_type = type::UINT;
+    namespace wchar {
+      type::id id = type::USHORT;
+      const c_compiler::type* type = ushort_type::create();
+    } // end of namespace wchar
     bool require_align = true;
     int (*close_file)();
     void (*last)(const last_interface_t*);
@@ -102,11 +106,28 @@ void c_compiler::generator::initialize()
 
   generate = (void (*)(const interface_t*))dlsym(m_module,"generator_generate");
 
-  int (*size)(const type*) = (int (*)(const type*))dlsym(m_module,"generator_sizeof");
+  int (*size)(int) = (int (*)(int))dlsym(m_module,"generator_sizeof");
   type_impl::update(size);
   type::id (*szof_tp)() = (type::id (*)())dlsym(m_module,"generator_sizeof_type");
   if (szof_tp)
     sizeof_type = (*szof_tp)();
+
+  type::id (*wc_tp)() = (type::id (*)())dlsym(m_module,"generator_wchar_type");
+  if (wc_tp) {
+    wchar::id = (*wc_tp)();
+    switch (wchar::id) {
+    case type::SHORT:  wchar::type = short_type::create(); break;
+    case type::USHORT: wchar::type = ushort_type::create(); break;
+    case type::INT:    wchar::type = int_type::create(); break;
+    case type::UINT:   wchar::type = uint_type::create(); break;
+    case type::LONG:   wchar::type = long_type::create(); break;
+    default:
+      assert(wchar::id == type::ULONG);
+      wchar::type = ulong_type::create();
+      break;
+    }
+  }
+  
   bool (*ra)() = (bool (*)())dlsym(m_module,"generator_require_align");
   if (ra)
     require_align = (*ra)();

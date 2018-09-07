@@ -10,23 +10,6 @@ namespace ucn {
 struct genaddr;
 
 namespace literal {
-#if defined(_MSC_VER) || defined(__CYGWIN__)
-  typedef ushort_type wchar_type;
-  typedef unsigned short int wchar_typedef;
-#endif // defined(_MSC_VER) || defined(__CYGWIN__)
-#ifdef linux
-#ifdef DEBIAN
-  typedef int_type wchar_type;
-  typedef int wchar_typedef;
-#else // DEBIAN
-  typedef long_type wchar_type;
-  typedef long int wchar_typedef;
-#endif // DEBIAN
-#endif // linux
-#ifdef __APPLE__
-  typedef int_type wchar_type;
-  typedef int wchar_typedef;
-#endif // __APPLE__
   extern genaddr* stringa(std::string);
 } // end of namespace literal
 
@@ -187,16 +170,16 @@ inline int update(goto3ac* go, to3ac* to)
 extern std::vector<var*> garbage;
 
 namespace type_impl {
-  extern void update(int (*)(const type*));
-}
+  extern void update(int (*)(int));
+} // end of namespace type_impl
 
 namespace tac_impl {
   extern void dump(std::ostream&, const tac*);
-}
+} // end of namespace tac_impl
 
 namespace scope_impl {
   extern void dump(scope* = &scope::root, int = 0);
-}
+} // end of namespace scope_impl
 
 extern void destroy_temporary();
 
@@ -717,6 +700,10 @@ namespace generator {
   extern void terminate();
   extern long_double_t* long_double;
   extern type::id sizeof_type;
+  namespace wchar {
+    extern type::id id;
+    extern const type* type;
+  } // end of namespace wchar
   extern void (*last)(const last_interface_t*);
 } // end of namespace generator
 
@@ -761,6 +748,11 @@ namespace live_var {
   using namespace std;
   void dump(string, const map<optimize::basic_block::info*, set<var*> >&);
 } // end of namespace live_var
+
+namespace character_impl {
+  usr* integer_create(bool wide, char prev, int c);
+  usr* integer_create(bool wide, int c);
+} // end of namespace character_impl
 
 #ifdef USE_PROFILE
 namespace simple_profiler {

@@ -22,18 +22,18 @@ c_compiler::type_impl::sizeof_table::sizeof_table()
   (*this)[long_double_type::create()] = sizeof(long double);
 }
 
-void c_compiler::type_impl::update(int (*size)(const type*))
+void c_compiler::type_impl::update(int (*size)(int id))
 {
   if (!size)
-        return;
-  sizeof_table[short_type::create()] = sizeof_table[ushort_type::create()] = size(short_type::create());
-  sizeof_table[int_type::create()] = sizeof_table[uint_type::create()] = size(int_type::create());
-  sizeof_table[long_type::create()] = sizeof_table[ulong_type::create()] = size(long_type::create());
-  sizeof_table[long_long_type::create()] = sizeof_table[ulong_long_type::create()] = size(long_long_type::create());
-  sizeof_table[float_type::create()] = size(float_type::create());
-  sizeof_table[double_type::create()] = size(double_type::create());
-  sizeof_table[long_double_type::create()] = size(long_double_type::create());
-  m_pointer_sizeof = size(pointer_type::create(void_type::create()));
+    return;
+  sizeof_table[short_type::create()] = sizeof_table[ushort_type::create()] = size((int)type::SHORT);
+  sizeof_table[int_type::create()] = sizeof_table[uint_type::create()] = size((int)type::INT);
+  sizeof_table[long_type::create()] = sizeof_table[ulong_type::create()] = size((int)type::LONG);
+  sizeof_table[long_long_type::create()] = sizeof_table[ulong_long_type::create()] = size((int)type::LONGLONG);
+  sizeof_table[float_type::create()] = size((int)type::FLOAT);
+  sizeof_table[double_type::create()] = size((int)type::DOUBLE);
+  sizeof_table[long_double_type::create()] = size((int)type::LONG_DOUBLE);
+  m_pointer_sizeof = size((int)type::POINTER);
 }
 
 bool c_compiler::type::compatible(const type* that) const

@@ -126,7 +126,7 @@ int c_compiler::initializer::char_array_string(var* y, argument& arg)
   for_each(name.begin(),name.end(),char_array_string_impl::eval(tmp,wide));
   if ( tmp.nth != dim || !dim ){
     u[tmp.off] = zero;
-    tmp.off += wide ? sizeof(literal::wchar_typedef) : 1;
+    tmp.off += wide ? generator::wchar::type->size() : 1;
     tmp.off_max = max(tmp.off_max,tmp.off);
     tmp.nth_max = max(tmp.nth_max,++tmp.nth);
   }
@@ -166,7 +166,7 @@ const c_compiler::array_type* c_compiler::initializer::char_array_string_impl::c
   ARRAY* array = static_cast<ARRAY*>(T);
   T = array->element_type();
   T = T->unqualified();
-  if ( T != char_type::create() && T != literal::wchar_type::create() )
+  if ( T != char_type::create() && T != generator::wchar::type )
     return 0;
   return array;
 }
@@ -189,10 +189,46 @@ c_compiler::initializer::char_array_string_impl::char_array(const type* T, int n
   return char_array(ret.second);
 }
 
+namespace c_compiler {
+  namespace character_impl {
+    usr* common(int v)
+    {
+      switch (generator::wchar::id) {
+      case type::SHORT:
+	return integer::create((short)v);
+      case type::USHORT:
+	return integer::create((unsigned short)v);
+      case type::INT:
+	return integer::create((int)v);
+      case type::UINT:
+	return integer::create((unsigned)v);
+      case type::LONG:
+	return integer::create((long)v);
+      default:
+	assert(generator::wchar::id == type::ULONG);
+	return integer::create((unsigned long)v);
+      }
+    }
+    usr* integer_hex(bool wide, int a, int b)
+    {
+      int v = a << 4 | b;
+      return wide ? common(v) : integer::create(char(v));
+    }
+    usr* integer_create(bool wide, char prev, int c)
+    {
+      int v = prev << 8 | c;
+      return wide ? common(v) : integer::create(char(v));
+    }
+    usr* integer_create(bool wide, int c)
+    {
+      return wide ? common(c) : integer::create(char(c));
+    }
+  } // end of namespace character_impl
+} // end of namespace c_compiler
+
 int c_compiler::initializer::char_array_string_impl::eval::operator()(int c)
 {
   using namespace std;
-  using namespace literal;
   if ( c == '\\' && !m_escape ){
     m_escape = true;
     return arg.off;
@@ -270,32 +306,30 @@ int c_compiler::initializer::char_array_string_impl::eval::operator()(int c)
   else if ( m_hex_mode ){
     int a = isdigit(m_prev) ? m_prev - '0' : m_prev - 'a' + 10;
     int b = isdigit(c) ? c - '0' : c - 'a' + 10;
-    y = m_wide ? integer::create((wchar_typedef)(a << 4 | b)) : integer::create(char(a << 4 | b));
+    y = character_impl::integer_hex(m_wide, a, b);
     m_hex_mode = false;
   }
   else if ( m_shiftjis_state ){
     assert(64 <= c && c <= 126 || 128 <= c && c <= 252);
-    y = m_wide ? integer::create((wchar_typedef)(m_prev << 8 | c))
-      : integer::create(char(m_prev << 8 | c));
+    y = character_impl::integer_create(m_wide, m_prev, c);
     m_shiftjis_state = false;
   }
   else if ( m_jis_state == 3 )
-    y = m_wide ? integer::create((wchar_typedef)(m_prev << 8 | c))
-      : integer::create(char(m_prev << 8 | c));
+    y = character_impl::integer_create(m_wide, m_prev, c);
   else if ( m_euc_state == 1 ){
     y = integer::create(char(c));
     m_euc_state = 0;
   }
   else if ( m_euc_state == 2 ){
-    y = m_wide ? integer::create((wchar_typedef)(m_prev << 8 | c))
-      : integer::create(char(m_prev << 8 | c));
+    y = character_impl::integer_create(m_wide, m_prev, c);
     m_euc_state = 0;
   }
   else
-    y = m_wide ? integer::create((wchar_typedef)c) : integer::create(char(c));
+    y = character_impl::integer_create(m_wide, c);
   arg.V[arg.off] = y;
   arg.nth_max = max(arg.nth_max,++arg.nth);
-  arg.off_max = max(arg.off_max, arg.off += m_wide ? sizeof(wchar_typedef): 1);
+  arg.off += m_wide ? generator::wchar::type->size(): 1;
+  arg.off_max = max(arg.off_max, arg.off);
   return arg.off;
 }
 
