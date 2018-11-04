@@ -36,16 +36,16 @@ void c_compiler::cmdline::setup(int argc, char** argv)
     else {
       if ( input.empty() ){
         input = *argv;
-                if (output.empty()) {
-                        output = input;
-                        string::size_type pos = output.find_last_of(separator);
-                        if (pos != string::npos)
-                                output.erase(0, pos + 1);
-                        pos = output.find_last_of('.');
-                        if (pos != string::npos)
-                                output.erase(pos);
-                        output += ".s";
-                }
+        if (output.empty()) {
+          output = input;
+          string::size_type pos = output.find_last_of(separator);
+          if (pos != string::npos)
+            output.erase(0, pos + 1);
+          pos = output.find_last_of('.');
+          if (pos != string::npos)
+            output.erase(pos);
+          output += ".s";
+        }
       }
       else
         warning::cmdline::input(*argv);
@@ -54,11 +54,11 @@ void c_compiler::cmdline::setup(int argc, char** argv)
 
   if ( generator.empty() && !no_generator ){
 #ifdef _MSC_VER
-        char* p;
-        size_t n;
-        _dupenv_s(&p,&n,"CC1GENERATOR");
+    char* p;
+    size_t n;
+    _dupenv_s(&p,&n,"CC1GENERATOR");
 #else // _MSC_VER
-        char* p = getenv("CC1GENERATOR");
+    char* p = getenv("CC1GENERATOR");
 #endif // _MSC_VER
     if ( p )
       generator = p;

@@ -9,45 +9,25 @@ c_compiler::scope c_compiler::scope::root;
 
 c_compiler::scope* c_compiler::scope::current = &c_compiler::scope::root;
 
-namespace c_compiler { namespace scope_impl {
-  void usr_deleter(const std::pair<std::string, std::vector<usr*> >& entry)
-  {
-    using namespace std;
-    const vector<usr*>& v = entry.second;
-    for_each(v.begin(),v.end(),deleter<usr>());
-  }
-} } // end of namespace scope_impl and c_compiler
-
 c_compiler::scope::~scope()
 {
-  using namespace std;
-  for_each(m_children.begin(),m_children.end(),deleter<scope>());
-  for_each(m_usrs.begin(),m_usrs.end(),scope_impl::usr_deleter);
-  for_each(m_tags.begin(),m_tags.end(),deleter2<string,tag>());
-}
+  for (auto p : m_children) delete p;
 
-c_compiler::pvector<c_compiler::tag> param_tag;
+  for (auto u : m_usrs)
+    for (auto p : u.second)
+      delete p;
 
-c_compiler::param_scope::~param_scope()
-{
-  using namespace std;
-  transform(m_tags.begin(),m_tags.end(),back_inserter(param_tag),get2nd<string,tag*>());
-  m_tags.clear();
+  for (auto p : m_tags) p.second->m_scope = 0;
 }
 
 c_compiler::block::~block()
 {
-  using namespace std;
-  for_each(m_vars.begin(),m_vars.end(),deleter<var>());
-}
-
-c_compiler::tag::~tag()
-{
-  delete m_types.first;
-  delete m_types.second;
+  for (auto p : m_vars) delete p;
 }
 
 bool c_compiler::parse::maybe_absdecl;
+
+int c_compiler::parse::work_around;
 
 namespace c_compiler { namespace parse { namespace identifier {
   namespace judge_impl {
@@ -72,6 +52,8 @@ int c_compiler::parse::identifier::judge(std::string name)
 {
   using namespace std;
   using namespace judge_impl;
+  if (work_around)
+	return no_spec(name);
   if ( peek_impl::nest )
     return IDENTIFIER_LEX;
   if ( !decl_specs::m_curr.empty() ){
@@ -131,20 +113,20 @@ int c_compiler::parse::identifier::judge_impl::lookup(std::string name, scope* p
   if ( prev != STRUCT_KW && prev != UNION_KW && prev != ENUM_KW ){
     const map<string, vector<usr*> >& usrs = ptr->m_usrs;
     map<string, vector<usr*> >::const_iterator p = usrs.find(name);
-    if ( p != usrs.end() ){
-          const vector<usr*>& v = p->second;
-          assert(!v.empty());
+    if (p != usrs.end()) {
+      const vector<usr*>& v = p->second;
+      assert(!v.empty());
       usr* u = v.back();
-      if ( u->m_flag & usr::ENUM_MEMBER ){
+      if (u->m_flag & usr::ENUM_MEMBER) {
         enum_member* p = static_cast<enum_member*>(u);
         c_compiler_lval.m_usr = p->m_value;
         return INTEGER_CONSTANT_LEX;
       }
       c_compiler_lval.m_usr = u;
-      if ( u->m_flag & usr::TYPEDEF )
+      if (u->m_flag & usr::TYPEDEF)
         return TYPEDEF_NAME_LEX;
       const type* T = u->m_type;
-      if ( const pointer_type* G = T->ptr_gen() )
+      if (const pointer_type* G = T->ptr_gen())
         garbage.push_back(c_compiler_lval.m_var = new genaddr(G,T,u,0));
       return IDENTIFIER_LEX;
     }
@@ -629,22 +611,21 @@ c_compiler::usr* c_compiler::character::create(std::string name)
   return u;
 }
 
-struct c_compiler::const_type::table_t : c_compiler::pmap<const type*, const const_type> {};
-
-c_compiler::const_type::table_t c_compiler::const_type::table;
-
-namespace c_compiler { namespace character_impl {
-  struct simple_escape : pmap<std::string, usr> {
-    bool m_initialized;
-    simple_escape() : m_initialized(false) {}
-    void helper(std::string, std::string, int);
-    void initialize();
-  } m_simple_escape;
-  usr* escape(std::string);
-  usr* wide(std::string);
-  usr* universal(std::string);
-  usr* normal(std::string);
-} } // end of namespace character_impl and c_compiler
+namespace c_compiler {
+  namespace character_impl {
+    using namespace std;  
+    struct simple_escape : map<string, usr*> {
+      bool m_initialized;
+      simple_escape() : m_initialized(false) {}
+      void helper(string, string, int);
+      void initialize();
+    } m_simple_escape;
+    usr* escape(string);
+    usr* wide(string);
+    usr* universal(string);
+    usr* normal(string);
+  } // end of namespace character_impl
+} // end of namespace c_compiler
 
 c_compiler::usr* c_compiler::character::new_obj(std::string name)
 {

@@ -83,3 +83,14 @@ o 出力:いろいろなテストケース
 大規模災害シミュレータなんぞできたりしない。分散コンピューティングのテクニックが必要
 になるだろう。台風、地震がこのところ頻発している。 (2018/09/06)
 ----------------------------------------------------------------------------
+6.7.2.3 Tags
+A type specifier of the form
+enum identifier
+without an enumerator list shall only appear after the type it specifies is completed.
+
+とあるが、これって不完全型 enum を宣言するのはエラーだと言ってる?
+
+struct S;   // S は不完全型構造体. ok
+enum E;  // E は不完全型. error?
+
+

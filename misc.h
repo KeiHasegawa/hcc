@@ -82,9 +82,7 @@ namespace decl {
     extern const type* func(const type*, parse::identifier_list*, usr* = 0);
     extern const type* array(const type*, var*, bool, usr* = 0);
     namespace array_impl {
-      extern int point;
-      extern const type* varray(const type*, var*, usr*);
-      extern const type* varray(const type*, var*, const std::vector<tac*>&, usr*);
+      extern int csz;
     }
     extern const type* pointer(const type*, const type*);
   } // end of namespace declarator
@@ -136,35 +134,45 @@ namespace stmt {
   void _break();
   void _return(var*);
   namespace _asm_ {
-          struct operand {
-                  var* m_specifier;
-                  var* m_expr;
-                  operand(var* spec, var* expr) : m_specifier(spec), m_expr(expr) {}
-          };
-          struct operands : std::vector<operand*> {
-            ~operands()
-             {
-               using namespace std;
-               for_each(begin(), end(), deleter<operand>());
-             }
-          };
-          typedef std::vector<var*> reg_list;
-          struct operand_list {
-                  operands* m_output;
-                  operands* m_input;
-                  reg_list* m_work;
-                  operand_list(operands* output, operands* input, reg_list* work) : m_output(output), m_input(input), m_work(work) {}
-                  ~operand_list() { delete m_output; delete m_input; delete m_work; }
-          };
-          void action(var*);
-          void action(var*, operand_list*);
+    struct operand {
+      var* m_specifier;
+      var* m_expr;
+      operand(var* spec, var* expr) : m_specifier(spec), m_expr(expr) {}
+    };
+    struct operands : std::vector<operand*> {
+      ~operands()
+      {
+        for (auto p : *this)
+          delete p;
+      }
+    };
+    typedef std::vector<var*> reg_list;
+    struct operand_list {
+      operands* m_output;
+      operands* m_input;
+      reg_list* m_work;
+      operand_list(operands* output, operands* input, reg_list* work)
+      : m_output(output), m_input(input), m_work(work) {}
+      ~operand_list() { delete m_output; delete m_input; delete m_work; }
+    };
+    void action(var*);
+    void action(var*, operand_list*);
   } // end of namespace _asm_
 } // end of namespace stmt
 
-inline int update(goto3ac* go, to3ac* to)
+inline void update(goto3ac* go, to3ac* to)
 {
   go->m_to = to;
-  return 0;
+}
+
+inline bool compatible(const type* x, const type* y)
+{
+  return x->compatible(y);
+}
+
+inline const type* composite(const type* x, const type* y)
+{
+  return x->composite(y);
 }
 
 extern std::vector<var*> garbage;
@@ -184,46 +192,55 @@ namespace scope_impl {
 extern void destroy_temporary();
 
 namespace function_definition {
+  using namespace std;
   extern void begin(parse::decl_specs*, usr*);
-  extern void action(fundef* fdef, std::vector<tac*>& vcode, bool from_parser);
-  extern std::map<std::string, usr*> table;
+  extern void action(fundef* fdef, vector<tac*>& vcode, bool from_parser);
+  extern map<string, usr*> table;
   namespace static_inline {
     struct info {
       fundef* m_fundef;
-      std::vector<tac*> m_code;
+      vector<tac*> m_code;
+      vector<const type*> m_tmp;
       var* m_ret;
-      std::vector<tac*> m_expanded;
+      vector<tac*> m_expanded;
       block* m_param;
       info(){}
-      info(fundef* f, const std::vector<tac*>& c)
-        : m_fundef(f), m_code(c), m_ret(0), m_param(0) {}
+      info(fundef* f, const vector<tac*>& c, const vector<const type*>& t)
+        : m_fundef(f), m_code(c), m_tmp(t), m_ret(0), m_param(0) {}
       ~info();
     };
     namespace expand { extern void action(info*); }
-    struct skipped_t : std::map<usr*,info*> {
+    struct skipped_t : map<usr*,info*> {
 #ifdef _DEBUG
-      ~skipped_t(){ std::for_each(begin(),end(),deleter2<usr*,info>()); }
+      ~skipped_t()
+      {
+        for_each(begin(),end(),[](const pair<usr*,info*>& x){ delete x.second; });
+      }
 #endif // _DEBUG
     };
     extern skipped_t skipped;
-        namespace just_refed {
-                struct info {
-                        file_t m_file;
-                        usr::flag m_flag;
-                        usr* m_func;
-                        info(file_t file, usr::flag flag, usr* u)
-                                : m_file(file), m_flag(flag), m_func(u) {}
-                };
-                struct table_t : std::map<std::string, info*> {
+    namespace just_refed {
+      struct info {
+        file_t m_file;
+        usr::flag_t m_flag;
+        usr* m_func;
+      info(file_t file, usr::flag_t flag, usr* u)
+      : m_file(file), m_flag(flag), m_func(u) {}
+      };
+      struct table_t : map<string, info*> {
 #ifdef _DEBUG
-                        ~table_t() { std::for_each(begin(), end(), deleter2<std::string, info>()); }
+        ~table_t()
+        {
+          for (auto p : *this)
+            delete p.second;
+        }
 #endif // _DEBUG
-                };
-                extern table_t table;
-                void nodef(const std::pair<std::string, info*>&);
-        }  // end of namespace just_refed
-        void check_skipped(tac*);
-        void gencode(info*);
+      };
+      extern table_t table;
+      void nodef(const pair<string, info*>&);
+    }  // end of namespace just_refed
+    void check_skipped(tac*);
+    void gencode(info*);
   } // end of namespace static_inline
   namespace Inline {
     extern std::map<std::string, std::vector<usr*> > decled;
@@ -259,7 +276,8 @@ struct generated : virtual var {
   var* assign(var*);
   ~generated()
   {
-    std::for_each(m_code.begin(),m_code.end(),deleter<tac>());
+    using namespace std;
+    for_each(m_code.begin(),m_code.end(),[](tac* p){ delete p;});
   }
 };
 
@@ -486,7 +504,7 @@ namespace error {
     }
     namespace binary {
       extern void invalid(const file_t&, int, const type*, const type*);
-      extern void not_compatible(const file_t&, const pointer_type*, const pointer_type*);
+      extern void invalid_pointer(const file_t&, const pointer_type*, const pointer_type*);
     }
     namespace cond {
       extern void not_scalar(const file_t&);
@@ -510,7 +528,7 @@ namespace error {
     extern void redeclaration(const file_t&, const file_t&, std::string);
     extern void not_object(const usr*, const type*);
     namespace storage {
-      extern void multiple(const file_t&, usr::flag, usr::flag);
+      extern void multiple(const file_t&, usr::flag_t, usr::flag_t);
       extern void invalid_function(const usr*);
     }
     namespace struct_or_union {
@@ -699,9 +717,10 @@ namespace generator {
   extern int (*close_file)();
   extern void terminate();
   extern long_double_t* long_double;
-  extern type::id sizeof_type;
+  extern type::id_t sizeof_type;
+  extern type::id_t ptrdiff_type;
   namespace wchar {
-    extern type::id id;
+    extern type::id_t id;
     extern const type* type;
   } // end of namespace wchar
   extern void (*last)(const last_interface_t*);

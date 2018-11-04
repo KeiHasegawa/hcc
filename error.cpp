@@ -34,7 +34,7 @@ void c_compiler::error::cmdline::open(std::string fn)
 {
   using namespace std;
   string prog = c_compiler::cmdline::prog;
-  switch ( lang ){
+  switch (lang) {
   case jpn: cerr << prog << " : " << fn << " を開けません.\n"; break;
   default:  cerr << prog << " : " << "cannot open `" << fn << "'\n"; break;
   }
@@ -50,7 +50,7 @@ void c_compiler::error::cmdline::generator()
   using namespace std;
   using namespace error;
   string prog = c_compiler::cmdline::prog;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     cerr << prog << ": ターゲットジェネレータが指定されていません.\n";
     break;
@@ -91,7 +91,7 @@ void c_compiler::error::header(const file_t& file, std::string msg)
   if ( !headered ){
     if ( fundef* func = fundef::current ){
       string name = func->m_usr->m_name;
-      switch ( lang ){
+      switch (lang) {
       case jpn:
         cerr << file.m_name << ": 函数 `" << name << "' :\n";
         break;
@@ -108,7 +108,7 @@ void c_compiler::error::header(const file_t& file, std::string msg)
 void c_compiler::error::undeclared(const file_t& file, std::string name)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << name << "' は宣言されていません.\n";
@@ -124,7 +124,7 @@ void c_compiler::error::undeclared(const file_t& file, std::string name)
 void c_compiler::error::parse::missing(const file_t& file, char c)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << c << "' がありません.\n";
@@ -140,7 +140,7 @@ void c_compiler::error::parse::missing(const file_t& file, char c)
 void c_compiler::error::literal::integer::too_large(const file_t& file, std::string name, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "`" << name << "' が `";
@@ -160,7 +160,7 @@ void c_compiler::error::literal::integer::too_large(const file_t& file, std::str
 void c_compiler::error::literal::character::invalid(const file_t& file, std::string name, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
 #ifndef __GNUC__
     header(file,"エラー");
@@ -182,7 +182,7 @@ void c_compiler::error::literal::character::invalid(const file_t& file, std::str
 void c_compiler::error::expr::underscore_func::outside(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "`__func__' が函数の外側で参照されています.\n";
@@ -198,7 +198,7 @@ void c_compiler::error::expr::underscore_func::outside(const file_t& file)
 void c_compiler::error::expr::underscore_func::declared(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
 #ifndef __GNUC__
     header(file,"エラー");
@@ -217,7 +217,7 @@ void c_compiler::error::expr::subscripting::not_pointer(const file_t& file, cons
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字演算子を配列でもポインタでもない";
@@ -249,7 +249,7 @@ void c_compiler::error::expr::subscripting::not_pointer(const file_t& file, cons
 void c_compiler::error::expr::subscripting::not_object(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字参照された値が ";
@@ -280,7 +280,7 @@ void c_compiler::error::expr::subscripting::not_integer(const file_t& file, cons
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字の値";
@@ -302,7 +302,7 @@ void c_compiler::error::expr::call::not_function(const file_t& file, const var* 
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数ではない";
@@ -326,7 +326,7 @@ void c_compiler::error::expr::call::num_of_arg(const file_t& file, const var* v,
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数呼び出し";
@@ -349,7 +349,7 @@ void c_compiler::error::expr::call::not_object(const file_t& file, const var* v)
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数";
@@ -372,7 +372,7 @@ void c_compiler::error::expr::call::mismatch_argument(const file_t& file, int n,
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数";
@@ -408,7 +408,7 @@ void c_compiler::error::expr::member::not_pointer(const usr* id, const var* v)
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(id->m_file,"エラー");
     if ( u )
@@ -437,7 +437,7 @@ void c_compiler::error::expr::member::not_record(const usr* id, const var* v)
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
 #ifndef __GNUC__
     header(id->m_file,"エラー");
@@ -465,7 +465,7 @@ void c_compiler::error::expr::member::not_member(const usr* id, const record_typ
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
   tag* T = rec->get_tag();
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(id->m_file,"エラー");
     if ( u ){
@@ -500,7 +500,7 @@ void c_compiler::error::expr::ppmm::not_lvalue(const file_t& file, bool plus, co
   using namespace std;
   string op = plus ? "`++'" : "`--'";
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << op << " 演算子が左辺値でない";
@@ -527,7 +527,7 @@ void c_compiler::error::expr::ppmm::not_modifiable(const file_t& file, bool plus
   using namespace std;
   string op = plus ? "`++'" : "`--'";
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << op << " 演算子が変更できない";
@@ -553,7 +553,7 @@ void c_compiler::error::expr::ppmm::not_modifiable_lvalue(const file_t& file, bo
 {
   using namespace std;
   string op = plus ? "`++'" : "`--'";
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << op << " 演算子が型 `";
@@ -574,7 +574,7 @@ void c_compiler::error::expr::ppmm::not_scalar(const file_t& file, bool plus, co
   using namespace std;
   string op = plus ? "`++'" : "`--'";
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << op << " 演算子がスカラー型でない";
@@ -601,7 +601,7 @@ void c_compiler::error::expr::ppmm::invalid_pointer(const file_t& file, bool plu
   using namespace std;
   string op = plus ? "`++'" : "`--'";
   const type* T = pt->referenced_type();
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << op << " 演算子がオブジェクトでない型 `";
@@ -620,7 +620,7 @@ void c_compiler::error::expr::ppmm::invalid_pointer(const file_t& file, bool plu
 void c_compiler::error::expr::address::not_lvalue(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "単項の `&' 演算子が左辺値でない式に適用されています.\n";
@@ -636,7 +636,7 @@ void c_compiler::error::expr::address::not_lvalue(const file_t& file)
 void c_compiler::error::expr::address::bit_field(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "単項の & 演算子がビットフィールド `" << u->m_name << "' に対して指定されています.\n";
@@ -657,7 +657,7 @@ void c_compiler::error::expr::address::specified_register(const file_t& file, co
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "単項の `&' が register 宣言されている `" << name << "' に指定されています.\n";
@@ -678,7 +678,7 @@ void c_compiler::error::expr::address::implicit::specified_register(const file_t
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "register 宣言されている `" << name << "' のアドレスが参照されています.\n";
@@ -698,7 +698,7 @@ void c_compiler::error::expr::address::implicit::specified_register(const file_t
 void c_compiler::error::expr::indirection::not_pointer(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "単項の * がポインタでない型の式に指定されています.\n";
@@ -714,7 +714,7 @@ void c_compiler::error::expr::indirection::not_pointer(const file_t& file)
 void c_compiler::error::expr::unary::invalid(const file_t& file, int op, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "単項の `" << char(op) << "' が型 `";
@@ -734,7 +734,7 @@ void c_compiler::error::expr::unary::invalid(const file_t& file, int op, const t
 void c_compiler::error::expr::size::invalid(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "`sizeof' が型 `";
@@ -754,7 +754,7 @@ void c_compiler::error::expr::size::invalid(const file_t& file, const type* T)
 void c_compiler::error::expr::size::bit_field(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "sizeof 演算子がビットフィールド `" << u->m_name << "' に対して指定されています.\n";
@@ -774,7 +774,7 @@ void c_compiler::error::expr::size::bit_field(const file_t& file, const usr* u)
 void c_compiler::error::expr::cast::not_scalar(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "キャストの型がスカラーではありません.\n";
@@ -790,7 +790,7 @@ void c_compiler::error::expr::cast::not_scalar(const file_t& file)
 void c_compiler::error::expr::cast::invalid(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "不正なキャストです.\n";
@@ -806,7 +806,7 @@ void c_compiler::error::expr::cast::invalid(const file_t& file)
 void c_compiler::error::expr::va::not_lvalue(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "va_start の第二引数が左辺値を持ちません.\n";
@@ -821,7 +821,7 @@ void c_compiler::error::expr::va::not_lvalue(const file_t& file)
 void c_compiler::error::expr::va::no_size(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "va_start の第二引数のサイズが 0 です.\n";
@@ -837,7 +837,7 @@ void c_compiler::error::expr::va::invalid(std::string op, const file_t& file, co
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
 #ifndef __GNUC__
   case jpn:
     header(file,"エラー");
@@ -861,7 +861,7 @@ namespace c_compiler { namespace error { namespace expr { namespace binary {
 void c_compiler::error::expr::binary::invalid(const file_t& file, int op, const type* y, const type* z)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "二項演算子 `" << m_table[op] << "' が型 `";
@@ -904,7 +904,7 @@ c_compiler::error::expr::binary::table::table()
   (*this)[OROR_MK] = "||";
 }
 
-void c_compiler::error::expr::binary::not_compatible(const file_t& file, const pointer_type* y, const pointer_type* z)
+void c_compiler::error::expr::binary::invalid_pointer(const file_t& file, const pointer_type* y, const pointer_type* z)
 {
   invalid(file,'-',y,z);
 }
@@ -912,7 +912,7 @@ void c_compiler::error::expr::binary::not_compatible(const file_t& file, const p
 void c_compiler::error::expr::cond::not_scalar(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "3 項演算子の第 1 式の型がスカラーではありません.\n";
@@ -928,7 +928,7 @@ void c_compiler::error::expr::cond::not_scalar(const file_t& file)
 void c_compiler::error::expr::cond::mismatch(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "3 項演算子の第 2 式と第 3 式の型が不正です.\n";
@@ -947,7 +947,7 @@ void c_compiler::error::expr::assign::not_modifiable(const file_t& file, const u
   string name;
   if ( u && u->m_name[0] != '.' )
     name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "代入演算子の左オペランド";
@@ -969,7 +969,7 @@ void c_compiler::error::expr::assign::not_modifiable(const file_t& file, const u
 void c_compiler::error::expr::assign::not_lvalue(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "代入演算子の左のオペランドが左辺値を持ちません.\n";
@@ -985,7 +985,7 @@ void c_compiler::error::expr::assign::not_lvalue(const file_t& file)
 void c_compiler::error::expr::assign::invalid(const file_t& file, const usr* u, bool discard)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     if ( u ){
@@ -1015,7 +1015,7 @@ void c_compiler::error::expr::assign::invalid(const file_t& file, const usr* u, 
 void c_compiler::error::expr::assign::not_modifiable_lvalue(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "代入演算子が型 `";
@@ -1035,7 +1035,7 @@ void c_compiler::error::expr::assign::not_modifiable_lvalue(const file_t& file, 
 void c_compiler::error::decl::empty(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     error::header(file,"エラー");
     cerr << "空の宣言です.\n";
@@ -1051,7 +1051,7 @@ void c_compiler::error::decl::empty(const file_t& file)
 void c_compiler::error::decl::multiple_type(const file_t& file, const type* x, const type* y)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`';
@@ -1075,7 +1075,7 @@ void c_compiler::error::decl::multiple_type(const file_t& file, const type* x, c
 void c_compiler::error::decl::invalid_combination(const file_t& file, const type* T, std::string spec)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`';
@@ -1095,7 +1095,7 @@ void c_compiler::error::decl::invalid_combination(const file_t& file, const type
 void c_compiler::error::decl::invalid_combination(const file_t& file, std::string x, std::string y)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << x << "' と `" << y << "' が指定されています.\n";
@@ -1112,7 +1112,7 @@ void c_compiler::error::decl::no_type(const usr* u)
 {
   using namespace std;
   using namespace error;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     error::header(u->m_file,"エラー");
     cerr << "`" << u->m_name << "' の宣言で `int' が仮定されました.\n";
@@ -1129,7 +1129,7 @@ void c_compiler::error::decl::no_type(const file_t& file)
 {
   using namespace std;
   using namespace error;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     error::header(file,"エラー");
     cerr << "仮引数の宣言で `int' が仮定されました.\n";
@@ -1145,7 +1145,7 @@ void c_compiler::error::decl::no_type(const file_t& file)
 void c_compiler::error::decl::redeclaration(const usr* prev, const usr* curr, bool param)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr->m_file,"エラー");
     if ( param )
@@ -1169,7 +1169,7 @@ void c_compiler::error::decl::redeclaration(const usr* prev, const usr* curr, bo
 void c_compiler::error::decl::redeclaration(const file_t& curr, const file_t& prev, std::string name)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "`" << name << "' が再宣言されています.\n";
@@ -1190,7 +1190,7 @@ void c_compiler::error::decl::not_object(const usr* entry, const type* T)
 {
   using namespace std;
   string name = entry->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(entry->m_file,"エラー");
     if ( tag* tag = T->get_tag() ){
@@ -1225,11 +1225,11 @@ void c_compiler::error::decl::not_object(const usr* entry, const type* T)
   ++counter;
 }
 
-void c_compiler::error::decl::storage::multiple(const file_t& file, usr::flag x, usr::flag y)
+void c_compiler::error::decl::storage::multiple(const file_t& file, usr::flag_t x, usr::flag_t y)
 {
   using namespace std;
-  x = usr::flag(x & ~usr::INLINE);
-  switch ( lang ){
+  x = usr::flag_t(x & ~usr::INLINE);
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "記憶クラス `";
@@ -1254,7 +1254,7 @@ void c_compiler::error::decl::storage::invalid_function(const usr* u)
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ブロックスコープの函数 `" << name << "' が `extern' 以外の記憶クラスを伴って宣言されました.\n";
@@ -1272,7 +1272,7 @@ void c_compiler::error::decl::struct_or_union::incomplete_or_function(const usr*
   using namespace std;
   string name = u->m_name;
   const type* T = u->m_type;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     T->decl(cerr,name);
@@ -1292,7 +1292,7 @@ void c_compiler::error::decl::struct_or_union::not_ordinary(const usr* u)
   using namespace std;
   string name = u->m_name;
   const type* T = u->m_type;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "variably modified な `";
@@ -1312,7 +1312,7 @@ void c_compiler::error::decl::struct_or_union::not_ordinary(const usr* u)
 void c_compiler::error::decl::qualifier::invalid(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`';
@@ -1334,7 +1334,7 @@ void c_compiler::error::decl::func_spec::not_function(const usr* u)
   using namespace std;
   string name = u->m_name;
   const type* T = u->m_type;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "`inline' が型 `";
@@ -1354,7 +1354,7 @@ void c_compiler::error::decl::func_spec::not_function(const usr* u)
 void c_compiler::error::decl::func_spec::main(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "`inline' が `main' に指定されています.\n";
@@ -1371,7 +1371,7 @@ void c_compiler::error::decl::func_spec::main(const usr* u)
 void c_compiler::error::decl::func_spec::no_definition(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "inline 函数 `" << u->m_name << "' が宣言されていますが, 定義されていません.\n";
@@ -1389,7 +1389,7 @@ void c_compiler::error::decl::func_spec::static_storage(const usr* u)
 {
   using namespace std;
   string func = fundef::current->m_usr->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "static storage duration を持つ `" << u->m_name << "' が inline 函数 `" << func;
@@ -1408,7 +1408,7 @@ void c_compiler::error::decl::func_spec::internal_linkage(const file_t& file, co
 {
   using namespace std;
   string func = fundef::current->m_usr->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "内部リンケージを持つ `" << u->m_name << "' が inline 函数 `" << func;
@@ -1426,7 +1426,7 @@ void c_compiler::error::decl::func_spec::internal_linkage(const file_t& file, co
 void c_compiler::error::decl::declarator::func::of_func(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1456,7 +1456,7 @@ void c_compiler::error::decl::declarator::func::of_func(const file_t& file, cons
 void c_compiler::error::decl::declarator::func::of_array(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1486,7 +1486,7 @@ void c_compiler::error::decl::declarator::func::of_array(const file_t& file, con
 void c_compiler::error::decl::declarator::func::not_declared(const file_t& file, std::string name)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << name << "' はパラメータとして指定されていますが、宣言されていません.\n";
@@ -1502,7 +1502,7 @@ void c_compiler::error::decl::declarator::func::not_declared(const file_t& file,
 void c_compiler::error::decl::declarator::func::not_parameter(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << '`' << u->m_name << "' は宣言されていますが、パラメータとして指定されていません.\n";
@@ -1518,7 +1518,7 @@ void c_compiler::error::decl::declarator::func::not_parameter(const usr* u)
 void c_compiler::error::decl::declarator::func::parameter_omitted(const file_t& file, int n)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << n << " 番目のパラメータが省略されています.\n";
@@ -1541,7 +1541,7 @@ void c_compiler::error::decl::declarator::func::parameter_omitted(const file_t& 
 void c_compiler::error::decl::declarator::func::invalid_storage(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "パラメータ";
@@ -1563,7 +1563,7 @@ void c_compiler::error::decl::declarator::func::invalid_storage(const file_t& fi
 void c_compiler::error::decl::declarator::func::invalid_identifier_list(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数定義でない函数宣言で, 型指定のないパラメータ名が指定されています.\n";
@@ -1580,7 +1580,7 @@ void c_compiler::error::decl::declarator::func::invalid_identifier_list(const fi
 void c_compiler::error::decl::declarator::array::not_integer(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1610,7 +1610,7 @@ void c_compiler::error::decl::declarator::array::not_integer(const file_t& file,
 void c_compiler::error::decl::declarator::array::not_positive(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1640,7 +1640,7 @@ void c_compiler::error::decl::declarator::array::not_positive(const file_t& file
 void c_compiler::error::decl::declarator::array::of_func(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1670,7 +1670,7 @@ void c_compiler::error::decl::declarator::array::of_func(const file_t& file, con
 void c_compiler::error::decl::declarator::array::asterisc_dimension(const file_t& file, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     if ( u ){
       header(u->m_file,"エラー");
@@ -1700,7 +1700,7 @@ void c_compiler::error::decl::declarator::array::asterisc_dimension(const file_t
 void c_compiler::error::decl::struct_or_union::bit_field::not_integer_bit(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ビットフィールド";
@@ -1722,7 +1722,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::not_integer_bit(const 
 void c_compiler::error::decl::struct_or_union::bit_field::not_constant(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ビットフィールド";
@@ -1744,7 +1744,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::not_constant(const usr
 void c_compiler::error::decl::struct_or_union::bit_field::negative(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ビットフィールド";
@@ -1766,7 +1766,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::negative(const usr* u)
 void c_compiler::error::decl::struct_or_union::bit_field::exceed(const usr* u, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ビットフィールド";
@@ -1792,7 +1792,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::exceed(const usr* u, c
 void c_compiler::error::decl::struct_or_union::bit_field::zero(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "ビットフィールド `" << u->m_name << "' のビット数にゼロが指定されています.\n";
@@ -1808,7 +1808,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::zero(const usr* u)
 void c_compiler::error::decl::struct_or_union::bit_field::not_integer_type(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "整数型でないビットフィールド";
@@ -1830,7 +1830,7 @@ void c_compiler::error::decl::struct_or_union::bit_field::not_integer_type(const
 void c_compiler::error::decl::_enum::not_constant(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "列挙のメンバ `" << u->m_name << "' の値が定数ではありません.\n";
@@ -1846,7 +1846,7 @@ void c_compiler::error::decl::_enum::not_constant(const usr* u)
 void c_compiler::error::decl::_enum::not_integer(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "列挙のメンバ `" << u->m_name << "' の値が整数ではありません.\n";
@@ -1864,7 +1864,7 @@ void c_compiler::error::decl::declarator::varray::invalid_storage(const usr* u)
   using namespace std;
   string name = u->m_name;
   const file_t& file = u->m_file;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "variable length array ";
@@ -1886,7 +1886,7 @@ void c_compiler::error::decl::declarator::varray::invalid_storage(const usr* u)
 void c_compiler::error::decl::declarator::varray::initializer(const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "variable length array `" << u->m_name << "' が初期化されています.\n";
@@ -1904,7 +1904,7 @@ void c_compiler::error::decl::declarator::vm::file_scope(const usr* u)
   using namespace std;
   string name = u->m_name;
   const type* T = u->m_type;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "variably modified な `";
@@ -1926,7 +1926,7 @@ void c_compiler::error::decl::declarator::vm::invalid_linkage(const usr* u)
   using namespace std;
   string name = u->m_name;
   const type* T = u->m_type;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "variably modified な `";
@@ -1946,7 +1946,7 @@ void c_compiler::error::decl::declarator::vm::invalid_linkage(const usr* u)
 void c_compiler::error::decl::initializer::invalid_assign(const file_t& file, const usr* u, bool discard)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     if ( u ){
@@ -1978,7 +1978,7 @@ void c_compiler::error::decl::initializer::invalid_assign(const file_t& file, co
 void c_compiler::error::decl::initializer::not_constant(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "初期化指定子が定数ではありません.\n";
@@ -1994,7 +1994,7 @@ void c_compiler::error::decl::initializer::not_constant(const file_t& file)
 void c_compiler::error::decl::initializer::designator::invalid_subscripting(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字指定子が型 `";
@@ -2014,7 +2014,7 @@ void c_compiler::error::decl::initializer::designator::invalid_subscripting(cons
 void c_compiler::error::decl::initializer::designator::not_integer(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字が整定数ではありません.\n";
@@ -2030,7 +2030,7 @@ void c_compiler::error::decl::initializer::designator::not_integer(const file_t&
 void c_compiler::error::decl::initializer::designator::not_constant(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "添字が定数ではありません.\n";
@@ -2046,7 +2046,7 @@ void c_compiler::error::decl::initializer::designator::not_constant(const file_t
 void c_compiler::error::decl::initializer::designator::invalid_dot(const file_t& file, const type* T)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "メンバ指定子が型 `";
@@ -2073,7 +2073,7 @@ void c_compiler::error::decl::initializer::exceed(const usr* u)
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     if ( name[0] != '.' )
@@ -2095,7 +2095,7 @@ void c_compiler::error::decl::initializer::not_object(const usr* u)
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "オブジェクトでない";
@@ -2120,7 +2120,7 @@ void c_compiler::error::decl::initializer::with_extern(const usr* u)
 {
   using namespace std;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(u->m_file,"エラー");
     cerr << "`extern' 付きの `" << name << "' が初期化されています.\n";
@@ -2136,7 +2136,7 @@ void c_compiler::error::decl::initializer::with_extern(const usr* u)
 void c_compiler::error::decl::external::invalid(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "パラメータスコープのない関数定義です.\n";
@@ -2152,7 +2152,7 @@ void c_compiler::error::decl::external::invalid(const file_t& file)
 void c_compiler::error::stmt::expr::incomplete_type(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "式文の式の型が不完全型です.\n";
@@ -2168,7 +2168,7 @@ void c_compiler::error::stmt::expr::incomplete_type(const file_t& file)
 void c_compiler::error::stmt::label::multiple(std::string label, const file_t& prev, const file_t& curr)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "ラベル `" << label << "' が多重に定義されています.\n";
@@ -2188,7 +2188,7 @@ void c_compiler::error::stmt::label::multiple(std::string label, const file_t& p
 void c_compiler::error::stmt::label::not_defined(std::string label, const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "ラベル `" << label << "' が使用されていますが定義されていません.\n";
@@ -2205,7 +2205,7 @@ void c_compiler::error::stmt::_if::not_scalar(const file_t& file, const var* v)
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "if の式";
@@ -2228,7 +2228,7 @@ void c_compiler::error::stmt::_switch::not_integer(const file_t& file, const var
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "switch の式";
@@ -2251,7 +2251,7 @@ void c_compiler::error::stmt::_switch::invalid(bool _case, const file_t& file, c
 {
   using namespace std;
   string s = _case ? "case" : "default";
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << s << " ラベルへのジャンプ先で\n";
@@ -2272,7 +2272,7 @@ void c_compiler::error::stmt::_case::not_constant(const file_t& file, const var*
 {
   using namespace std;
   const usr* u = dynamic_cast<const usr*>(v);
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "case ラベル";
@@ -2298,7 +2298,7 @@ void c_compiler::error::stmt::_case::not_integer(const file_t& file, const var* 
   string name = u->m_name;
   if ( name[0] == '.' && !isdigit(name[1]) )
     name.erase();
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "case ラベル";
@@ -2320,7 +2320,7 @@ void c_compiler::error::stmt::_case::not_integer(const file_t& file, const var* 
 void c_compiler::error::stmt::_case::no_switch(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "case ラベル が switch の外で使用されています.\n";
@@ -2336,7 +2336,7 @@ void c_compiler::error::stmt::_case::no_switch(const file_t& file)
 void c_compiler::error::stmt::_case::duplicate(const file_t& curr, const file_t& prev)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "case ラベル が重複して指定されています.\n";
@@ -2356,7 +2356,7 @@ void c_compiler::error::stmt::_case::duplicate(const file_t& curr, const file_t&
 void c_compiler::error::stmt::_default::no_switch(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "default が switch の外で使用されています.\n";
@@ -2372,7 +2372,7 @@ void c_compiler::error::stmt::_default::no_switch(const file_t& file)
 void c_compiler::error::stmt::_default::multiple(const file_t& curr, const file_t& prev)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "default が 2 つあります.\n";
@@ -2392,7 +2392,7 @@ void c_compiler::error::stmt::_default::multiple(const file_t& curr, const file_
 void c_compiler::error::stmt::_while::not_scalar(const file_t& curr)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "while 式がスカラー型でありません.\n";
@@ -2408,7 +2408,7 @@ void c_compiler::error::stmt::_while::not_scalar(const file_t& curr)
 void c_compiler::error::stmt::_for::not_scalar(const file_t& curr)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << "`for' の第 2 式がスカラー型でありません.\n";
@@ -2426,7 +2426,7 @@ void c_compiler::error::stmt::_for::invalid_storage(const usr* u)
   using namespace std;
   const file_t& file = u->m_file;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "`for' における `" << name << "' の宣言で auto, register 以外の記憶クラスが指定されています.\n";
@@ -2448,7 +2448,7 @@ void c_compiler::error::stmt::do_while::not_scalar(const file_t& curr)
 void c_compiler::error::stmt::_goto::invalid(const file_t& go, const file_t& lab, const usr* u)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(go,"エラー");
     cerr << "goto 文で.\n";
@@ -2472,7 +2472,7 @@ void c_compiler::error::stmt::_goto::invalid(const file_t& go, const file_t& lab
 void c_compiler::error::stmt::_break::not_within(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "break 文がループの中でも switch 文の中でもないところに出現しました.\n";
@@ -2488,7 +2488,7 @@ void c_compiler::error::stmt::_break::not_within(const file_t& file)
 void c_compiler::error::stmt::_continue::not_within(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "continue 文がループの中でないところに出現しました.\n";
@@ -2504,7 +2504,7 @@ void c_compiler::error::stmt::_continue::not_within(const file_t& file)
 void c_compiler::error::stmt::_return::invalid(const file_t& file, const type* from, const type* to)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "`";
@@ -2528,7 +2528,7 @@ void c_compiler::error::stmt::_return::invalid(const file_t& file, const type* f
 void c_compiler::error::extdef::invalid_storage(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "ファイルスコープで記憶クラスが auto, register の宣言です.\n";
@@ -2546,7 +2546,7 @@ void c_compiler::error::extdef::fundef::multiple(const file_t& curr, const usr* 
   using namespace std;
   const file_t& prev = u->m_file;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(curr,"エラー");
     cerr << '`' << name << "' の函数定義が重複しています.\n";
@@ -2568,7 +2568,7 @@ void c_compiler::error::extdef::fundef::invalid_return(const usr* u, const type*
   using namespace std;
   const file_t& file = u->m_file;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << name << "' の函数定義で戻り値の型が `";
@@ -2590,7 +2590,7 @@ void c_compiler::error::extdef::fundef::invalid_storage(const usr* u)
   using namespace std;
   const file_t& file = u->m_file;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << name << "' の記憶クラスに register 以外が指定されています.\n";
@@ -2608,7 +2608,7 @@ void c_compiler::error::extdef::fundef::invalid_initializer(const usr* u)
   using namespace std;
   const file_t& file = u->m_file;
   string name = u->m_name;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << '`' << name << "' に初期化指定子が指定されています.\n";
@@ -2624,7 +2624,7 @@ void c_compiler::error::extdef::fundef::invalid_initializer(const usr* u)
 void c_compiler::error::extdef::fundef::nodef(const file_t& file, std::string name, const file_t& ref)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "static な函数 `" << name << "' の函数定義がありません.\n";
@@ -2644,7 +2644,7 @@ void c_compiler::error::extdef::fundef::nodef(const file_t& file, std::string na
 void c_compiler::error::extdef::fundef::typedefed(const file_t& file)
 {
   using namespace std;
-  switch ( lang ){
+  switch (lang) {
   case jpn:
     header(file,"エラー");
     cerr << "函数定義が typedef されています.\n";

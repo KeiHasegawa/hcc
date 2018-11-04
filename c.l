@@ -192,6 +192,14 @@ while               { c_compiler_lval.m_ival = c_compiler::code.size(); return W
                                c_compiler::parse::maybe_absdecl = false;
                              return ')';
                            }
+\[                         {
+                             ++c_compiler::parse::work_around;
+                             return '[';
+                           }
+\]                         {
+                             --c_compiler::parse::work_around;
+                             return ']';
+                           }
 .                          { return yytext[0]; }
 
 %%

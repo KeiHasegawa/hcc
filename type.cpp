@@ -4,19 +4,23 @@
 #include "misc.h"
 
 namespace c_compiler { namespace type_impl {
-    struct sizeof_table : std::map<const type*, int> {
-      sizeof_table();
+    using namespace std;
+    struct sizeof_table_t : map<const type*, int> {
+      sizeof_table_t();
     } sizeof_table;
-    int m_pointer_sizeof = sizeof(void*);
+    int pointer_sizeof = sizeof(void*);
 } } // end of namespace type_impl and c_compiler
 
-c_compiler::type_impl::sizeof_table::sizeof_table()
+c_compiler::type_impl::sizeof_table_t::sizeof_table_t()
 {
-  (*this)[short_type::create()] = (*this)[ushort_type::create()] = sizeof(short);
-  (*this)[int_type::create()] = (*this)[uint_type::create()] = sizeof(int);
-  (*this)[long_type::create()] = (*this)[ulong_type::create()] = sizeof(long);
-  (*this)[long_long_type::create()] = (*this)[ulong_long_type::create()] =
-    sizeof(long long);
+  (*this)[short_type::create()] =
+  (*this)[ushort_type::create()] = sizeof(short);
+  (*this)[int_type::create()] =
+  (*this)[uint_type::create()] = sizeof(int);
+  (*this)[long_type::create()] =
+  (*this)[ulong_type::create()] = sizeof(long);
+  (*this)[long_long_type::create()] =
+  (*this)[ulong_long_type::create()] = sizeof(long long);
   (*this)[float_type::create()] = sizeof(float);
   (*this)[double_type::create()] = sizeof(double);
   (*this)[long_double_type::create()] = sizeof(long double);
@@ -26,38 +30,35 @@ void c_compiler::type_impl::update(int (*size)(int id))
 {
   if (!size)
     return;
-  sizeof_table[short_type::create()] = sizeof_table[ushort_type::create()] = size((int)type::SHORT);
-  sizeof_table[int_type::create()] = sizeof_table[uint_type::create()] = size((int)type::INT);
-  sizeof_table[long_type::create()] = sizeof_table[ulong_type::create()] = size((int)type::LONG);
-  sizeof_table[long_long_type::create()] = sizeof_table[ulong_long_type::create()] = size((int)type::LONGLONG);
+  sizeof_table[short_type::create()] =
+  sizeof_table[ushort_type::create()] = size((int)type::SHORT);
+  sizeof_table[int_type::create()] =
+  sizeof_table[uint_type::create()] = size((int)type::INT);
+  sizeof_table[long_type::create()] =
+  sizeof_table[ulong_type::create()] = size((int)type::LONG);
+  sizeof_table[long_long_type::create()] =
+  sizeof_table[ulong_long_type::create()] = size((int)type::LONGLONG);
   sizeof_table[float_type::create()] = size((int)type::FLOAT);
   sizeof_table[double_type::create()] = size((int)type::DOUBLE);
   sizeof_table[long_double_type::create()] = size((int)type::LONG_DOUBLE);
-  m_pointer_sizeof = size((int)type::POINTER);
+  pointer_sizeof = size((int)type::POINTER);
 }
 
 bool c_compiler::type::compatible(const type* that) const
 {
-  return this == that->unqualified();
+  return this == that;
 }
 
 const c_compiler::type* c_compiler::type::composite(const type* that) const
 {
-  int cvr = 0;
-  return this == that->unqualified(&cvr) ? qualified(cvr) : 0;
-}
-
-bool c_compiler::type::include_cvr(const type* that) const
-{
-  int cvr = 0;
-  that->unqualified(&cvr);
-  return !cvr;
+  return this == that ? this : 0;
 }
 
 std::pair<int, const c_compiler::type*> c_compiler::type::current(int nth) const
 {
   using namespace std;
-  return nth ? make_pair(-1,static_cast<const type*>(0)) : make_pair(0,this);
+  const type* zero = 0;
+  return nth ? make_pair(-1, zero) : make_pair(0, this);
 }
 
 const c_compiler::type* c_compiler::type::qualified(int cvr) const
@@ -78,33 +79,46 @@ const c_compiler::type* c_compiler::type::qualified(int cvr) const
   return T;
 }
 
-namespace c_compiler { namespace type_impl {
-  std::vector<const type*> temp1;
-#ifdef _DEBUG
-  pvector<const type> temp2;
-#endif // _DEBUG
-} } // end of namespace type_impl and c_compiler
-
 int c_compiler::type::align() const
 {
-        switch (size()) {
-        case 1: return 1;
-        case 2: return 2;
-        case 3:
-        case 4: return 4;
-        case 5: case 6: case 7: case 8: return 8;
-        case 9: case 10: case 11: case 12: case 13:
-        case 14: case 15: case 16:
-        default: return 16;
-        }
+  switch (size()) {
+  case 1: return 1;
+  case 2: return 2;
+  case 3:
+  case 4: return 4;
+  case 5: case 6: case 7: case 8: return 8;
+  case 9: case 10: case 11: case 12: case 13:
+  case 14: case 15: case 16:
+  default: return 16;
+  }
 }
 
-void c_compiler::type::destroy_temporary()
+void c_compiler::type::destroy_tmp()
 {
-  using namespace std;
-  vector<const type*>& v = type_impl::temp1;
-  for_each(v.begin(),v.end(),deleter<const type>());
-  v.clear();
+	const_type::destroy_tmp();
+	volatile_type::destroy_tmp();
+	restrict_type::destroy_tmp();
+	func_type::destroy_tmp();
+	array_type::destroy_tmp();
+	pointer_type::destroy_tmp();
+	incomplete_tagged_type::destroy_tmp();
+	record_type::destroy_tmp();
+	enum_type::destroy_tmp();
+	varray_type::destroy_tmp();
+}
+
+void c_compiler::type::collect_tmp(std::vector<const type*>& vt)
+{
+	const_type::collect_tmp(vt);
+	volatile_type::collect_tmp(vt);
+	restrict_type::collect_tmp(vt);
+	func_type::collect_tmp(vt);
+	array_type::collect_tmp(vt);
+	pointer_type::collect_tmp(vt);
+	incomplete_tagged_type::collect_tmp(vt);
+	record_type::collect_tmp(vt);
+	enum_type::collect_tmp(vt);
+	varray_type::collect_tmp(vt);
 }
 
 c_compiler::void_type c_compiler::void_type::obj;
@@ -160,7 +174,10 @@ const c_compiler::type* c_compiler::uchar_type::promotion() const
 
 c_compiler::short_type c_compiler::short_type::obj;
 
-int c_compiler::short_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::short_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::short_type::decl(std::ostream& os, std::string name) const
 {
@@ -176,7 +193,10 @@ const c_compiler::type* c_compiler::short_type::promotion() const
 
 c_compiler::ushort_type c_compiler::ushort_type::obj;
 
-int c_compiler::ushort_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::ushort_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::ushort_type::decl(std::ostream& os, std::string name) const
 {
@@ -192,7 +212,10 @@ const c_compiler::type* c_compiler::ushort_type::promotion() const
 
 c_compiler::int_type c_compiler::int_type::obj;
 
-int c_compiler::int_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::int_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::int_type::decl(std::ostream& os, std::string name) const
 {
@@ -203,7 +226,10 @@ void c_compiler::int_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::uint_type c_compiler::uint_type::obj;
 
-int c_compiler::uint_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::uint_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::uint_type::decl(std::ostream& os, std::string name) const
 {
@@ -214,7 +240,10 @@ void c_compiler::uint_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::long_type c_compiler::long_type::obj;
 
-int c_compiler::long_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::long_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::long_type::decl(std::ostream& os, std::string name) const
 {
@@ -225,7 +254,10 @@ void c_compiler::long_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::ulong_type c_compiler::ulong_type::obj;
 
-int c_compiler::ulong_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::ulong_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::ulong_type::decl(std::ostream& os, std::string name) const
 {
@@ -236,7 +268,10 @@ void c_compiler::ulong_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::long_long_type c_compiler::long_long_type::obj;
 
-int c_compiler::long_long_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::long_long_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::long_long_type::decl(std::ostream& os, std::string name) const
 {
@@ -247,7 +282,10 @@ void c_compiler::long_long_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::ulong_long_type c_compiler::ulong_long_type::obj;
 
-int c_compiler::ulong_long_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::ulong_long_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::ulong_long_type::decl(std::ostream& os, std::string name) const
 {
@@ -258,7 +296,10 @@ void c_compiler::ulong_long_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::float_type c_compiler::float_type::obj;
 
-int c_compiler::float_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::float_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::float_type::decl(std::ostream& os, std::string name) const
 {
@@ -267,11 +308,17 @@ void c_compiler::float_type::decl(std::ostream& os, std::string name) const
     os << ' ' << name;
 }
 
-const c_compiler::type* c_compiler::float_type::varg() const { return double_type::create(); }
+const c_compiler::type* c_compiler::float_type::varg() const
+{
+  return double_type::create();
+}
 
 c_compiler::double_type c_compiler::double_type::obj;
 
-int c_compiler::double_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::double_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
 void c_compiler::double_type::decl(std::ostream& os, std::string name) const
 {
@@ -282,9 +329,13 @@ void c_compiler::double_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::long_double_type c_compiler::long_double_type::obj;
 
-int c_compiler::long_double_type::size() const { return type_impl::sizeof_table[&obj]; }
+int c_compiler::long_double_type::size() const
+{
+  return type_impl::sizeof_table[&obj];
+}
 
-void c_compiler::long_double_type::decl(std::ostream& os, std::string name) const
+void
+c_compiler::long_double_type::decl(std::ostream& os, std::string name) const
 {
   os << "long double";
   if ( !name.empty() )
@@ -293,14 +344,16 @@ void c_compiler::long_double_type::decl(std::ostream& os, std::string name) cons
 
 c_compiler::backpatch_type c_compiler::backpatch_type::obj;
 
-struct c_compiler::const_type::table_t : c_compiler::pmap<const type*, const const_type> {};
+namespace c_compiler {
+  const_type::table_t const_type::tmp_tbl;
+  const_type::table_t const_type::pmt_tbl;
+} // end of namespace c_compiler
 
 void c_compiler::const_type::decl(std::ostream& os, std::string name) const
 {
-  typedef const pointer_type PT;
-  if ( m_T->m_id == type::POINTER ){
+  if (m_T->m_id == type::POINTER) {
     name = "const " + name;
-    m_T->decl(os,name);
+    m_T->decl(os, name);
   }
   else {
     os << "const ";
@@ -308,54 +361,78 @@ void c_compiler::const_type::decl(std::ostream& os, std::string name) const
   }
 }
 
-bool c_compiler::const_type::include_cvr(const type* that) const
+bool c_compiler::const_type::compatible(const type* T) const
 {
-  int x = 0;
-  const type* a = this->unqualified(&x);
-  int y = 0;
-  const type* b = that->unqualified(&y);
-  if ( ~x & y )
+  if (this == T)
+    return true;
+  if (T->m_id != CONST)
     return false;
-  return a->include_cvr(b);
+  typedef const const_type CT;
+  CT* that = static_cast<CT*>(T);
+  return this->m_T->compatible(that->m_T);
 }
 
-const c_compiler::type* c_compiler::const_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::const_type::composite(const type* T) const
 {
-  return create(m_T->patch(T,u));
+  if (this == T)
+    return this;
+  if (T->m_id != CONST)
+    return 0;
+  typedef const const_type CT;
+  CT* that = static_cast<CT*>(T);
+  T = this->m_T->composite(that->m_T);
+  return T ? create(T) : 0;
 }
 
-const c_compiler::type* c_compiler::const_type::qualified(int cvr) const
+const c_compiler::type*
+c_compiler::const_type::patch(const type* T, usr* u) const
+{
+  return create(m_T->patch(T, u));
+}
+
+const c_compiler::type*
+c_compiler::const_type::qualified(int cvr) const
 {
   cvr |= 1;
   return m_T->qualified(cvr);
 }
 
-const c_compiler::const_type* c_compiler::const_type::create(const type* T)
+const c_compiler::type*
+c_compiler::const_type::create(const type* T)
 {
-  if ( T->temporary(false) ){
-    const const_type* ret = new const_type(T);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  if (T->m_id == CONST)
+    return T;
+
+  table_t& table = T->tmp() ? tmp_tbl : pmt_tbl;
   table_t::const_iterator p = table.find(T);
   if ( p != table.end() )
-    return p->second;
-  else
-    return table[T] = new const_type(T);
+      return p->second;
+  return table[T] = new const_type(T);
 }
 
-struct c_compiler::volatile_type::table_t : c_compiler::pmap<const type*, const volatile_type> {};
+void c_compiler::const_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
 
-c_compiler::volatile_type::table_t c_compiler::volatile_type::table;
+void c_compiler::const_type::collect_tmp(std::vector<const type*>& vs)
+{
+  for (auto p : tmp_tbl)
+	vs.push_back(p.second);
+  tmp_tbl.clear();
+}
+
+
+namespace c_compiler {
+  volatile_type::table_t volatile_type::tmp_tbl;
+  volatile_type::table_t volatile_type::pmt_tbl;
+} // end of namespace c_compiler
 
 void c_compiler::volatile_type::decl(std::ostream& os, std::string name) const
 {
-  typedef const pointer_type PT;
   if ( m_T->m_id == type::POINTER ){
     name = "volatile " + name;
     m_T->decl(os,name);
@@ -366,20 +443,34 @@ void c_compiler::volatile_type::decl(std::ostream& os, std::string name) const
   }
 }
 
-bool c_compiler::volatile_type::include_cvr(const type* that) const
+bool c_compiler::volatile_type::compatible(const type* T) const
 {
-  int x = 0;
-  const type* a = this->unqualified(&x);
-  int y = 0;
-  const type* b = that->unqualified(&y);
-  if ( ~x & y )
+  if (this == T)
+    return true;
+  if (T->m_id != VOLATILE)
     return false;
-  return a->include_cvr(b);
+  typedef const volatile_type VT;
+  VT* that = static_cast<VT*>(T);
+  return this->m_T->compatible(that->m_T);
 }
 
-const c_compiler::type* c_compiler::volatile_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::volatile_type::composite(const type* T) const
 {
-  return create(m_T->patch(T,u));
+  if (this == T)
+    return this;
+  if (T->m_id != VOLATILE)
+    return 0;
+  typedef const volatile_type VT;
+  VT* that = static_cast<VT*>(T);
+  T = this->m_T->composite(that->m_T);
+  return T ? create(T) : 0;
+}
+
+const c_compiler::type*
+c_compiler::volatile_type::patch(const type* T, usr* u) const
+{
+  return create(m_T->patch(T, u));
 }
 
 const c_compiler::type* c_compiler::volatile_type::qualified(int cvr) const
@@ -388,28 +479,47 @@ const c_compiler::type* c_compiler::volatile_type::qualified(int cvr) const
   return m_T->qualified(cvr);
 }
 
-const c_compiler::volatile_type* c_compiler::volatile_type::create(const type* T)
+const c_compiler::type*
+c_compiler::volatile_type::create(const type* T)
 {
-  if ( T->temporary(false) ){
-    const volatile_type* ret = new volatile_type(T);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  if (T->m_id == VOLATILE)
+    return T;
+
+  table_t& table = T->tmp() ? tmp_tbl : pmt_tbl;
   table_t::const_iterator p = table.find(T);
-  if ( p != table.end() )
-    return p->second;
-  else
-    return table[T] = new volatile_type(T);
+  if (p != table.end())
+      return p->second;
+  
+  if (T->m_id == CONST) {
+    typedef const const_type CT;
+    CT* ct = static_cast<CT*>(T);
+    volatile_type* vt = new volatile_type(ct->m_T);
+    table[ct->m_T] = vt;
+    return const_type::create(vt);
+  }
+
+  volatile_type* ret = new volatile_type(T);
+  return table[T] = ret;
 }
 
-struct c_compiler::restrict_type::table_t : c_compiler::pmap<const type*, const restrict_type> {};
+void c_compiler::volatile_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
 
-c_compiler::restrict_type::table_t c_compiler::restrict_type::table;
+void c_compiler::volatile_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p.second);
+  tmp_tbl.clear();
+}
+
+namespace c_compiler {
+  restrict_type::table_t restrict_type::tmp_tbl;
+  restrict_type::table_t restrict_type::pmt_tbl;
+} // end of namespace c_compiler
 
 void c_compiler::restrict_type::decl(std::ostream& os, std::string name) const
 {
@@ -424,20 +534,34 @@ void c_compiler::restrict_type::decl(std::ostream& os, std::string name) const
   }
 }
 
-bool c_compiler::restrict_type::include_cvr(const type* that) const
+bool c_compiler::restrict_type::compatible(const type* T) const
 {
-  int x = 0;
-  const type* a = this->unqualified(&x);
-  int y = 0;
-  const type* b = that->unqualified(&y);
-  if ( ~x & y )
+  if (this == T)
+    return true;
+  if (T->m_id != RESTRICT)
     return false;
-  return a->include_cvr(b);
+  typedef const restrict_type RT;
+  RT* that = static_cast<RT*>(T);
+  return this->m_T->compatible(that->m_T);
 }
 
-const c_compiler::type* c_compiler::restrict_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::restrict_type::composite(const type* T) const
 {
-  return create(m_T->patch(T,u));
+  if (this == T)
+    return this;
+  if (T->m_id != RESTRICT)
+    return 0;
+  typedef const restrict_type RT;
+  RT* that = static_cast<RT*>(T);
+  T = this->m_T->composite(that->m_T);
+  return T ? create(T) : 0;
+}
+
+const c_compiler::type*
+c_compiler::restrict_type::patch(const type* T, usr* u) const
+{
+  return create(m_T->patch(T, u));
 }
 
 const c_compiler::type* c_compiler::restrict_type::qualified(int cvr) const
@@ -446,29 +570,68 @@ const c_compiler::type* c_compiler::restrict_type::qualified(int cvr) const
   return m_T->qualified(cvr);
 }
 
-const c_compiler::restrict_type* c_compiler::restrict_type::create(const type* T)
+const c_compiler::type*
+c_compiler::restrict_type::create(const type* T)
 {
-  if ( T->temporary(false) ){
-    const restrict_type* ret = new restrict_type(T);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  if (T->m_id == RESTRICT)
+    return T;
+
+  table_t& table = T->tmp() ? tmp_tbl : pmt_tbl;
   table_t::const_iterator p = table.find(T);
-  if ( p != table.end() )
+  if (p != table.end())
     return p->second;
-  else
-    return table[T] = new restrict_type(T);
+
+  typedef const const_type CT;  
+  typedef const volatile_type VT;
+  
+  if (T->m_id == CONST) {
+    CT* ct = static_cast<CT*>(T);
+    const type* T2 = ct->m_T;
+    if (T2->m_id == VOLATILE) {
+      VT* vt = static_cast<VT*>(T2);
+      restrict_type* rt = new restrict_type(vt->m_T);
+      table[vt->m_T] = rt;
+      return const_type::create(volatile_type::create(rt));
+    }
+    restrict_type* rt = new restrict_type(T2);
+    table[T2] = rt;
+    return const_type::create(rt);
+  }
+
+  if (T->m_id == VOLATILE) {
+    VT* vt = static_cast<VT*>(T);
+    restrict_type* rt = new restrict_type(vt->m_T);
+    table[vt->m_T] = rt;
+    return volatile_type::create(rt);
+  }
+
+  restrict_type* ret = new restrict_type(T);  
+  return table[T] = ret;
 }
 
-struct c_compiler::func_type::table_t
-  : c_compiler::pmap<std::pair<std::pair<const type*, std::vector<const type*> >,bool>, const func_type> {};
+void c_compiler::restrict_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
 
-c_compiler::func_type::table_t c_compiler::func_type::table;
+void c_compiler::restrict_type::collect_tmp(std::vector<const type*>& vs)
+{
+  for (auto p : tmp_tbl)
+    vs.push_back(p.second);
+  tmp_tbl.clear();
+}
+
+namespace c_compiler {
+  using namespace std;
+  using namespace std;
+  struct func_type::table_t
+  : map<pair<pair<const type*, vector<const type*> >,bool>, const func_type*>
+  {};
+  func_type::table_t func_type::tmp_tbl;
+  func_type::table_t func_type::pmt_tbl;
+} // end of namespace c_compiler
 
 void c_compiler::func_type::decl(std::ostream& os, std::string name) const
 {
@@ -488,7 +651,7 @@ void c_compiler::func_type::decl(std::ostream& os, std::string name) const
         tmp << "const ";
       if ( cvr & 2 )
         tmp << "volatile ";
-      if ( cvr & 2 )
+      if ( cvr & 4 )
         tmp << "restrict ";
       tmp << name;
       y->decl(os,tmp.str());
@@ -516,12 +679,14 @@ void c_compiler::func_type::post(std::ostream& os) const
   os << ')';
 }
 
-namespace c_compiler { namespace func_impl {
-  bool compatible(const type* x, const type* y){ return x->compatible(y); }
-  namespace old_new {
-    bool compatible(const std::vector<const type*>&, const std::vector<const type*>&);
-  } // end of namespace old_new
-} } // end of namespace func_impl and c_compier
+namespace c_compiler {
+  namespace func_impl {
+    namespace old_new {
+      using namespace std;
+      bool compatible(const vector<const type*>&, const vector<const type*>&);
+    } // end of namespace old_new
+  } // end of namespace func_impl
+} // end of namespace c_compier
 
 bool c_compiler::func_type::compatible(const type* T) const
 {
@@ -544,18 +709,18 @@ bool c_compiler::func_type::compatible(const type* T) const
     return true;
   const vector<const type*>& u = this->m_param;
   const vector<const type*>& v = that->m_param;
-  if ( u.size() != v.size() )
+  if (u.size() != v.size())
     return false;
-  return mismatch(u.begin(),u.end(),v.begin(),func_impl::compatible) == make_pair(u.end(),v.end());
+  return mismatch(u.begin(),u.end(),v.begin(),c_compiler::compatible) == make_pair(u.end(),v.end());
 }
 
 namespace c_compiler { namespace func_impl { namespace old_new {
   const ellipsis_type* olddecl_nodef(const std::vector<const type*>&);
-  const type* varg_helper(const type* T){ return T->varg(); }
 } } } // end of namespace old_new, func_impl and c_compier
 
-bool c_compiler::func_impl::old_new::compatible(const std::vector<const type*>& o,
-                                                const std::vector<const type*>& n)
+bool
+c_compiler::func_impl::old_new::compatible(const std::vector<const type*>& o,
+                                           const std::vector<const type*>& n)
 {
   using namespace std;
   typedef const ellipsis_type ET;
@@ -563,22 +728,14 @@ bool c_compiler::func_impl::old_new::compatible(const std::vector<const type*>& 
     if ( n.back()->m_id == type::ELLIPSIS )
       return false;
     vector<const type*> p;
-#ifdef _MSC_VER
-    transform(n.begin(),n.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
     transform(n.begin(),n.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-    return mismatch(n.begin(),n.end(),p.begin(),func_impl::compatible) == make_pair(n.end(),p.end());
+    return mismatch(n.begin(),n.end(),p.begin(),c_compiler::compatible) == make_pair(n.end(),p.end());
   }
-  if ( o.size() != n.size() )
+  if (o.size() != n.size())
     return false;
   vector<const type*> p;
-#ifdef _MSC_VER
-  transform(o.begin(),o.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
   transform(o.begin(),o.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-  return mismatch(n.begin(),n.end(),p.begin(),func_impl::compatible) == make_pair(n.end(),p.end());
+  return mismatch(n.begin(),n.end(),p.begin(),c_compiler::compatible) == make_pair(n.end(),p.end());
 }
 
 const c_compiler::ellipsis_type*
@@ -594,23 +751,24 @@ c_compiler::func_impl::old_new::olddecl_nodef(const std::vector<const type*>& o)
   return et;
 }
 
-namespace c_compiler { namespace func_impl {
-  const type* composite(const type* x, const type* y){ return x->composite(y); }
-  namespace old_new {
-    const func_type* composite(const func_type*, const func_type*);
-  } // end of namespace old_new
-} } // end of namespace func_impl and c_compier
+namespace c_compiler {
+  namespace func_impl {
+    namespace old_new {
+      const func_type* composite(const func_type*, const func_type*);
+    } // end of namespace old_new
+  } // end of namespace func_impl
+} // end of namespace c_compier
 
 const c_compiler::type* c_compiler::func_type::composite(const type* T) const
 {
   using namespace std;
-  if ( this == T )
+  if (this == T)
     return this;
-  if ( T->m_id != type::FUNC )
+  if (T->m_id != type::FUNC)
     return 0;
   typedef const func_type FUNC;
   FUNC* that = static_cast<FUNC*>(T);
-  if ( !this->m_T->compatible(that->m_T) )
+  if (!this->m_T->compatible(that->m_T))
     return 0;
   if ( this->m_old_style != that->m_old_style ){
     if ( this->m_old_style )
@@ -622,12 +780,12 @@ const c_compiler::type* c_compiler::func_type::composite(const type* T) const
   const vector<const type*>& v = that->m_param;
   if ( this->m_old_style || that->m_old_style )
     return u.size() > v.size() ? this : that;
-  if ( u.size() != v.size() )
+  if (u.size() != v.size())
     return 0;
-  if ( mismatch(u.begin(),u.end(),v.begin(),func_impl::compatible) != make_pair(u.end(),v.end()) )
+  if (mismatch(u.begin(),u.end(),v.begin(),c_compiler::compatible) != make_pair(u.end(),v.end()))
     return 0;
   vector<const type*> param;
-  transform(u.begin(),u.end(),v.begin(),back_inserter(param),func_impl::composite);
+  transform(u.begin(),u.end(),v.begin(),back_inserter(param),c_compiler::composite);
   return create(this->m_T->composite(that->m_T),param,false);
 }
 
@@ -642,94 +800,26 @@ c_compiler::func_impl::old_new::composite(const func_type* of, const func_type* 
     if ( n.back()->m_id == type::ELLIPSIS )
       return 0;
     vector<const type*> p;
-#ifdef _MSC_VER
-    transform(n.begin(),n.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
     transform(n.begin(),n.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-    if ( mismatch(n.begin(),n.end(),p.begin(),func_impl::compatible) != make_pair(n.end(),p.end()) )
+    if (mismatch(n.begin(),n.end(),p.begin(),c_compiler::compatible) != make_pair(n.end(),p.end()))
       return 0;
     vector<const type*> param;
-    transform(n.begin(),n.end(),p.begin(),back_inserter(param),func_impl::composite);
+    transform(n.begin(),n.end(),p.begin(),back_inserter(param),c_compiler::composite);
     return func_type::create(of->return_type()->composite(nf->return_type()),param,false);
   }
-  if ( o.size() != n.size() )
+  if (o.size() != n.size())
     return 0;
   vector<const type*> p;
-#ifdef _MSC_VER
-  transform(o.begin(),o.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
   transform(o.begin(),o.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-  if ( mismatch(n.begin(),n.end(),p.begin(),func_impl::compatible) != make_pair(n.end(),p.end()) )
+  if (mismatch(n.begin(),n.end(),p.begin(),c_compiler::compatible) != make_pair(n.end(),p.end()))
     return 0;
   vector<const type*> param;
-  transform(n.begin(),n.end(),o.begin(),back_inserter(param),func_impl::composite);
+  transform(n.begin(),n.end(),o.begin(),back_inserter(param),c_compiler::composite);
   return func_type::create(of->return_type()->composite(nf->return_type()),param,false);
 }
 
-namespace c_compiler { namespace func_impl {
-  bool include_cvr(const type* x, const type* y){ return x->include_cvr(y); }
-  namespace old_new {
-    bool include_cvr(const std::vector<const type*>&, const std::vector<const type*>&);
-  } // end of namespace old_new
-} } // end of namespace func_impl and c_compier
-
-bool c_compiler::func_type::include_cvr(const type* T) const
-{
-  using namespace std;
-  if ( this == T )
-    return true;
-  if ( T->m_id != type::FUNC )
-    return false;
-  typedef const func_type FUNC;
-  FUNC* that = static_cast<FUNC*>(T);
-  if ( !this->m_T->include_cvr(that->m_T) )
-    return false;
-  if ( this->m_old_style != that->m_old_style ){
-    if ( this->m_old_style )
-      return func_impl::old_new::include_cvr(this->m_param,that->m_param);
-    else
-      return func_impl::old_new::include_cvr(that->m_param,this->m_param);
-  }
-  if ( this->m_old_style || that->m_old_style )
-    return true;
-  const vector<const type*>& u = this->m_param;
-  const vector<const type*>& v = that->m_param;
-  if ( u.size() != v.size() )
-    return false;
-  return mismatch(u.begin(),u.end(),v.begin(),func_impl::include_cvr) == make_pair(u.end(),v.end());
-}
-
-bool
-c_compiler::func_impl::old_new::include_cvr(const std::vector<const type*>& o,
-                                            const std::vector<const type*>& n)
-{
-  using namespace std;
-  typedef const ellipsis_type ET;
-  if ( ET* et = olddecl_nodef(o) ){
-    if ( n.back()->m_id == type::ELLIPSIS )
-      return false;
-    vector<const type*> p;
-#ifdef _MSC_VER
-    transform(n.begin(),n.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
-    transform(n.begin(),n.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-    return mismatch(n.begin(),n.end(),p.begin(),func_impl::include_cvr) == make_pair(n.end(),p.end());
-  }
-  if ( o.size() != n.size() )
-    return false;
-  vector<const type*> p;
-#ifdef _MSC_VER
-  transform(o.begin(),o.end(),back_inserter(p),varg_helper);
-#else // _MSC_VER
-  transform(o.begin(),o.end(),back_inserter(p),mem_fun(&type::varg));
-#endif // _MSC_VER
-  return mismatch(n.begin(),n.end(),p.begin(),func_impl::include_cvr) == make_pair(n.end(),p.end());
-}
-
-const c_compiler::type* c_compiler::func_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::func_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
   if ( T->m_id == type::FUNC ){
@@ -742,9 +832,9 @@ const c_compiler::type* c_compiler::func_type::patch(const type* T, usr* u) cons
     func::of_array(parse::position,u);
     T = int_type::create();
   }
-  if ( u ){
-    usr::flag& flag = u->m_flag;
-    flag = usr::flag(flag | usr::FUNCTION);
+  if (u) {
+    usr::flag_t& flag = u->m_flag;
+    flag = usr::flag_t(flag | usr::FUNCTION);
   }
   return create(T,m_param,m_old_style);
 }
@@ -754,22 +844,12 @@ const c_compiler::type* c_compiler::func_type::qualified(int cvr) const
   return create(m_T->qualified(cvr),m_param,m_old_style);
 }
 
-#ifdef _MSC_VER
-namespace c_compiler { namespace func_impl {
-  const type* complete_type(const type* T){ return T->complete_type(); }
-} } // end of namespace func_impl and c_compiler
-#endif // _MSC_VER
-
 const c_compiler::type* c_compiler::func_type::complete_type() const
 {
   using namespace std;
   const type* T = m_T->complete_type();
   vector<const type*> param;
-#ifndef _MSC_VER
   transform(m_param.begin(),m_param.end(),back_inserter(param),mem_fun(&type::complete_type));
-#else // _MSC_VER
-  transform(m_param.begin(),m_param.end(),back_inserter(param),func_impl::complete_type);
-#endif // _MSC_VER
   return create(T,param,m_old_style);
 }
 
@@ -778,10 +858,25 @@ const c_compiler::pointer_type* c_compiler::func_type::ptr_gen() const
   return pointer_type::create(this);
 }
 
-bool c_compiler::func_type::temporary(bool b) const
+bool c_compiler::func_type::tmp() const
 {
   using namespace std;
-  return m_T->temporary(b) || find_if(m_param.begin(), m_param.end(), bind2nd(mem_fun(&type::temporary), b)) != m_param.end();
+  return m_T->tmp() || find_if(m_param.begin(), m_param.end(), mem_fun(&type::tmp)) != m_param.end();
+}
+
+bool c_compiler::func_type::variably_modified() const
+{
+  using namespace std;
+  return m_T->variably_modified() || find_if(m_param.begin(), m_param.end(), mem_fun(&type::variably_modified)) != m_param.end();
+}
+
+const c_compiler::type* c_compiler::func_type::vla2a() const
+{
+  using namespace std;
+  const type* T = m_T->vla2a();
+  vector<const type*> param;
+  transform(m_param.begin(), m_param.end(), back_inserter(param), mem_fun(&type::vla2a));
+  return create(T, param, m_old_style);
 }
 
 const c_compiler::func_type* c_compiler::func_type::create(const type* T,
@@ -789,16 +884,7 @@ const c_compiler::func_type* c_compiler::func_type::create(const type* T,
                                                            bool old_style)
 {
   using namespace std;
-  if (T->temporary(false) || find_if(param.begin(), param.end(), bind2nd(mem_fun(&type::temporary), false)) != param.end()) {
-    const func_type* ret = new func_type(T,param,old_style);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  table_t& table = (T->tmp() || find_if(param.begin(), param.end(), mem_fun(&type::tmp)) != param.end()) ? tmp_tbl : pmt_tbl;
   pair<pair<const type*, vector<const type*> >,bool> key(make_pair(T,param),old_style);
   table_t::const_iterator p = table.find(key);
   if ( p != table.end() )
@@ -807,9 +893,27 @@ const c_compiler::func_type* c_compiler::func_type::create(const type* T,
     return table[key] = new func_type(T,param,old_style);
 }
 
-struct c_compiler::array_type::table_t : c_compiler::pmap<std::pair<const type*,int>, const array_type> {};
+void c_compiler::func_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
 
-c_compiler::array_type::table_t c_compiler::array_type::table;
+void c_compiler::func_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p.second);
+  tmp_tbl.clear();
+}
+
+namespace c_compiler {
+  using namespace std;
+  struct array_type::table_t
+    : map<pair<const type*,int>, const array_type*> {};
+  array_type::table_t array_type::tmp_tbl;
+  array_type::table_t array_type::pmt_tbl;
+} // end of namespace c_compiler
 
 void c_compiler::array_type::decl(std::ostream& os, std::string name) const
 {
@@ -864,7 +968,8 @@ bool c_compiler::array_type::compatible(const type* T) const
     return false;
 }
 
-const c_compiler::type* c_compiler::array_type::composite(const type* T) const
+const c_compiler::type*
+c_compiler::array_type::composite(const type* T) const
 {
   if ( this == T )
     return this;
@@ -886,24 +991,6 @@ const c_compiler::type* c_compiler::array_type::composite(const type* T) const
     return 0;
 }
 
-bool c_compiler::array_type::include_cvr(const type* T) const
-{
-  if ( this == T )
-    return true;
-  if ( T->m_id == type::ARRAY ){
-    typedef const array_type ARRAY;
-    ARRAY* that = static_cast<ARRAY*>(T);
-    return this->m_T->include_cvr(that->m_T);
-  }
-  else if ( T->m_id == type::VARRAY ){
-    typedef const varray_type VARRAY;
-    VARRAY* that = static_cast<VARRAY*>(T);
-    return this->m_T->include_cvr(that->element_type());
-  }
-  else
-    return false;
-}
-
 void c_compiler::array_type::post(std::ostream& os) const
 {
   os << '[';
@@ -913,10 +1000,11 @@ void c_compiler::array_type::post(std::ostream& os) const
   m_T->post(os);
 }
 
-const c_compiler::type* c_compiler::array_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::array_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
-  if ( T->m_id == type::FUNC ){
+  if (T->m_id == type::FUNC) {
     using namespace error::decl::declarator;
     array::of_func(parse::position,u);
     T = backpatch_type::create();
@@ -957,19 +1045,11 @@ c_compiler::var* c_compiler::array_type::vsize() const
   return size->mul(dim);
 }
 
-const c_compiler::array_type* c_compiler::array_type::create(const type* T, int dim)
+const c_compiler::array_type*
+c_compiler::array_type::create(const type* T, int dim)
 {
   using namespace std;
-  if ( T->temporary(false) ){
-    const array_type* ret = new array_type(T,dim);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  table_t& table = T->tmp() ? tmp_tbl : pmt_tbl;
   pair<const type*, int> key(T,dim);
   table_t::const_iterator p = table.find(key);
   if ( p != table.end() )
@@ -978,11 +1058,29 @@ const c_compiler::array_type* c_compiler::array_type::create(const type* T, int 
     return table[key] = new array_type(T,dim);
 }
 
-struct c_compiler::pointer_type::table_t : c_compiler::pmap<const type*, const pointer_type> {};
+void c_compiler::array_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
 
-int c_compiler::pointer_type::size() const { return type_impl::m_pointer_sizeof; }
+void c_compiler::array_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p.second);
+  tmp_tbl.clear();
+}
 
-c_compiler::pointer_type::table_t c_compiler::pointer_type::table;
+namespace c_compiler {
+  pointer_type::table_t pointer_type::tmp_tbl;
+  pointer_type::table_t pointer_type::pmt_tbl;
+} // end of namespace c_compiler
+
+int c_compiler::pointer_type::size() const
+{
+  return type_impl::pointer_sizeof;
+}
 
 void c_compiler::pointer_type::decl(std::ostream& os, std::string name) const
 {
@@ -996,79 +1094,39 @@ void c_compiler::pointer_type::decl(std::ostream& os, std::string name) const
   m_T->decl(os,tmp.str());
 }
 
-const c_compiler::type* c_compiler::pointer_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::pointer_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
-  if ( u ){
-    usr::flag& flag = u->m_flag;
-    flag = (usr::flag)(flag & ~usr::FUNCTION & ~usr::VL);
+  if (u) {
+    usr::flag_t& flag = u->m_flag;
+    flag = usr::flag_t(flag & ~usr::FUNCTION & ~usr::VL);
   }
   return create(T);
 }
 
 bool c_compiler::pointer_type::compatible(const type* T) const
 {
-  T = T->unqualified();
-  if ( this == T )
+  if (this == T)
     return true;
-  typedef const pointer_type PT;
-  if ( T->m_id == type::POINTER ){
-    PT* that = static_cast<PT*>(T);
-    return this->m_T->compatible(that->m_T);
-  }
-  else
+  if (T->m_id != type::POINTER)
     return false;
-}
-
-const c_compiler::type* c_compiler::pointer_type::composite(const type* T) const
-{
-  int cvr = 0;
-  T = T->unqualified(&cvr);
   typedef const pointer_type PT;
-  if ( T->m_id == type::POINTER ){
-    PT* that = static_cast<PT*>(T);
-    return this->m_T->compatible(that->m_T) ? create(this->m_T->composite(that->m_T))->qualified(cvr) : 0;
-  }
-  else
-    return 0;
-}
-
-bool c_compiler::pointer_type::include_cvr(const type* T) const
-{
-  typedef const pointer_type PT;
-  if ( T->m_id != type::POINTER )
-    return false;
   PT* that = static_cast<PT*>(T);
-  const type* a = this->m_T;
-  const type* b = that->m_T;
-  int c = 0;
-  int d = 0;
-  const type* e = a->unqualified(&c);
-  const type* f = b->unqualified(&d);
-  if ( ~c & d )
-    return false;
+  return this->m_T->compatible(that->m_T);
+}
+
+const c_compiler::type*
+c_compiler::pointer_type::composite(const type* T) const
+{
+  if (this == T)
+    return this;
+  if (T->m_id != type::POINTER)
+    return 0;
   typedef const pointer_type PT;
-  if ( e->m_id != type::POINTER )
-    return a->include_cvr(b);
-  PT* g = static_cast<PT*>(e);
-  PT* h = static_cast<PT*>(f);
-  if ( !g->include_cvr(h) )
-    return false;
-  const type* i = g->m_T;
-  const type* j = h->m_T;
-  int k = 0;
-  int l = 0;
-  i->unqualified(&k);
-  j->unqualified(&l);
-  if ( ~k & l )
-    return false;
-  if ( (k&4) && !(l&4) && !(c&1) )
-    return false;
-  if ( (k&2) && !(l&2) && !(c&1) )
-    return false;
-  if ( (k&1) && !(l&1) && !(c&1) )
-    return false;
-  return true;
+  PT* that = static_cast<PT*>(T);
+  T = this->m_T->composite(that->m_T);
+  return T ? create(T) : 0;
 }
 
 const c_compiler::type* c_compiler::pointer_type::complete_type() const
@@ -1076,23 +1134,29 @@ const c_compiler::type* c_compiler::pointer_type::complete_type() const
   return create(m_T->complete_type());
 }
 
-const c_compiler::pointer_type* c_compiler::pointer_type::create(const type* T)
+const c_compiler::pointer_type*
+c_compiler::pointer_type::create(const type* T)
 {
-  if ( T->temporary(false) ){
-    const pointer_type* ret = new pointer_type(T);
-    if ( scope::current->m_id == scope::BLOCK )
-      type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-    else
-      type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-    return ret;
-  }
+  table_t& table = T->tmp() ? tmp_tbl : pmt_tbl;
   table_t::const_iterator p = table.find(T);
   if ( p != table.end() )
     return p->second;
   else
     return table[T] = new pointer_type(T);
+}
+
+void c_compiler::pointer_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p.second;
+  tmp_tbl.clear();
+}
+
+void c_compiler::pointer_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p.second);
+  tmp_tbl.clear();
 }
 
 void c_compiler::ellipsis_type::decl(std::ostream& os, std::string name) const
@@ -1117,85 +1181,121 @@ void c_compiler::incomplete_tagged_type::decl(std::ostream& os, std::string name
 
 bool c_compiler::incomplete_tagged_type::compatible(const type* T) const
 {
-  const type* that = T->unqualified();
-  if ( this == that )
+  if (this == T)
     return true;
-  if ( that->m_id == type::RECORD ){
+  if (T->m_id == type::RECORD) {
     typedef const record_type REC;
-    REC* rec = static_cast<REC*>(that);
-    return m_tag == rec->get_tag();
+    REC* that = static_cast<REC*>(T);
+    return m_tag == that->get_tag();
   }
-  if ( that->m_id == type::ENUM ){
+  if (T->m_id == type::ENUM) {
     typedef const enum_type ENUM;
-    ENUM* et = static_cast<ENUM*>(that);
-    return m_tag == et->get_tag();
+    ENUM* that = static_cast<ENUM*>(T);
+    return m_tag == that->get_tag();
   }
   return false;
 }
 
-const c_compiler::type* c_compiler::incomplete_tagged_type::composite(const type* T) const
+const c_compiler::type*
+c_compiler::incomplete_tagged_type::composite(const type* T) const
 {
-  const type* that = T->unqualified();
-  if ( this == that )
+  if (this == T)
     return this;
-  if ( that->m_id == type::RECORD ){
+  if (T->m_id == type::RECORD) {
     typedef const record_type REC;
-    REC* rec = static_cast<REC*>(that);
-    return m_tag == rec->get_tag() ? rec : 0;
+    REC* that = static_cast<REC*>(T);
+    return m_tag == that->get_tag() ? that : 0;
   }
-  if ( that->m_id == type::ENUM ){
+  if (T->m_id == type::ENUM) {
     typedef const enum_type ENUM;
-    ENUM* et = static_cast<ENUM*>(that);
-    return m_tag == et->get_tag() ? et : 0;
+    ENUM* that = static_cast<ENUM*>(T);
+    return m_tag == that->get_tag() ? that : 0;
   }
   return 0;
 }
 
-const c_compiler::type* c_compiler::incomplete_tagged_type::complete_type() const
+const c_compiler::type*
+c_compiler::incomplete_tagged_type::complete_type() const
 {
   return m_tag->m_types.second ? m_tag->m_types.second : this;
 }
 
-bool c_compiler::incomplete_tagged_type::temporary(bool vm) const
+namespace c_compiler {
+  bool inblock(const scope* ptr)
+  {
+    if (ptr->m_id == scope::BLOCK)
+      return true;
+    return ptr->m_parent ? inblock(ptr->m_parent) : false;
+  }
+  inline bool temporary(const tag* ptr)
+  {
+    return inblock(ptr->m_scope);
+  }
+} // end of namespace c_compiler
+
+bool c_compiler::incomplete_tagged_type::tmp() const
 {
-  if ( vm )
-    return false;
-  else
-    return m_tag->m_scope != &scope::root;
+  return tmp_tbl.find(this) != tmp_tbl.end();
 }
 
-const c_compiler::incomplete_tagged_type* c_compiler::incomplete_tagged_type::create(tag* tag)
+namespace c_compiler {
+  incomplete_tagged_type::table_t incomplete_tagged_type::tmp_tbl;
+} // end of namespace c_compiler
+
+const c_compiler::incomplete_tagged_type*
+c_compiler::incomplete_tagged_type::create(tag* ptr)
 {
-  return new incomplete_tagged_type(tag);
+  typedef incomplete_tagged_type ITT;
+  ITT* ret = new ITT(ptr);
+  if (temporary(ptr))
+    tmp_tbl.insert(ret);
+  return ret;
 }
 
-namespace c_compiler { namespace record_impl {
-  struct layouter {
-    std::insert_iterator<std::map<std::string, std::pair<int, usr*> > > X;
-    std::insert_iterator<std::map<usr*, int> > Y;
-    usr* m_last;
-    struct current {
-      usr* m_member;
-      const type* m_integer;
-      int m_position;
-      current(usr* member = 0, const type* T = 0)
-        : m_member(member), m_integer(T), m_position(0) {}
-    } m_current;
-    int operator()(int, usr*);
-    layouter(std::insert_iterator<std::map<std::string, std::pair<int, usr*> > > XX,
-             std::insert_iterator<std::map<usr*, int> > YY,
-             usr* last)
-             : X(XX), Y(YY), m_last(last) {}
-  };
-  struct grounder {
-    std::insert_iterator<std::map<usr*, int> > Y;
-    std::pair<std::string, std::pair<int, usr*> > operator()(usr*);
-    grounder(std::insert_iterator<std::map<usr*, int> > YY) : Y(YY) {}
-  };
-  bool comp_size(usr*, usr*);
-  bool comp_align(usr*, usr*);
-  bool member_modifiable(usr*);
-} } // end of namespace record_impl and c_compiler
+void c_compiler::incomplete_tagged_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p;
+  tmp_tbl.clear();
+}
+
+void c_compiler::incomplete_tagged_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p);
+  tmp_tbl.clear();
+}
+
+namespace c_compiler {
+  namespace record_impl {
+    using namespace std;    
+    struct layouter {
+      insert_iterator<map<string, pair<int, usr*> > > X;
+      insert_iterator<map<usr*, int> > Y;
+      usr* m_last;
+      struct current {
+        usr* m_member;
+        const type* m_integer;
+        int m_position;
+        current(usr* member = 0, const type* T = 0)
+          : m_member(member), m_integer(T), m_position(0) {}
+      } m_current;
+      int operator()(int, usr*);
+      layouter(insert_iterator<map<string, pair<int, usr*> > > XX,
+               insert_iterator<map<usr*, int> > YY,
+               usr* last)
+        : X(XX), Y(YY), m_last(last) {}
+    };
+    struct grounder {
+      insert_iterator<map<usr*, int> > Y;
+      pair<string, pair<int, usr*> > operator()(usr*);
+      grounder(insert_iterator<map<usr*, int> > YY) : Y(YY) {}
+    };
+    bool comp_size(usr*, usr*);
+    bool comp_align(usr*, usr*);
+    bool member_modifiable(usr*);
+  } // end of namespace record_impl
+} // end of namespace c_compiler
 
 c_compiler::record_type::record_type(tag* tag, const std::vector<usr*>& member)
   : type(RECORD), m_tag(tag), m_member(member)
@@ -1214,8 +1314,8 @@ c_compiler::record_type::record_type(tag* tag, const std::vector<usr*>& member)
       BF* bf = static_cast<BF*>(T);
       T = bf->integer_type();
       m_size += T->size();
-      usr::flag& flag = m_member.back()->m_flag;
-      flag = usr::flag(flag | usr::MSB_FIELD);
+      usr::flag_t& flag = m_member.back()->m_flag;
+      flag = usr::flag_t(flag | usr::MSB_FIELD);
     }
   }
   else {
@@ -1253,15 +1353,15 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
     bool update = false;
     if ( const type* C = m_current.m_integer ){
       if ( C != T ){
-        usr::flag& flag = m_current.m_member->m_flag;
-        flag = usr::flag(flag | usr::MSB_FIELD);
+        usr::flag_t& flag = m_current.m_member->m_flag;
+        flag = usr::flag_t(flag | usr::MSB_FIELD);
         offset += C->size();
         m_current = current(member,T);
       }
       else if ( m_current.m_position + bf->bit() > T->size() * 8 ){
         offset += C->size();
-        usr::flag& flag = m_current.m_member->m_flag;
-        flag = usr::flag(flag | usr::MSB_FIELD);
+        usr::flag_t& flag = m_current.m_member->m_flag;
+        flag = usr::flag_t(flag | usr::MSB_FIELD);
         m_current = current(member,T);
       }
       else {
@@ -1285,14 +1385,14 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
   }
   else {
     if ( const type* C = m_current.m_integer ){
-      usr::flag& flag = m_current.m_member->m_flag;
-      flag = usr::flag(flag | usr::MSB_FIELD);
+      usr::flag_t& flag = m_current.m_member->m_flag;
+      flag = usr::flag_t(flag | usr::MSB_FIELD);
       offset += C->size();
     }
     m_current = current();
     string name = member->m_name;
     const type* T = member->m_type;
-    if ( T->temporary(true) ){
+    if (T->tmp()) {
       using namespace error::decl::struct_or_union;
       not_ordinary(member);
       T = member->m_type = int_type::create();
@@ -1310,7 +1410,7 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
         *X++ = make_pair(name,make_pair(offset,member));
         return offset;
       }
-      for_each(code.begin()+n,code.end(),deleter<tac>());
+      for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
       code.resize(n);
       using namespace error::decl::struct_or_union;
       incomplete_or_function(member);
@@ -1390,33 +1490,33 @@ void c_compiler::record_type::decl(std::ostream& os, std::string name) const
 
 bool c_compiler::record_type::compatible(const type* T) const
 {
-  const type* that = T->unqualified();
-  if ( this == that )
+  if (this == T)
     return true;
-  else if ( that->m_id == type::INCOMPLETE_TAGGED ){
-    typedef const incomplete_tagged_type ITT;
-    ITT* itt = static_cast<ITT*>(that);
-    return m_tag == itt->get_tag();
-  }
-  else
+
+  if (T->m_id != type::INCOMPLETE_TAGGED)
     return false;
+
+  typedef const incomplete_tagged_type ITT;
+  ITT* that = static_cast<ITT*>(T);
+  return m_tag == that->get_tag();
 }
 
-const c_compiler::type* c_compiler::record_type::composite(const type* T) const
+const c_compiler::type*
+c_compiler::record_type::composite(const type* T) const
 {
-  const type* that = T->unqualified();
-  if ( this == that )
+  if (this == T)
     return this;
-  else if ( that->m_id == type::INCOMPLETE_TAGGED ){
-    typedef const incomplete_tagged_type ITT;
-    ITT* itt = static_cast<ITT*>(that);
-    return m_tag == itt->get_tag() ? this : 0;
-  }
-  else
+
+  if (T->m_id != type::INCOMPLETE_TAGGED)
     return 0;
+  
+  typedef const incomplete_tagged_type ITT;
+  ITT* that = static_cast<ITT*>(T);
+  return m_tag == that->get_tag() ? this : 0;
 }
 
-std::pair<int, c_compiler::usr*> c_compiler::record_type::offset(std::string name) const
+std::pair<int, c_compiler::usr*>
+c_compiler::record_type::offset(std::string name) const
 {
   using namespace std;
   map<string, pair<int, usr*> >::const_iterator p = m_layout.find(name);
@@ -1451,23 +1551,42 @@ std::pair<int, const c_compiler::type*> c_compiler::record_type::current(int nth
   return make_pair(offset,T);
 }
 
-bool c_compiler::record_type::temporary(bool vm) const
+bool c_compiler::record_type::tmp() const
 {
-  if ( vm )
-    return false;
-  else
-    return m_tag->m_scope != &scope::root;
-}
-
-const c_compiler::record_type* c_compiler::record_type::create(tag* tag, const std::vector<usr*>& member)
-{
-  return new record_type(tag,member);
+  return tmp_tbl.find(this) != tmp_tbl.end();
 }
 
 c_compiler::record_type::~record_type()
 {
-  using namespace std;
-  for_each(m_member.begin(),m_member.end(),deleter<usr>());
+  for (auto p : m_member)
+    delete p;
+}
+
+namespace c_compiler {
+  record_type::table_t record_type::tmp_tbl;
+} // end of namespace c_compiler
+
+const c_compiler::record_type*
+c_compiler::record_type::create(tag* ptr, const std::vector<usr*>& member)
+{
+  record_type* ret = new record_type(ptr,member);
+  if (temporary(ptr))
+    tmp_tbl.insert(ret);
+  return ret;
+}
+
+void c_compiler::record_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p;
+  tmp_tbl.clear();
+}
+
+void c_compiler::record_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p);
+  tmp_tbl.clear();
 }
 
 void c_compiler::enum_type::decl(std::ostream& os, std::string name) const
@@ -1477,47 +1596,81 @@ void c_compiler::enum_type::decl(std::ostream& os, std::string name) const
     os << ' ' << name;
 }
 
-bool c_compiler::enum_type::compatible(const type* that) const
+bool c_compiler::enum_type::compatible(const type* T) const
 {
-  that = that->unqualified();
-  that = that->complete_type();
-  return this == that;
-}
+  if (this == T)
+    return true;
 
-const c_compiler::type* c_compiler::enum_type::composite(const type* that) const
-{
-  int cvr = 0;
-  that = that->unqualified(&cvr);
-  that = that->complete_type();
-  return this == that ? qualified(cvr) : 0;
-}
-
-bool c_compiler::enum_type::temporary(bool vm) const
-{
-  if ( vm )
+  if (T->m_id != type::INCOMPLETE_TAGGED)
     return false;
-  else
-    return m_tag->m_scope != &scope::root;
+
+  typedef const incomplete_tagged_type ITT;
+  ITT* that = static_cast<ITT*>(T);
+  return m_tag == that->get_tag();
 }
 
-const c_compiler::enum_type* c_compiler::enum_type::create(tag* tag, const type* integer)
+const c_compiler::type* c_compiler::enum_type::composite(const type* T) const
 {
-  return new enum_type(tag,integer);
+  if (this == T)
+    return this;
+
+  if (T->m_id != type::INCOMPLETE_TAGGED)
+    return 0;
+
+  typedef const incomplete_tagged_type ITT;
+  ITT* that = static_cast<ITT*>(T);
+  return m_tag == that->get_tag() ? this : 0;
 }
 
-struct c_compiler::bit_field_type::table_t : c_compiler::pmap<std::pair<int, const type*>, const bit_field_type> {};
+bool c_compiler::enum_type::tmp() const
+{
+  return tmp_tbl.find(this) != tmp_tbl.end();
+}
 
-c_compiler::bit_field_type::table_t c_compiler::bit_field_type::table;
+namespace c_compiler {
+  enum_type::table_t enum_type::tmp_tbl;
+} // end of namespace c_compiler
 
-const c_compiler::type* c_compiler::bit_field_type::patch(const type* T, usr* u) const
+const c_compiler::enum_type*
+c_compiler::enum_type::create(tag* ptr, const type* integer)
+{
+  enum_type* ret = new enum_type(ptr, integer);
+  if (temporary(ptr))
+    tmp_tbl.insert(ret);
+  return ret;
+}
+
+void c_compiler::enum_type::destroy_tmp()
+{
+  for (auto p : tmp_tbl)
+    delete p;
+  tmp_tbl.clear();
+}
+
+void c_compiler::enum_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : tmp_tbl)
+    vt.push_back(p);
+  tmp_tbl.clear();
+}
+
+namespace c_compiler {
+  using namespace std;
+  struct bit_field_type::table_t :
+    map<pair<int, const type*>, const bit_field_type*> {};
+  bit_field_type::table_t bit_field_type::table;
+} // end of namespace c_compiler
+
+const c_compiler::type*
+c_compiler::bit_field_type::patch(const type* T, usr* u) const
 {
   using namespace error::decl::struct_or_union::bit_field;
   if ( !T->integer() ){
     not_integer_type(u);
     T = int_type::create();
   }
-  usr::flag& flag = u->m_flag;
-  flag = usr::flag(flag | usr::BIT_FIELD);
+  usr::flag_t& flag = u->m_flag;
+  flag = usr::flag_t(flag | usr::BIT_FIELD);
   int n = T->size();
   n <<= 3;
   int bit = m_bit;
@@ -1542,29 +1695,12 @@ const c_compiler::bit_field_type* c_compiler::bit_field_type::create(int bit, co
     return table[make_pair(bit,integer)] = new bit_field_type(bit,integer);
 }
 
-c_compiler::varray_type::varray_type(const type* T, var* dim)
- : type(VARRAY), m_T(T), m_decided(false)
-{
-  m_dim.first = dim;
-  m_dim.second = new var(dim->m_type);
-  m_dim.second->m_scope = 0;
-}
-
-c_compiler::varray_type::varray_type(const type* T, var* dim, const std::vector<tac*>& c)
- : type(VARRAY), m_T(T), m_decided(false), m_code(c)
-{
-  m_dim.first = dim;
-  m_dim.second = new var(dim->m_type);
-  m_dim.second->m_scope = 0;
-}
-
-c_compiler::varray_type::~varray_type()
-{
+namespace c_compiler {
   using namespace std;
-  if ( !m_decided )
-    delete m_dim.second;
-  for_each(m_code.begin(),m_code.end(),deleter<tac>());
-}
+  struct varray_type::table_t
+    : map<pair<const type*, var*>, const varray_type*> {};
+  varray_type::table_t varray_type::table;
+} // end of namespace c_compiler
 
 void c_compiler::varray_type::decl(std::ostream& os, std::string name) const
 {
@@ -1603,54 +1739,41 @@ bool c_compiler::varray_type::compatible(const type* T) const
 {
   if ( this == T )
     return true;
-  if ( T->m_id == type::VARRAY ){
+
+  if (T->m_id == type::VARRAY) {
     typedef const varray_type VARRAY;
     VARRAY* that = static_cast<VARRAY*>(T);
     return this->m_T->compatible(that->m_T);
   }
-  else if ( T->m_id == type::ARRAY ){
+
+  if (T->m_id == type::ARRAY) {
     typedef const array_type ARRAY;
     ARRAY* that = static_cast<ARRAY*>(T);
     return this->m_T->compatible(that->element_type());
   }
-  else
-    return false;
+
+  return false;
 }
 
-const c_compiler::type* c_compiler::varray_type::composite(const type* T) const
+const c_compiler::type*
+c_compiler::varray_type::composite(const type* T) const
 {
   if ( this == T )
     return this;
-  if ( T->m_id == type::VARRAY ){
+  
+  if (T->m_id == type::VARRAY) {
     typedef const varray_type VARRAY;
     VARRAY* that = static_cast<VARRAY*>(T);
     return this->m_T->compatible(that->m_T) ? this : 0;
   }
-  else if ( T->m_id == type::ARRAY ){
+  
+  if (T->m_id == type::ARRAY) {
     typedef const array_type ARRAY;
     ARRAY* that = static_cast<ARRAY*>(T);
     return this->m_T->compatible(that->element_type()) ? this : 0;
   }
-  else
-    return 0;
-}
 
-bool c_compiler::varray_type::include_cvr(const type* T) const
-{
-  if ( this == T )
-    return true;
-  if ( T->m_id == type::VARRAY ){
-    typedef const varray_type VARRAY;
-    VARRAY* that = static_cast<VARRAY*>(T);
-    return this->m_T->include_cvr(that->m_T);
-  }
-  else if ( T->m_id == type::ARRAY ){
-    typedef const array_type ARRAY;
-    ARRAY* that = static_cast<ARRAY*>(T);
-    return this->m_T->include_cvr(that->element_type());
-  }
-  else
-    return false;
+  return 0;
 }
 
 void c_compiler::varray_type::post(std::ostream& os) const
@@ -1660,33 +1783,31 @@ void c_compiler::varray_type::post(std::ostream& os) const
   m_T->post(os);
 }
 
-const c_compiler::type* c_compiler::varray_type::patch(const type* T, usr* u) const
+const c_compiler::type*
+c_compiler::varray_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
-  if ( T->m_id == type::FUNC ){
+  if (T->m_id == type::FUNC) {
     using namespace error::decl::declarator;
     array::of_func(parse::position,u);
     T = backpatch_type::create();
   }
   T = T->complete_type();
-  if ( u ){
-    usr::flag& flag = u->m_flag;
-    flag = usr::flag(flag | usr::VL);
+  if (u) {
+    usr::flag_t& flag = u->m_flag;
+    flag = usr::flag_t(flag | usr::VL);
   }
-  const type* ret = m_code.empty() ? create(T,m_dim.first) : create(T,m_dim.first,m_code);
-  m_code.clear();
-  return ret;
+  return create(T,m_dim);
 }
 
 const c_compiler::type* c_compiler::varray_type::qualified(int cvr) const
 {
-  return create(m_T->qualified(cvr),m_dim.first);
+  return create(m_T->qualified(cvr),m_dim);
 }
 
 const c_compiler::type* c_compiler::varray_type::complete_type() const
 {
-  m_T = m_T->complete_type();
-  return this;
+  return create(m_T->complete_type(),m_dim);
 }
 
 const c_compiler::pointer_type* c_compiler::varray_type::ptr_gen() const
@@ -1694,82 +1815,40 @@ const c_compiler::pointer_type* c_compiler::varray_type::ptr_gen() const
   return pointer_type::create(m_T);
 }
 
-namespace c_compiler { namespace varray_impl {
-  void move1(tac*);
-  void move2(var*);
-} } // end of namespace varray_impl and c_compiler
-
-void c_compiler::varray_impl::move1(tac* ptr)
-{
-  if ( ptr->x ) move2(ptr->x);
-  if ( ptr->y ) move2(ptr->y);
-  if ( ptr->z ) move2(ptr->z);
-}
-
-void c_compiler::varray_impl::move2(var* v)
-{
-  using namespace std;
-  vector<var*>::reverse_iterator p = find(garbage.rbegin(),garbage.rend(),v);
-  if ( p != garbage.rend() ){
-    garbage.erase(p.base()-1);
-    block* b = static_cast<block*>(scope::current);
-    v->m_scope = b;
-    b->m_vars.push_back(v);
-  }
-}
-
-void c_compiler::varray_type::decide() const
-{
-  using namespace std;
-  if ( m_decided )
-    return;
-  m_T->decide();
-  for_each(m_code.begin(),m_code.end(),varray_impl::move1);
-  copy(m_code.begin(),m_code.end(),back_inserter(code));
-  m_code.clear();
-  block* b = static_cast<block*>(scope::current);
-  m_dim.second->m_scope = b;
-  b->m_vars.push_back(m_dim.second);
-  code.push_back(new assign3ac(m_dim.second,m_dim.first));
-  m_decided = true;
-}
-
 c_compiler::var* c_compiler::varray_type::vsize() const
 {
   using namespace std;
-  const type* T = m_T;
-  T = T->complete_type();
+  const type* T = m_T->complete_type();
   if ( var* vs = T->vsize() )
-    return m_dim.second->mul(vs);
-  else {
-    int n = T->size();
-    usr* size = integer::create(n);
-    return m_dim.second->mul(size);
-  }
+    return m_dim->mul(vs);
+
+  int n = T->size();
+  usr* size = integer::create(n);
+  return m_dim->mul(size);
 }
 
-const c_compiler::varray_type* c_compiler::varray_type::create(const type* T, var* dim)
+const c_compiler::varray_type*
+c_compiler::varray_type::create(const type* T, var* dim)
 {
   using namespace std;
-  const varray_type* ret = new varray_type(T,dim);
-  if ( scope::current->m_id == scope::BLOCK )
-    type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
+  pair<const type*, var*> key(T,dim);
+  table_t::const_iterator p = table.find(key);
+  if ( p != table.end() )
+    return p->second;
   else
-    type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-  return ret;
+    return table[key] = new varray_type(T,dim);
 }
 
-const c_compiler::varray_type* c_compiler::varray_type::create(const type* T, var* dim, const std::vector<tac*>& c)
+void c_compiler::varray_type::destroy_tmp()
 {
-  using namespace std;
-  const varray_type* ret = new varray_type(T,dim,c);
-  if ( scope::current->m_id == scope::BLOCK )
-    type_impl::temp1.push_back(ret);
-#ifdef _DEBUG
-  else
-    type_impl::temp2.push_back(ret);
-#endif // _DEBUG
-  return ret;
+  for (auto p : table)
+    delete p.second;
+  table.clear();
+}
+
+void c_compiler::varray_type::collect_tmp(std::vector<const type*>& vt)
+{
+  for (auto p : table)
+    vt.push_back(p.second);
+  table.clear();
 }

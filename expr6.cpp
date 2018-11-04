@@ -24,7 +24,7 @@ c_compiler::var* c_compiler::usr::assign(var* op)
   y->m_type = y->m_type->complete_type();
   bool discard = false;
   T = expr::assign_impl::valid(T,y,&discard);
-  if ( !T ){
+  if (!T) {
     using namespace error::expr::assign;
     invalid(parse::position,this,discard);
     T = int_type::create();
@@ -199,7 +199,46 @@ c_compiler::var* c_compiler::refsomewhere::assign(var* op)
   return ret;
 }
 
-const c_compiler::type* c_compiler::expr::assign_impl::valid(const type* T, var* src, bool* discard)
+namespace c_compiler {
+  namespace expr {
+    namespace assign_impl {
+      using namespace std;
+      struct table_t : public set<pair<int, int> > {
+        table_t()
+        {
+          insert(make_pair(0, 0));
+          insert(make_pair(1, 0));
+          insert(make_pair(1, 1));
+          insert(make_pair(2, 0));
+          insert(make_pair(2, 2));
+          insert(make_pair(3, 0));
+          insert(make_pair(3, 1));
+          insert(make_pair(3, 2));
+          insert(make_pair(3, 3));
+          insert(make_pair(4, 0));
+          insert(make_pair(4, 4));
+          insert(make_pair(5, 0));
+          insert(make_pair(5, 1));
+          insert(make_pair(5, 4));
+          insert(make_pair(5, 5));
+          insert(make_pair(6, 0));
+          insert(make_pair(6, 2));
+          insert(make_pair(6, 4));
+          insert(make_pair(6, 6));
+          for (int i = 0; i != 8 ; ++i)
+            insert(make_pair(7, i));
+        }
+      } table;
+      inline bool include(int x, int y)
+      {
+        return table.find(make_pair(x, y)) != table.end();
+      }
+    } // end of namespace assign_impl
+  } // end of namespace expr
+} // end of namespace c_compiler
+
+const c_compiler::type*
+c_compiler::expr::assign_impl::valid(const type* T, var* src, bool* discard)
 {
   using namespace std;
   decl::check(src);
@@ -209,45 +248,48 @@ const c_compiler::type* c_compiler::expr::assign_impl::valid(const type* T, var*
   xx = xx->unqualified();
   yy = yy->unqualified();
 
-  if ( xx->arithmetic() && yy->arithmetic() )
+  if (xx->arithmetic() && yy->arithmetic())
     return xx;
 
-  if ( xx->m_id == type::RECORD ){
-    typedef const record_type REC;
-    REC* rec = static_cast<REC*>(xx);
-    if ( rec->compatible(yy) )
-      return rec;
+  if (xx->m_id == type::RECORD) {
+    if (compatible(xx, yy))
+      return xx;
     return 0;
   }
 
   typedef const pointer_type PT;
-  if ( xx->m_id == type::POINTER ){
-    PT* lp = static_cast<PT*>(xx);
-    if ( yy->m_id == type::POINTER ){
-      PT* rp = static_cast<PT*>(yy);
-      if ( lp->compatible(rp) ){
-        if ( !discard || lp->include_cvr(rp) )
-          return lp;
+  if (xx->m_id == type::POINTER) {
+    PT* px = static_cast<PT*>(xx);
+    if (yy->m_id == type::POINTER) {
+      PT* py = static_cast<PT*>(yy);
+      const type* Tx = px->referenced_type();
+      const type* Ty = py->referenced_type();
+      int cvr_x = 0, cvr_y = 0;
+      Tx = Tx->unqualified(&cvr_x);
+      Ty = Ty->unqualified(&cvr_y);
+      if (compatible(Tx, Ty)) {
+        if (!discard || include(cvr_x, cvr_y))
+          return px;
         else {
           *discard = true;
           return 0;
         }
       }
-      const type* vp = pointer_type::create(void_type::create());
-      if ( vp->compatible(lp) ){
-        if ( lp->include_cvr(rp) )
-          return lp;
+      const type* v = void_type::create();
+      if (compatible(Tx, v)){
+        if (include(cvr_x, cvr_y))
+          return px;
         else {
-                  if (discard)
+          if (discard)
             *discard = true;
           return 0;
         }
       }
-      if ( vp->compatible(rp) ){
-        if ( lp->include_cvr(rp) )
-          return lp;
+      if (compatible(Ty, v)) {
+        if (include(cvr_x, cvr_y) )
+          return py;
         else {
-                  if (discard)
+          if (discard)
             *discard = true;
           return 0;
         }
@@ -255,8 +297,8 @@ const c_compiler::type* c_compiler::expr::assign_impl::valid(const type* T, var*
     }
   }
 
-  if ( xx->m_id == type::POINTER ){
-    if ( yy->integer() && src->zero() )
+  if (xx->m_id == type::POINTER) {
+    if (yy->integer() && src->zero())
       return xx;
   }
 
@@ -282,7 +324,7 @@ c_compiler::var* c_compiler::var::comma(var* y)
   }
   else
     garbage.push_back(ret);
-  assert(!T->compatible(void_type::create()));
+  assert(T->m_id != type::VOID);
   code.push_back(new assign3ac(ret,v));
   return ret;
 }
@@ -297,5 +339,3 @@ std::string c_compiler::new_name(std::string head)
   os << head << cnt++;
   return os.str();
 }
-
-int c_compiler::decl::declarator::array_impl::point;

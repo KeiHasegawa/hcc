@@ -7,9 +7,10 @@ namespace c_compiler {
   namespace generator {
     void (*generate)(const interface_t*);
     long_double_t* long_double;
-    type::id sizeof_type = type::UINT;
+    type::id_t sizeof_type = type::UINT;
+    type::id_t ptrdiff_type = type::LONG;
     namespace wchar {
-      type::id id = type::USHORT;
+      type::id_t id = type::USHORT;
       const c_compiler::type* type = ushort_type::create();
     } // end of namespace wchar
     bool require_align = true;
@@ -108,11 +109,14 @@ void c_compiler::generator::initialize()
 
   int (*size)(int) = (int (*)(int))dlsym(m_module,"generator_sizeof");
   type_impl::update(size);
-  type::id (*szof_tp)() = (type::id (*)())dlsym(m_module,"generator_sizeof_type");
+  type::id_t (*szof_tp)() = (type::id_t (*)())dlsym(m_module, "generator_sizeof_type");
   if (szof_tp)
     sizeof_type = (*szof_tp)();
+  type::id_t (*ptrd_tp)() = (type::id_t (*)())dlsym(m_module, "generator_ptrdiff_type");
+  if (ptrd_tp)
+    ptrdiff_type = (*ptrd_tp)();
 
-  type::id (*wc_tp)() = (type::id (*)())dlsym(m_module,"generator_wchar_type");
+  type::id_t (*wc_tp)() = (type::id_t (*)())dlsym(m_module,"generator_wchar_type");
   if (wc_tp) {
     wchar::id = (*wc_tp)();
     switch (wchar::id) {

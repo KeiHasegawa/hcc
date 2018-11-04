@@ -56,7 +56,7 @@ int c_compiler::scope_impl::dump_usr(usr* u, int ntab)
   using namespace std;
   for ( int i = 0 ; i < ntab; ++i )
     cout << '\t';
-  if ( u->m_flag ){
+  if (u->m_flag) {
     string s = usr::keyword(u->m_flag);
     if ( !s.empty() )
       cout << s << ' ';
@@ -65,18 +65,17 @@ int c_compiler::scope_impl::dump_usr(usr* u, int ntab)
     string name = names::ref(u);
     const type* T = u->m_type;
     T->decl(cout,name);
-    if ( u->m_flag & usr::WITH_INI ){
-          with_initial* p = static_cast<with_initial*>(u);
+    if (u->m_flag & usr::WITH_INI) {
+      with_initial* p = static_cast<with_initial*>(u);
       cout << '\t';
       const map<int,var*>& v = p->m_value;
       transform(v.begin(),v.end(),ostream_iterator<string>(cout,","),dump_initial);
     }
-    else {
-      if ( enum_member* q = dynamic_cast<enum_member*>(u) ){
-        cout << '\t';
-        const usr* v = q->m_value;
-        cout << v->m_name;
-      }
+    else if (u->m_flag & usr::ENUM_MEMBER) {
+      enum_member* q = static_cast<enum_member*>(u);
+      cout << '\t';
+      const usr* v = q->m_value;
+      cout << v->m_name;
     }
   }
   cout << '\n';
@@ -182,7 +181,7 @@ namespace c_compiler { namespace tac_impl {
 
 void c_compiler::tac_impl::dump(std::ostream& os, const tac* ptr)
 {
-  table_t::const_iterator p = table.find(ptr->id);
+  table_t::const_iterator p = table.find(ptr->m_id);
   assert(p != table.end());
   (p->second)(os, ptr);
 }

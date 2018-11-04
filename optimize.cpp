@@ -20,7 +20,7 @@ void c_compiler::optimize::redundant_to3ac(std::vector<tac*>& v)
   using namespace std;
   typedef vector<tac*>::iterator IT;
   for ( IT p = v.begin() ; p != v.end() ; ){
-    if ( (*p)->id == tac::TO ){
+    if ((*p)->m_id == tac::TO) {
       to3ac* to = static_cast<to3ac*>(*p);
       if ( to->m_goto.empty() ){
         delete *p;
@@ -52,37 +52,45 @@ namespace c_compiler { namespace optimize { namespace live_var {
   extern void analize(const std::vector<basic_block::info*>&);
 } } } // end of namespace live_var, optimize and c_compiler
 
-namespace c_compiler { namespace optimize { namespace symtab {
-  extern int simplify(scope*, std::vector<tac*>*);
-  namespace literal {
-          extern void simplify(const std::vector<tac*>&);
-  } // end of namespace literal
-} } } // end of namespace symtab, optimize and c_compiler
+namespace c_compiler {
+  namespace optimize {
+    using namespace std;
+    namespace symtab {
+      extern int simplify(scope*, vector<tac*>*);
+      namespace literal {
+        extern void simplify(const std::vector<tac*>&);
+      } // end of namespace literal
+    } // end of namespace symtab
+    namespace basic_block {
+      struct info {
+        tac** m_leader;
+        int m_size;
+        vector<info*> m_follow, m_preceed;
+        info(tac** leader) : m_leader(leader), m_size(0) {}
+      };
+    } // end of namespace basic_block
+  } // end of namespace optimize
+} // end of namespace c_compiler
 
 void c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<tac*>& v)
 {
   using namespace std;
-  if ( cmdline::output_medium && cmdline::output_optinfo ){
+  if (cmdline::output_medium && cmdline::output_optinfo) {
     cout << "Before optimization\n";
     function_definition::dump(fdef, v);
   }
   vector<info*> bbs;
   create(v,bbs);
   live_var::analize(bbs);
-  if ( cmdline::dag_optimize ){
+  if (cmdline::dag_optimize) {
     dag::action_t seed;
     for_each(bbs.begin(),bbs.end(),bind2nd(ptr_fun(dag::action),&seed));
-    const map<var*, vector<pair<tac*,int> > >& m = seed.loffs;
-    typedef map<var*, vector<pair<tac*, int> > >::const_iterator IT;
-    for ( IT p = m.begin() ; p != m.end() ; ++p ){
-      const vector<pair<tac*, int> >& v = p->second;
-      typedef vector<pair<tac*, int> >::const_iterator X;
-      for ( X q = v.begin() ; q != v.end() ; ++q )
-        delete q->first;
-    }
+        for (auto p : seed.loffs)
+          for (auto q : p.second)
+            delete q.first;
     v = seed.conv;
   }
-  for_each(bbs.begin(),bbs.end(),deleter<info>());
+  for (auto p : bbs) delete p;
   {
     scope* p = fundef::current->m_param;
     vector<scope*>& children = p->m_children;
@@ -90,7 +98,7 @@ void c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<t
     p = children.back();
     symtab::simplify(p, &v);
   }
-  if ( !function_definition::Inline::resolve::flag )
+  if (!function_definition::Inline::resolve::flag)
     symtab::literal::simplify(v);
 }
 
@@ -119,8 +127,8 @@ void c_compiler::optimize::basic_block::devide(std::set<tac**>& leader, const st
   typedef vector<tac*>::const_iterator IT;
   IT p = v.begin();
   leader.insert(const_cast<tac**>(&*p));
-  while ( p != v.end() ){
-    tac::id_t id = (*p)->id;
+  while (p != v.end()) {
+    tac::id_t id = (*p)->m_id;
     switch ( id ){
     case tac::TO:
       leader.insert(const_cast<tac**>(&*p));
@@ -136,15 +144,6 @@ void c_compiler::optimize::basic_block::devide(std::set<tac**>& leader, const st
     }
   }
 }
-
-namespace c_compiler { namespace optimize { namespace basic_block {
-  struct info {
-    tac** m_leader;
-    int m_size;
-    std::vector<info*> m_follow, m_preceed;
-    info(tac** leader) : m_leader(leader), m_size(0) {}
-  };
-} } } // end of namespace basic_block, optimize and c_compiler
 
 c_compiler::optimize::basic_block::info*
 c_compiler::optimize::basic_block::new_obj(tac** leader)
@@ -169,7 +168,7 @@ void c_compiler::optimize::basic_block::build(std::vector<info*>::iterator begin
     basic_block::info* next = p != end ? *p : 0;
     curr->m_size = next ? next->m_leader - curr->m_leader : end3ac - curr->m_leader;
     tac* last = next ? *(next->m_leader - 1) : *(end3ac-1);
-    if ( last->id == tac::GOTO ){
+    if (last->m_id == tac::GOTO) {
       goto3ac* go = static_cast<goto3ac*>(last);
       tac* to = go->m_to;
       IT q = find_if(begin,end,bind2nd(ptr_fun(destination),to));
@@ -246,9 +245,9 @@ int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
 {
   using namespace std;
   tac* ptr = *pp;
-  tac::id_t id = ptr->id;
+  tac::id_t id = ptr->m_id;
   if ( mt->ret ){
-    if ( id != tac::TO && id != tac::GOTO ){
+    if (id != tac::TO && id != tac::GOTO) {
       delete ptr;
       return 0;
     }
@@ -311,8 +310,8 @@ c_compiler::optimize::basic_block::dag::info*
 c_compiler::optimize::basic_block::dag::get(tac* ptr, std::map<var*, dag::info*>* node, bool* found)
 {
   using namespace std;
-  tac::id_t id = ptr->id;
-  switch ( id ){
+  tac::id_t id = ptr->m_id;
+  switch (id) {
   case tac::ASSIGN:
     {
       var* y = ptr->y;
@@ -367,7 +366,7 @@ c_compiler::optimize::basic_block::dag::match(info* xinfo, std::pair<tac*, std::
   tac* ytac = arg.first;
   if ( !xtac )
     return false;
-  if ( xtac->id != ytac->id )
+  if (xtac->m_id != ytac->m_id)
     return false;
   map<var*, dag::info*>* node = arg.second;
   if ( dag::info* left = xinfo->m_left ){
@@ -385,20 +384,26 @@ c_compiler::optimize::basic_block::dag::match(info* xinfo, std::pair<tac*, std::
     if ( right != i )
       return false;
   }
-  tac::id_t id = xtac->id;
-  switch ( id ){
+  tac::id_t id = xtac->m_id;
+  switch (id) {
   case tac::ROFF:
   case tac::INVRADDR:
     {
       const type* x = xtac->x->m_type;
       const type* y = ytac->x->m_type;
-      return x->compatible(y);
+      x = x->unqualified();
+      y = y->unqualified();
+      return compatible(x, y);
     }
   case tac::CAST:
     {
       cast3ac* x = static_cast<cast3ac*>(xtac);
       cast3ac* y = static_cast<cast3ac*>(ytac);
-      return x->m_type->compatible(y->m_type);
+      const type* Tx = x->m_type;
+      const type* Ty = y->m_type;
+      Tx = Tx->unqualified();
+      Ty = Ty->unqualified();
+      return compatible(Tx, Ty);
     }
   case tac::LOFF:
   case tac::ALLOC:
@@ -413,11 +418,11 @@ c_compiler::optimize::basic_block::dag::roff_match_loff(info* xinfo, std::pair<t
 {
   using namespace std;
   tac* roff = arg.first;
-  assert(roff->id == tac::ROFF);
+  assert(roff->m_id == tac::ROFF);
   tac* loff = xinfo->m_tac;
   if ( !loff )
     return false;
-  if ( loff->id != tac::LOFF )
+  if (loff->m_id != tac::LOFF)
     return false;
   map<var*, dag::info*>* node = arg.second;
   var* a = roff->y;
@@ -432,13 +437,15 @@ c_compiler::optimize::basic_block::dag::roff_match_loff(info* xinfo, std::pair<t
     return false;
   const type* x = roff->x->m_type;
   const type* y = loff->z->m_type;
-  return x->compatible(y);
+  x = x->unqualified();
+  y = y->unqualified();
+  return compatible(x, y);
 }
 
 namespace c_compiler { namespace optimize { namespace live_var {
   std::map<basic_block::info*, std::set<var*> > in, out, def, use;
   int prepare(basic_block::info*);
-  int add_global1(basic_block::info*);
+  void add_global1(basic_block::info*);
   int calc(int, basic_block::info*);
   void msg(int);
 } } } // end of namespace live_var, optimize and c_compiler
@@ -570,19 +577,12 @@ namespace c_compiler { namespace optimize { namespace live_var {
   bool local(var*);
 } } } // end of namespace live_var, optimize and c_compiler
 
-int c_compiler::optimize::live_var::add_global1(basic_block::info* B)
+void c_compiler::optimize::live_var::add_global1(basic_block::info* B)
 {
-  using namespace std;
-  typedef map<basic_block::info*, set<var*> >::const_iterator IT;
-  {
-    for ( IT p = def.begin() ; p != def.end() ; ++p )
-      add_global2(p->second,B);
-  }
-  {
-    for ( IT p = use.begin() ; p != use.end() ; ++p )
-      add_global2(p->second,B);
-  }
-  return 0;
+  for (auto p : def)
+    add_global2(p.second,B);
+  for (auto p : use)
+    add_global2(p.second,B);
 }
 
 void c_compiler::optimize::live_var::add_global2(const std::set<var*>& i, basic_block::info* B)
@@ -599,8 +599,8 @@ bool c_compiler::optimize::live_var::local(var* x)
   usr* u = x->usr_cast();
   if ( !u )
     return true;
-  usr::flag flag = u->m_flag;
-  usr::flag mask = usr::flag(usr::EXTERN | usr::STATIC);
+  usr::flag_t flag = u->m_flag;
+  usr::flag_t mask = usr::flag_t(usr::EXTERN | usr::STATIC);
   return !(flag & mask);
 }
 
@@ -613,8 +613,8 @@ c_compiler::optimize::basic_block::dag::generate::action(action_t* act)
 {
   using namespace std;
   vector<info*>& v = info::all;
-  for_each(v.begin(),v.end(),bind2nd(ptr_fun(inorder),act));
-  for_each(v.begin(),v.end(),deleter<info>());
+  for (auto p : v) inorder(p, act);
+  for (auto p : v) delete p;
   v.clear();
 }
 
@@ -633,7 +633,7 @@ c_compiler::optimize::basic_block::dag::generate::inorder(dag::info* d, action_t
   tac* ptr = d->m_tac;
   if ( !ptr )
     return result[d] = assigns(d,act);
-  tac::id_t id = ptr->id;
+  tac::id_t id = ptr->m_id;
   dag::action_t* pa = act->mt->pa;
   map<var*, vector<pair<tac*, int> > >& loffs = pa->loffs;
   vector<tac*>& conv = pa->conv;
@@ -660,7 +660,7 @@ c_compiler::optimize::basic_block::dag::generate::inorder(dag::info* d, action_t
       if ( !d->m_parents.empty() ){
         dag::info* parent = d->m_parents[0];
         tac* ptr = parent->m_tac;
-        tac::id_t id = ptr->id;
+        tac::id_t id = ptr->m_id;
         if ( id == tac::DEALLOC )
           return result[d] = 0;
       }
@@ -924,7 +924,7 @@ c_compiler::optimize::basic_block::dag::generate::addrref(var* x, dag::info* par
   tac* ptr = parent->m_tac;
   if ( !ptr )
     return false;
-  return ptr->id == tac::ADDR && ptr->y == x;
+  return ptr->m_id == tac::ADDR && ptr->y == x;
 }
 
 int
@@ -1076,7 +1076,7 @@ void c_compiler::optimize::symtab::literal::mark3(const std::pair<std::string, s
 void c_compiler::optimize::symtab::literal::mark4(usr* u)
 {
   using namespace std;
-  usr::flag flag = u->m_flag;
+  usr::flag_t flag = u->m_flag;
   if ( !(flag & usr::WITH_INI) )
     return;
   with_initial* wi = static_cast<with_initial*>(u);

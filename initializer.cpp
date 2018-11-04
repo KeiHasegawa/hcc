@@ -195,18 +195,18 @@ namespace c_compiler {
     {
       switch (generator::wchar::id) {
       case type::SHORT:
-	return integer::create((short)v);
+        return integer::create((short)v);
       case type::USHORT:
-	return integer::create((unsigned short)v);
+        return integer::create((unsigned short)v);
       case type::INT:
-	return integer::create((int)v);
+        return integer::create((int)v);
       case type::UINT:
-	return integer::create((unsigned)v);
+        return integer::create((unsigned)v);
       case type::LONG:
-	return integer::create((long)v);
+        return integer::create((long)v);
       default:
-	assert(generator::wchar::id == type::ULONG);
-	return integer::create((unsigned long)v);
+        assert(generator::wchar::id == type::ULONG);
+        return integer::create((unsigned long)v);
       }
     }
     usr* integer_hex(bool wide, int a, int b)
@@ -635,7 +635,7 @@ int c_compiler::initializer::bit_field(var* y, argument& arg)
   x = x->bit_and(b);
   x = x->bit_or(y);
   arg.nth_max = max(arg.nth_max,++arg.nth);
-  const usr::flag& flag = member->m_flag;
+  const usr::flag_t& flag = member->m_flag;
   if ( flag & usr::MSB_FIELD )
     arg.off_max = max(arg.off_max, arg.off += T->size());
   return arg.off;

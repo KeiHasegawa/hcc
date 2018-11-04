@@ -61,10 +61,10 @@ c_compiler::var* c_compiler::var::bit_andr(constant<unsigned __int64>* y){ retur
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_and(constant<A>* y, constant<B>* z)
   {
-    usr::flag fy = y->m_flag;
+    usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
       return var_impl::bit_and(y,z);
-    usr::flag fz = z->m_flag;
+    usr::flag_t fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_and(y,z);
     usr* ret = integer::create(y->m_value & z->m_value);
@@ -344,10 +344,10 @@ c_compiler::var* c_compiler::var::bit_xorr(constant<unsigned __int64>* y){ retur
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_xor(constant<A>* y, constant<B>* z)
   {
-    usr::flag fy = y->m_flag;
+    usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
       return var_impl::bit_xor(y,z);
-    usr::flag fz = z->m_flag;
+    usr::flag_t fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_xor(y,z);
     usr* ret = integer::create(y->m_value ^ z->m_value);
@@ -627,10 +627,10 @@ c_compiler::var* c_compiler::var::bit_orr(constant<unsigned __int64>* y){ return
 namespace c_compiler { namespace constant_impl {
   template<class A, class B> var* bit_or(constant<A>* y, constant<B>* z)
   {
-    usr::flag fy = y->m_flag;
+    usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
       return var_impl::bit_or(y,z);
-    usr::flag fz = z->m_flag;
+    usr::flag_t fz = z->m_flag;
     if (fz & usr::CONST_PTR)
       return var_impl::bit_or(y,z);
     usr* ret = integer::create(y->m_value | z->m_value);
@@ -888,8 +888,8 @@ namespace c_compiler {
 namespace c_compiler { namespace SUB_CONST_LONG_impl {
   const type* propagation(const usr* y, const usr* z)
   {
-    usr::flag fy = y->m_flag;
-    usr::flag fz = z->m_flag;
+    usr::flag_t fy = y->m_flag;
+    usr::flag_t fz = z->m_flag;
     if (!(fy & usr::SUB_CONST_LONG) && !(fz & usr::SUB_CONST_LONG))
       return 0;
 
@@ -897,8 +897,8 @@ namespace c_compiler { namespace SUB_CONST_LONG_impl {
     const type* Tz = z->m_type;
     const type* Tyq = Ty->unqualified();
     const type* Tzq = Tz->unqualified();
-    type::id iy = Tyq->m_id;
-    type::id iz = Tzq->m_id;
+    type::id_t iy = Tyq->m_id;
+    type::id_t iz = Tzq->m_id;
 
     if ((fy & usr::SUB_CONST_LONG) && (fz & usr::SUB_CONST_LONG)) {
       if (iy == type::ULONG)

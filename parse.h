@@ -3,31 +3,13 @@
 
 namespace c_compiler {
 
-template<class C> struct deleter {
-  void operator()(C* p) const { delete p; }
-};
-
-template<class K, class V> struct deleter2 {
-  void operator()(const std::pair<K,V*>& p){ delete p.second; }
-};
-
-template<class K, class V> struct get1st {
-  K operator()(const std::pair<K,V>& p){ return p.first; }
-};
-
-template<class K, class V> struct get2nd {
-  V operator()(const std::pair<K,V>& p){ return p.second; }
-};
-
 template<class C> class pvector : public std::vector<C*> {
 public:
-  ~pvector(){ std::for_each(std::vector<C*>::begin(),std::vector<C*>::end(),deleter<C>()); }
-};
-
-template<class K, class V> struct pmap : std::map<K,V*> {
-#ifdef _DEBUG
-        ~pmap() { std::for_each(std::map<K,V*>::begin(), std::map<K, V*>::end(), deleter2<K, V>()); }
-#endif // _DEBUG
+  ~pvector()
+  {
+    for (auto p : *this)
+      delete p;
+  }
 };
 
 } // end of namespace c_compiler
@@ -35,6 +17,7 @@ template<class K, class V> struct pmap : std::map<K,V*> {
 namespace c_compiler { namespace parse {
 
 extern bool maybe_absdecl;
+extern int work_around;
 
 namespace identifier {
   extern int judge(std::string);
@@ -134,7 +117,7 @@ extern bool is_last_decl;
 
 extern file_t position;
 
-tag* tag_begin(tag::kind, usr*);
+tag* tag_begin(tag::kind_t, usr*);
 
 const type* struct_or_union_specifier(tag*, struct_declaration_list*);
 

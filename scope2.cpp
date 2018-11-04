@@ -198,7 +198,7 @@ namespace c_compiler {
     {
       using namespace std;
       typedef void* X;
-      bool temp = T->temporary(false);
+      bool temp = T->tmp();
       typedef pair<const type*, X> KEY;
       KEY key(T, v);
       typedef map<KEY, constant<X>*> table_t;
@@ -228,7 +228,7 @@ namespace c_compiler {
     {
       using namespace std;
       typedef __int64 X;
-      bool temp = T->temporary(false);
+      bool temp = T->tmp();
       typedef pair<const type*,X> KEY;
       KEY key(T, v);
       typedef map<KEY, constant<X>*> table_t;
@@ -547,7 +547,7 @@ c_compiler::usr_impl::simple_escape::simple_escape()
   (*this)["'\\v'"] = '\v';
 }
 
-std::string c_compiler::usr::keyword(flag f)
+std::string c_compiler::usr::keyword(flag_t f)
 {
   using namespace std;
   ostringstream os;

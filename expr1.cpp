@@ -13,18 +13,19 @@ c_compiler::var* c_compiler::expr::cast(const type* T, var* expr)
 {
   using namespace std;
   expr = expr->rvalue();
-  if ( T->compatible(void_type::create()) ){
+  T = T->unqualified();
+  if (T->m_id == type::VOID) {
     var* ret = new var(void_type::create());
     garbage.push_back(ret);
     return ret;
   }
-  if ( !T->scalar() ){
+  if (!T->scalar()) {
     using namespace error::expr::cast;
     not_scalar(parse::position);
     T = int_type::create();
   }
   T = cast_impl::valid(T,expr);
-  if ( !T ){
+  if (!T) {
     using namespace error::expr::cast;
     invalid(parse::position);
     T = int_type::create();
@@ -32,18 +33,43 @@ c_compiler::var* c_compiler::expr::cast(const type* T, var* expr)
   return expr->cast(T);
 }
 
-const c_compiler::type* c_compiler::expr::cast_impl::valid(const type* T, var* y)
+const c_compiler::type*
+c_compiler::expr::cast_impl::valid(const type* T, var* y)
 {
-  if ( const type* r = assign_impl::valid(T,y,0) )
-    return r;
+  if (assign_impl::valid(T,y,0))
+    return T;
   const type* Tx = T->unqualified();
-  const type* Ty = y->m_type->unqualified();
-  if ( Tx->m_id == type::POINTER )
+  const type* Ty = y->m_type;
+  Ty = Ty->unqualified();
+  if (Tx->m_id == type::POINTER)
     return Ty->real() ? 0 : T;
-  if ( Ty->m_id == type::POINTER )
+  if (Ty->m_id == type::POINTER)
     return Tx->real() ? 0 : T;
   return 0;
 }
+
+namespace c_compiler {
+  namespace cast_impl {
+    inline bool require(const type* Tx, const type* Ty)
+    {
+      Tx = Tx->unqualified();
+      Ty = Ty->unqualified();
+      if (compatible(Tx, Ty))
+        return false;
+      if (Tx->m_id == type::POINTER && Ty->m_id == type::POINTER) {
+        typedef const pointer_type PT;
+        PT* Px = static_cast<PT*>(Tx);
+        PT* Py = static_cast<PT*>(Ty);
+        Tx = Px->referenced_type();
+        Ty = Py->referenced_type();
+        Tx = Tx->unqualified();
+        Ty = Ty->unqualified();
+        return !compatible(Tx, Ty);
+      }
+      return true;
+    }
+  }  // end of namespace cast_impl
+}  // end of namespace c_compiler
 
 c_compiler::var* c_compiler::var::cast(const type* T)
 {
@@ -56,7 +82,7 @@ c_compiler::var* c_compiler::var::cast(const type* T)
   }
   else
     garbage.push_back(ret);
-  if ( T->compatible(m_type) )
+  if (!cast_impl::require(T, m_type))
     code.push_back(new assign3ac(ret,this));
   else
     code.push_back(new cast3ac(ret,this,T));
@@ -83,7 +109,7 @@ namespace c_compiler { namespace constant_impl {
 
 c_compiler::var* c_compiler::constant_impl::cast_ld(long double ld)
 {
-  if ( generator::long_double ){
+  if (generator::long_double) {
     int sz = long_double_type::create()->size();
     unsigned char* p = new unsigned char[sz];
     (*generator::long_double->from_double)(p,ld);
@@ -94,200 +120,242 @@ c_compiler::var* c_compiler::constant_impl::cast_ld(long double ld)
 }
 
 namespace c_compiler { namespace constant_impl {
-  template<class T> var* cast(const type* type, constant<T>* y)
+  template<class T> var* cast(const type* Tx, constant<T>* y)
   {
     using namespace std;
-    if (type->compatible(y->m_type))
+    if (!cast_impl::require(Tx, y->m_type))
       return y;
-    else if (type->compatible(char_type::create()))
-      return integer::create((char)(y->m_value));
-    else if (type->compatible(schar_type::create()))
-      return integer::create((signed char)(y->m_value));
-    else if (type->compatible(uchar_type::create()))
-      return integer::create((unsigned char)(y->m_value));
-    else if (type->compatible(short_type::create()))
-      return integer::create((short int)(y->m_value));
-    else if (type->compatible(ushort_type::create()))
-      return integer::create((unsigned short int)(y->m_value));
-    else if (type->compatible(int_type::create()))
-      return integer::create((int)(y->m_value));
-    else if (type->compatible(uint_type::create()))
-      return integer::create((unsigned int)(y->m_value));
-    else if (type->compatible(long_type::create())) {
+    Tx = Tx->unqualified();
+    switch (Tx->m_id) {
+    case type::CHAR: return integer::create((char)(y->m_value));
+    case type::SCHAR: return integer::create((signed char)(y->m_value));
+    case type::UCHAR: return integer::create((unsigned char)(y->m_value));
+    case type::SHORT: return integer::create((short int)(y->m_value));
+    case type::USHORT: return integer::create((unsigned short int)(y->m_value));
+    case type::INT: return integer::create((int)(y->m_value));
+    case type::UINT: return integer::create((unsigned int)(y->m_value));
+    case type::LONG:
+      {
         typedef long int X;
-        if (type->size() <= sizeof(X))
+        if (Tx->size() <= sizeof(X))
           return integer::create((X)(y->m_value));
         typedef long long int XX;
-        assert(type->size() == sizeof(XX));
+        assert(Tx->size() == sizeof(XX));
         usr* ret = integer::create((XX)(y->m_value));
         ret->m_type = const_type::create(long_type::create());
         ret->m_flag = usr::SUB_CONST_LONG;
         return ret;
-    }
-    else if (type->compatible(ulong_type::create())) {
+      }
+    case type::ULONG:
+      {
         typedef unsigned long int X;
-        if (type->size() <= sizeof(X))
+        if (Tx->size() <= sizeof(X))
           return integer::create((X)(y->m_value));
         typedef unsigned long long int XX;
-        assert(type->size() == sizeof(XX));
+        assert(Tx->size() == sizeof(XX));
         usr* ret = integer::create((XX)(y->m_value));
         ret->m_type = const_type::create(ulong_type::create());
         ret->m_flag = usr::SUB_CONST_LONG;
         return ret;
-    }
-    else if (type->compatible(long_long_type::create()))
-      return integer::create((__int64)(y->m_value));
-    else if (type->compatible(ulong_long_type::create()))
+      }
+    case type::LONGLONG: return integer::create((__int64)(y->m_value));
+    case type::ULONGLONG:
       return integer::create((unsigned __int64)(y->m_value));
-    else if (type->compatible(float_type::create()))
-      return floating::create((float)y->m_value);
-    else if (type->compatible(double_type::create()))
-      return floating::create((double)y->m_value);
-    else if (type->compatible(long_double_type::create()))
-      return cast_ld(y->m_value);
-    else if (type->m_id == type::POINTER ){
-      if (sizeof(void*) >= type->size())
-        return pointer::create(type,(void*)y->m_value);
-      else
-        return pointer::create(type,(__int64)y->m_value);
+    case type::FLOAT: return floating::create((float)y->m_value);
+    case type::DOUBLE: return floating::create((double)y->m_value);
+    case type::LONG_DOUBLE: return cast_ld(y->m_value);
+    case type::POINTER:
+      {
+        if (sizeof(void*) >= Tx->size())
+          return pointer::create(Tx,(void*)y->m_value);
+        else
+          return pointer::create(Tx,(__int64)y->m_value);
+      }
+    case type::ENUM:
+      {
+        typedef const enum_type ET;
+        ET* et = static_cast<ET*>(Tx);
+        return cast(et->get_integer(),y);
+      }
+    default:
+      return y->var::cast(Tx);
     }
-    else if (type->m_id == type::ENUM){
-      typedef const enum_type ET;
-      ET* et = static_cast<ET*>(type);
-      return cast(et->get_integer(),y);
-    }
-    else
-      return y->var::cast(type);
   }
-  template<class T> var* fcast(const type* type, constant<T>* y)
+  template<class T> var* fcast(const type* Tx, constant<T>* y)
   {
     using namespace std;
-    if ( type->compatible(y->m_type) )
+    if (!cast_impl::require(Tx, y->m_type))
       return y;
-    else if ( type->compatible(char_type::create()) )
-      return integer::create((char)(y->m_value));
-    else if ( type->compatible(schar_type::create()) )
-      return integer::create((signed char)(y->m_value));
-    else if ( type->compatible(uchar_type::create()) )
-      return integer::create((unsigned char)(y->m_value));
-    else if ( type->compatible(short_type::create()) )
-      return integer::create((short int)(y->m_value));
-    else if ( type->compatible(ushort_type::create()) )
-      return integer::create((unsigned short int)(y->m_value));
-    else if ( type->compatible(int_type::create()) )
-      return integer::create((int)(y->m_value));
-    else if ( type->compatible(uint_type::create()) )
-      return integer::create((unsigned int)(y->m_value));
-    else if ( type->compatible(long_type::create()) )
-      return integer::create((long int)(y->m_value));
-    else if ( type->compatible(ulong_type::create()) )
-      return integer::create((unsigned long int)(y->m_value));
-    else if ( type->compatible(long_long_type::create()) )
-      return integer::create((__int64)(y->m_value));
-    else if ( type->compatible(ulong_long_type::create()) )
+    Tx = Tx->unqualified();    
+    switch (Tx->m_id) {
+    case type::CHAR: return integer::create((char)(y->m_value));
+    case type::SCHAR: return integer::create((signed char)(y->m_value));
+    case type::UCHAR: return integer::create((unsigned char)(y->m_value));
+    case type::SHORT: return integer::create((short int)(y->m_value));
+    case type::USHORT: return integer::create((unsigned short int)(y->m_value));
+    case type::INT: return integer::create((int)(y->m_value));
+    case type::UINT: return integer::create((unsigned int)(y->m_value));
+    case type::LONG:
+      {
+        typedef long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(long_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::ULONG:
+      {
+        typedef unsigned long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef unsigned long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(ulong_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::LONGLONG: return integer::create((__int64)(y->m_value));
+    case type::ULONGLONG:
       return integer::create((unsigned __int64)(y->m_value));
-    else if ( type->compatible(float_type::create()) )
-      return floating::create((float)y->m_value);
-    else if ( type->compatible(double_type::create()) )
-      return floating::create((double)y->m_value);
-    else if ( type->compatible(long_double_type::create()) )
-      return cast_ld(y->m_value);
-    else if ( type->m_id == type::ENUM ){
-      typedef const enum_type ET;
-      ET* et = static_cast<ET*>(type);
-      return fcast(et->get_integer(),y);
+    case type::FLOAT: return floating::create((float)y->m_value);
+    case type::DOUBLE: return floating::create((double)y->m_value);
+    case type::LONG_DOUBLE: return cast_ld(y->m_value);
+    case type::ENUM:
+      {
+        typedef const enum_type ET;
+        ET* et = static_cast<ET*>(Tx);
+        return fcast(et->get_integer(),y);
+      }
+    default:
+      return y->var::cast(Tx);
     }
-    else
-      return y->var::cast(type);
   }
-  template<class T> var* pcast(const type* type, constant<T>* y)
+  template<class T> var* pcast(const type* Tx, constant<T>* y)
   {
     using namespace std;
-    if ( type->compatible(y->m_type) )
+    if (!cast_impl::require(Tx, y->m_type))
       return y;
-    else if ( type->compatible(char_type::create()) )
-      return integer::create((char)(__int64)y->m_value);
-    else if ( type->compatible(schar_type::create()) )
-      return integer::create((signed char)(__int64)y->m_value);
-    else if ( type->compatible(uchar_type::create()) )
+    Tx = Tx->unqualified();    
+    switch (Tx->m_id) {
+    case type::CHAR: return integer::create((char)(__int64)y->m_value);
+    case type::SCHAR: return integer::create((signed char)(__int64)y->m_value);
+    case type::UCHAR:
       return integer::create((unsigned char)(__int64)y->m_value);
-    else if ( type->compatible(short_type::create()) )
-      return integer::create((short int)(__int64)y->m_value);
-    else if ( type->compatible(ushort_type::create()) )
+    case type::SHORT: return integer::create((short int)(__int64)y->m_value);
+    case type::USHORT:
       return integer::create((unsigned short int)(__int64)y->m_value);
-    else if ( type->compatible(int_type::create()) )
-      return integer::create((int)(__int64)y->m_value);
-    else if ( type->compatible(uint_type::create()) )
-      return integer::create((unsigned int)(__int64)y->m_value);
-    else if ( type->compatible(long_type::create()) )
-      return integer::create((long int)y->m_value);
-    else if ( type->compatible(ulong_type::create()) )
-      return integer::create((unsigned long int)y->m_value);
-    else if ( type->compatible(long_long_type::create()) )
-      return integer::create((__int64)(y->m_value));
-    else if ( type->compatible(ulong_long_type::create()) )
-      return integer::create((unsigned __int64)y->m_value);
-    else if ( type->m_id == type::POINTER ) {
-      if (sizeof(void*) >= type->size())
-        return pointer::create(type,(void*)y->m_value);
-      else
-        return pointer::create(type,(__int64)y->m_value);
+    case type::INT: return integer::create((int)(__int64)(y->m_value));
+    case type::UINT:
+      return integer::create((unsigned int)(__int64)(y->m_value));
+    case type::LONG:
+      {
+        typedef long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(long_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::ULONG:
+      {
+        typedef unsigned long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef unsigned long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(ulong_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::LONGLONG: return integer::create((__int64)(y->m_value));
+    case type::ULONGLONG: return integer::create((unsigned __int64)y->m_value);
+    case type::POINTER:
+      {
+        if (sizeof(void*) >= Tx->size())
+          return pointer::create(Tx,(void*)y->m_value);
+        else
+          return pointer::create(Tx,(__int64)y->m_value);
+      }
+    case type::ENUM:
+      {
+        typedef const enum_type ET;
+        ET* et = static_cast<ET*>(Tx);
+        return pcast(et->get_integer(),y);
+      }
+    default:
+      return y->var::cast(Tx);
     }
-    else if ( type->m_id == type::ENUM ){
-      typedef const enum_type ET;
-      ET* et = static_cast<ET*>(type);
-      return pcast(et->get_integer(),y);
-    }
-    else
-      return y->var::cast(type);
   }
 #ifdef _MSC_VER
-  template<> var* cast(const type* type, constant<unsigned __int64>* y)
+  template<> var* cast(const type* Tx, constant<unsigned __int64>* y)
   {
     using namespace std;
-    if ( type->compatible(y->m_type) )
+    if (!cast_impl::require(Tx, y->m_type)) 
       return y;
-    else if ( type->compatible(char_type::create()) )
-      return integer::create((char)(y->m_value));
-    else if ( type->compatible(schar_type::create()) )
-      return integer::create((signed char)(y->m_value));
-    else if ( type->compatible(uchar_type::create()) )
-      return integer::create((unsigned char)(y->m_value));
-    else if ( type->compatible(short_type::create()) )
-      return integer::create((short int)(y->m_value));
-    else if ( type->compatible(ushort_type::create()) )
-      return integer::create((unsigned short int)(y->m_value));
-    else if ( type->compatible(int_type::create()) )
-      return integer::create((int)(y->m_value));
-    else if ( type->compatible(uint_type::create()) )
-      return integer::create((unsigned int)(y->m_value));
-    else if ( type->compatible(long_type::create()) )
-      return integer::create((long int)(y->m_value));
-    else if ( type->compatible(ulong_type::create()) )
-      return integer::create((unsigned long int)(y->m_value));
-    else if ( type->compatible(long_long_type::create()) )
-      return integer::create((__int64)(y->m_value));
-    else if ( type->compatible(ulong_long_type::create()) )
+    Tx = Tx->unqualified();
+    switch (Tx->m_id) {
+    case type::CHAR: return integer::create((char)(y->m_value));
+    case type::SCHAR: return integer::create((signed char)(y->m_value));
+    case type::UCHAR: return integer::create((unsigned char)(y->m_value));
+    case type::SHORT: return integer::create((short int)(y->m_value));
+    case type::USHORT: return integer::create((unsigned short int)(y->m_value));
+    case type::INT: return integer::create((int)(y->m_value));
+    case type::UINT: return integer::create((unsigned int)(y->m_value));
+    case type::LONG:
+      {
+        typedef long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(long_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::ULONG:
+      {
+        typedef unsigned long int X;
+        if (Tx->size() <= sizeof(X))
+          return integer::create((X)(y->m_value));
+        typedef unsigned long long int XX;
+        assert(Tx->size() == sizeof(XX));
+        usr* ret = integer::create((XX)(y->m_value));
+        ret->m_type = const_type::create(ulong_type::create());
+        ret->m_flag = usr::SUB_CONST_LONG;
+        return ret;
+      }
+    case type::LONGLONG: return integer::create((__int64)(y->m_value));
+    case type::ULONGLONG:
       return integer::create((unsigned __int64)(y->m_value));
-    else if ( type->compatible(float_type::create()) )
-      return floating::create((float)(__int64)y->m_value);
-    else if ( type->compatible(double_type::create()) )
-      return floating::create((double)(__int64)y->m_value);
-    else if ( type->compatible(long_double_type::create()) )
-      return cast_ld((__int64)y->m_value);
-    else if ( type->m_id == type::POINTER ) {
-      if (sizeof(void*) >= type->size())
-        return pointer::create(type,(void*)y->m_value);
-      else
-        return pointer::create(type,(__int64)y->m_value);
+    case type::FLOAT: return floating::create((float)(__int64)y->m_value);
+    case type::DOUBLE: return floating::create((double)(__int64)y->m_value);
+    case type::LONG_DOUBLE: return cast_ld((__int64)y->m_value);
+    case type::POINTER:
+      {
+        if (sizeof(void*) >= Tx->size())
+          return pointer::create(Tx,(void*)y->m_value);
+        else
+          return pointer::create(Tx,(__int64)y->m_value);
+      }
+    case type::ENUM:
+      {
+        typedef const enum_type ET;
+        ET* et = static_cast<ET*>(Tx);
+        return cast(et->get_integer(),y);
+      }
+    default:
+        return y->var::cast(Tx);
     }
-    else if ( type->m_id == type::ENUM ){
-      typedef const enum_type ET;
-      ET* et = static_cast<ET*>(type);
-      return cast(et->get_integer(),y);
-    }
-    else
-      return y->var::cast(type);
   }
 #endif // _MSC_VER
 } } // end of namespace constant_impl and c_compmiler
@@ -321,19 +389,20 @@ c_compiler::var* c_compiler::constant<float>::cast(const type* type)
 { return constant_impl::fcast(type,this); }
 c_compiler::var* c_compiler::constant<double>::cast(const type* type)
 { return constant_impl::fcast(type,this); }
-c_compiler::var* c_compiler::constant<long double>::cast(const type* type)
+c_compiler::var* c_compiler::constant<long double>::cast(const type* T)
 {
-  if ( generator::long_double ){
-    if ( type->compatible(long_double_type::create()) )
+  if (generator::long_double) {
+    T = T->unqualified();
+    if (T->m_id == type::LONG_DOUBLE)
       return this;
     else {
       double d = (*generator::long_double->to_double)(b);
       usr* tmp = floating::create(d);
-      return tmp->cast(type);
+      return tmp->cast(T);
     }
   }
   else
-    return constant_impl::fcast(type,this);
+    return constant_impl::fcast(T,this);
 }
 c_compiler::var* c_compiler::constant<void*>::cast(const type* type)
 { return constant_impl::pcast(type,this); }

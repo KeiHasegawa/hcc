@@ -4,6 +4,7 @@
 #c
 #end
 
-run --generator ../../30_intel/src/intel.dll --generator-option \( --debug \) sample.txt
+break c_compiler::c_compiler::expr::cast
+run --no-generator --output-medium --simple-medium sample.txt
 
 

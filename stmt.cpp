@@ -284,7 +284,7 @@ namespace c_compiler { namespace stmt { namespace if_impl {
     if ( info.m_point2 < 0 ){
       if ( ptr->zero() ){
         int n = info.m_point1;
-        for_each(code.begin()+n,code.end(),deleter<tac>());
+        for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
         code.resize(n);
       }
     }
@@ -292,14 +292,14 @@ namespace c_compiler { namespace stmt { namespace if_impl {
       if ( ptr->zero() ){
         int n = info.m_point1;
         int m = info.m_point2;
-        for_each(code.begin()+n,code.begin()+m,deleter<tac>());
+        for_each(code.begin()+n,code.begin()+m,[](tac* p){ delete p; });
         vector<tac*>::iterator p = code.begin() + n;
         vector<tac*>::iterator q = code.begin() + m;
         code.erase(p,q);
       }
       else {
         int n = info.m_point2;
-        for_each(code.begin()+n,code.end(),deleter<tac>());
+        for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
         code.resize(n);
       }
     }
@@ -730,7 +730,7 @@ namespace c_compiler { namespace stmt { namespace while_impl {
     assert(info.m_expr == ptr);
     if ( ptr->zero() ){
       int n = info.m_point;
-      for_each(code.begin()+n,code.end(),deleter<tac>());
+      for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
       code.resize(n);
     }
     else {
@@ -1250,10 +1250,10 @@ namespace c_compiler { namespace stmt { namespace for_impl {
     assert(info.m_expr == ptr);
     if ( ptr->zero() ){
       int n = info.m_point;
-      for_each(code.begin()+n,code.end(),deleter<tac>());
+      for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
       code.resize(n);
       vector<tac*>& v = info.m_expr3;
-      for_each(v.begin(),v.end(),deleter<tac>());
+      for_each(v.begin(),v.end(),[](tac* p){ delete p; });
     }
     else {
       ptr->var::end_for(leave);
@@ -1435,10 +1435,10 @@ void c_compiler::stmt::_return(var* expr)
     expr = expr->cast(T);
   }
   else {
-    const type* vt = void_type::create();
-    if ( !T->compatible(vt) ){
+    T = T->unqualified();
+    if (T->m_id != type::VOID) {
       using namespace error::stmt::_return;
-      invalid(parse::position,vt,T);
+      invalid(parse::position,void_type::create(),T);
     }
   }
   copy_dealloc();

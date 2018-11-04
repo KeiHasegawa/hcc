@@ -23,7 +23,6 @@ struct scope {
 struct param_scope : scope {
   std::vector<usr*> m_order;
   param_scope() : scope(PARAM) {}
-  ~param_scope();
 };
 
 struct var;
@@ -46,19 +45,18 @@ struct file_t {
 struct type;
 
 struct tag {
-  enum kind { STRUCT, UNION, ENUM };
-  kind m_kind;
+  enum kind_t { STRUCT, UNION, ENUM };
+  kind_t m_kind;
   std::string m_name;
   std::vector<file_t> m_file;
   std::pair<const type*, const type*> m_types;
   scope* m_scope;
-  static std::string keyword(kind);
-  tag(kind kd, std::string name, const file_t& file)
+  static std::string keyword(kind_t);
+  tag(kind_t kd, std::string name, const file_t& file)
     : m_kind(kd), m_name(name), m_scope(scope::current)
   {
     m_file.push_back(file);
   }
-  ~tag();
 };
 
 template<class T> struct constant;
@@ -73,8 +71,8 @@ namespace optimize { namespace basic_block { struct info; } }
 struct var {
   const type* m_type;
   scope* m_scope;
-  var(const type* type)
-    : m_type(type), m_scope(scope::current){}
+  var(const type* T)
+    : m_type(T), m_scope(scope::current){}
   virtual var* rvalue(){ return this; }
   virtual bool lvalue() const { return false; }
   virtual bool zero() const { return false; }
@@ -360,11 +358,14 @@ struct var {
   virtual ~var(){}
 };
 
-inline bool is_external_declaration(const var* v){ return !v->m_scope->m_parent; }
+inline bool is_external_declaration(const var* v)
+{
+  return !v->m_scope->m_parent;
+}
 
 struct usr : var {
   std::string m_name;
-  enum flag {
+  enum flag_t {
     NONE        = 0,
     TYPEDEF     = 1 << 0,
     EXTERN      = 1 << 1,
@@ -381,14 +382,14 @@ struct usr : var {
     WITH_INI    = 1 << 12,
     SUB_CONST_LONG = 1 << 13,
   };
-  flag m_flag;
+  flag_t m_flag;
   file_t m_file;
   virtual bool lvalue() const { return true; }
   var* address();
   var* assign(var*);
-  static std::string keyword(flag);
+  static std::string keyword(flag_t);
   usr* usr_cast(){ return this; }
-  usr(std::string name, const type* type, flag flag, const file_t& file)
+  usr(std::string name, const type* type, flag_t flag, const file_t& file)
     : var(type), m_name(name), m_flag(flag), m_file(file) {}
 };
 
@@ -652,7 +653,7 @@ template<class V> struct constant : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag flag, const file_t& file)
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
     : usr(name,type,flag,file), m_value(0) {}
 };
 
@@ -828,7 +829,7 @@ template<> struct constant<float> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag flag, const file_t& file)
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
     : usr(name,type,flag,file), m_value(0) {}
 };
 
@@ -1004,7 +1005,7 @@ template<> struct constant<double> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag flag, const file_t& file)
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
     : usr(name,type,flag,file), m_value(0) {}
 };
 
@@ -1181,7 +1182,7 @@ template<> struct constant<long double> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag flag, const file_t& file)
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
     : usr(name,type,flag,file), m_value(0), b(0) {}
 };
 
@@ -1255,7 +1256,7 @@ template<> struct constant<void*> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag flag, const file_t& file)
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
     : usr(name,type,flag,file), m_value(0) {}
 };
 
@@ -1263,11 +1264,11 @@ struct with_initial : usr {
   std::map<int,var*> m_value;
 
   // T obj = ...;
-  with_initial(const usr& u) : usr(u) { m_flag = flag(m_flag|usr::WITH_INI);  }
+  with_initial(const usr& u) : usr(u) { m_flag = flag_t(m_flag|usr::WITH_INI);  }
 
   // for string literal
   with_initial(std::string name, const type* type, const file_t& file)
-    : usr(name,type,flag(usr::STATIC|usr::WITH_INI),file) {}
+    : usr(name,type,flag_t(usr::STATIC|usr::WITH_INI),file) {}
 };
 
 struct fundef {
@@ -1317,32 +1318,24 @@ struct addrof : virtual var {
 };
 
 class pointer_type;
-class array_type;
-class func_type;
-class volatile_type;
-class restrict_type;
-class record_type;
-class bit_field_type;
-class ellipsis_type;
-class incomplete_tagged_type;
-class varray_type;
 
 struct type {
-  enum id {
-          OTHER,
-          CHAR, SCHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, LONGLONG, ULONGLONG,
-          FLOAT, DOUBLE, LONG_DOUBLE,
-          BACKPATCH, POINTER, ARRAY, FUNC, RECORD, ENUM, BIT_FIELD, ELLIPSIS,
-          INCOMPLETE_TAGGED, VARRAY
+  enum id_t {
+    VOID, CHAR, SCHAR, UCHAR, SHORT, USHORT, INT, UINT,
+    LONG, ULONG, LONGLONG, ULONGLONG,
+    FLOAT, DOUBLE, LONG_DOUBLE,
+    BACKPATCH,
+    CONST, VOLATILE, RESTRICT,
+    POINTER, ARRAY, FUNC, RECORD, ENUM, BIT_FIELD, ELLIPSIS,
+    INCOMPLETE_TAGGED, VARRAY
   };
-  id m_id;
-  type(id id = OTHER) : m_id(id) {}
-  virtual void decl(std::ostream&, std::string) const = 0;
+  id_t m_id;
+  type(id_t id) : m_id(id) {}
+  virtual void decl(std::ostream& os, std::string name) const = 0;
   virtual const type* prev() const { return this; }
-  virtual void post(std::ostream&) const {}
-  virtual bool compatible(const type*) const;
-  virtual const type* composite(const type*) const;
-  virtual bool include_cvr(const type*) const;
+  virtual void post(std::ostream& os) const {}
+  virtual bool compatible(const type* T) const;
+  virtual const type* composite(const type* T) const;
   virtual int size() const = 0;
   virtual int align() const;
   virtual bool scalar() const { return true; }
@@ -1362,19 +1355,20 @@ struct type {
   virtual std::pair<int, const type*> current(int) const;
   virtual const type* unqualified(int* cvr = 0) const { return this; }
   virtual bool aggregate() const { return false; }
-  virtual bool temporary(bool) const { return false; }  // argument bool flag is used for varray type or
-                                                        // combined type of varray type.
-  virtual void decide() const {}
+  virtual bool tmp() const { return false; }
+  virtual bool variably_modified() const { return false; }
+  virtual const type* vla2a() const { return this; }
   virtual var* vsize() const { return 0; }
   virtual ~type(){}
-  static void destroy_temporary();
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class void_type : public type {
   static void_type obj;
-  void_type(){}
+  void_type() : type(VOID) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 0; }
   bool scalar() const { return false; }
   static const void_type* create(){ return &obj; }
@@ -1384,7 +1378,7 @@ class char_type : public type {
   static char_type obj;
   char_type() : type(CHAR) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 1; }
   const type* promotion() const;
   bool _signed() const { return true;  }
@@ -1395,7 +1389,7 @@ class schar_type : public type {
   static schar_type obj;
   schar_type() : type(SCHAR) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 1; }
   const type* promotion() const;
   bool _signed() const { return true;  }
@@ -1406,7 +1400,7 @@ class uchar_type : public type {
   static uchar_type obj;
   uchar_type() : type(UCHAR) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 1; }
   const type* promotion() const;
   static const uchar_type* create(){ return &obj; }
@@ -1416,7 +1410,7 @@ class short_type : public type {
   static short_type obj;
   short_type() : type(SHORT) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   const type* promotion() const;
   bool _signed() const { return true;  }
@@ -1427,7 +1421,7 @@ class ushort_type : public type {
   static ushort_type obj;
   ushort_type() : type(USHORT) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   const type* promotion() const;
   static const ushort_type* create(){ return &obj; }
@@ -1437,7 +1431,7 @@ class int_type : public type {
   static int_type obj;
   int_type() : type(INT) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool _signed() const { return true; }
   static const int_type* create(){ return &obj; }
@@ -1447,7 +1441,7 @@ class uint_type : public type {
   static uint_type obj;
   uint_type() : type(UINT) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   static const uint_type* create(){ return &obj; }
 };
@@ -1456,7 +1450,7 @@ class long_type : public type {
   static long_type obj;
   long_type() : type(LONG) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool _signed() const { return true; }
   static const long_type* create(){ return &obj; }
@@ -1466,7 +1460,7 @@ class ulong_type : public type {
   static ulong_type obj;
   ulong_type() : type(ULONG) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   static const ulong_type* create(){ return &obj; }
 };
@@ -1475,7 +1469,7 @@ class long_long_type : public type {
   static long_long_type obj;
   long_long_type() : type(LONGLONG) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool _signed() const { return true; }
   static const long_long_type* create(){ return &obj; }
@@ -1485,7 +1479,7 @@ class ulong_long_type : public type {
   static ulong_long_type obj;
   ulong_long_type() : type(ULONGLONG) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   static const ulong_long_type* create(){ return &obj; }
 };
@@ -1494,7 +1488,7 @@ class float_type : public type {
   static float_type obj;
   float_type() : type(FLOAT) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool real() const { return true; }
   const type* varg() const;
@@ -1505,7 +1499,7 @@ class double_type : public type {
   static double_type obj;
   double_type() : type(DOUBLE) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool real() const { return true; }
   static const double_type* create(){ return &obj; }
@@ -1515,7 +1509,7 @@ class long_double_type : public type {
   static long_double_type obj;
   long_double_type() : type(LONG_DOUBLE) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const;
   bool real() const { return true; }
   static const long_double_type* create(){ return &obj; }
@@ -1525,7 +1519,7 @@ class backpatch_type : public type {
   static backpatch_type obj;
   backpatch_type() : type(BACKPATCH) {}
 public:
-  void decl(std::ostream&, std::string) const { assert(0); }
+  void decl(std::ostream& os, std::string name) const { assert(0); }
   const type* patch(const type* T, usr*) const { return T; }
   int size() const { return 0; }
   bool scalar() const { return false; }
@@ -1533,46 +1527,54 @@ public:
   static const backpatch_type* create(){ return &obj; }
 };
 
+class volatile_type;
+class restrict_type;
+ 
 class const_type : public type {
-  struct table_t;
-  static table_t table;
+  typedef std::map<const type*, const const_type*> table_t;
+  static table_t tmp_tbl, pmt_tbl;
   const type* m_T;
-  const_type(const type* T) : m_T(T) {}
+  const_type(const type* T) : type(CONST), m_T(T) {}
+  friend class volatile_type;
+  friend class restrict_type;
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type* T) const { return m_T->compatible(T); }
-  const type* composite(const type* T) const { T = m_T->composite(T); return T ? create(T) : 0; }
-  bool include_cvr(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return m_T->size(); }
   bool scalar() const { return m_T->scalar(); }
   bool real() const { return m_T->real(); }
   bool integer() const { return m_T->integer(); }
   const type* complete_type() const { return create(m_T->complete_type()); }
   const type* unqualified(int* cvr) const { if ( cvr ) *cvr |= 1; return m_T->unqualified(cvr); }
-  const type* patch(const type*, usr*) const;
+  const type* patch(const type* T, usr* u) const;
   bool modifiable() const { return false; }
   const type* promotion() const { return create(m_T->promotion()); }
   const type* varg() const { return create(m_T->varg()); }
   bool _signed() const { return m_T->_signed(); }
   std::pair<int, const type*> current(int nth) const { return m_T->current(nth); }
   bool aggregate() const { return m_T->aggregate(); }
-  bool temporary(bool b) const { return m_T->temporary(b); }
+  bool tmp() const { return m_T->tmp(); }
+  bool variably_modified() const { return m_T->variably_modified(); }
+  const type* vla2a() const { return create(m_T->vla2a()); }
   const type* qualified(int) const;
   tag* get_tag() const { return m_T->get_tag(); }
-  static const const_type* create(const type*);
+  static const type* create(const type* T);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class volatile_type : public type {
-  struct table_t;
-  static table_t table;
+  typedef std::map<const type*, const volatile_type*> table_t;
+  static table_t tmp_tbl, pmt_tbl;
   const type* m_T;
-  volatile_type(const type* T) : m_T(T) {}
+  volatile_type(const type* T) : type(VOLATILE), m_T(T) {}
+  friend class restrict_type;
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type* T) const { return m_T->compatible(T); }
-  const type* composite(const type* T) const { T = m_T->composite(T); return T ? create(T) : 0; }
-  bool include_cvr(const type*) const;
-  const type* patch(const type*, usr*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
+  const type* patch(const type* T, usr* u) const;
   int size() const { return m_T->size(); }
   bool scalar() const { return m_T->scalar(); }
   bool real() const { return m_T->real(); }
@@ -1585,23 +1587,26 @@ public:
   bool _signed() const { return m_T->_signed(); }
   std::pair<int, const type*> current(int nth) const { return m_T->current(nth); }
   bool aggregate() const { return m_T->aggregate(); }
-  bool temporary(bool b) const { return m_T->temporary(b); }
+  bool tmp() const { return m_T->tmp(); }
+  bool variably_modified() const { return m_T->variably_modified(); }
+  const type* vla2a() const { return create(m_T->vla2a()); }
   const type* qualified(int) const;
   tag* get_tag() const { return m_T->get_tag(); }
-  static const volatile_type* create(const type*);
+  static const type* create(const type*);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class restrict_type : public type {
-  struct table_t;
-  static table_t table;
+  typedef std::map<const type*, const restrict_type*> table_t;
+  static table_t tmp_tbl, pmt_tbl;
   const type* m_T;
-  restrict_type(const type* T) : m_T(T) {}
+  restrict_type(const type* T) : type(RESTRICT), m_T(T) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  const type* patch(const type*, usr*) const;
-  bool compatible(const type* T) const { return m_T->compatible(T); }
-  const type* composite(const type* T) const { T = m_T->composite(T); return T ? create(T) : 0; }
-  bool include_cvr(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  const type* patch(const type* T, usr* u) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return m_T->size(); }
   bool scalar() const { return m_T->scalar(); }
   bool integer() const { return m_T->integer(); }
@@ -1614,15 +1619,19 @@ public:
   bool _signed() const { return m_T->_signed(); }
   std::pair<int, const type*> current(int nth) const { return m_T->current(nth); }
   bool aggregate() const { return m_T->aggregate(); }
-  bool temporary(bool b) const { return m_T->temporary(b); }
+  bool tmp() const { return m_T->tmp(); }
+  bool variably_modified() const { return m_T->variably_modified(); }
+  const type* vla2a() const { return create(m_T->vla2a()); }
   const type* qualified(int) const;
   tag* get_tag() const { return m_T->get_tag(); }
-  static const restrict_type* create(const type*);
+  static const type* create(const type* T);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class func_type : public type {
   struct table_t;
-  static table_t table;
+  static table_t tmp_tbl, pmt_tbl;
   const type* m_T;
   std::vector<const type*> m_param;
   bool m_old_style;
@@ -1630,39 +1639,42 @@ class func_type : public type {
     : type(FUNC), m_T(T), m_param(param), m_old_style(old_style) {}
 public:
   void decl(std::ostream& os, std::string name) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
-  bool include_cvr(const type*) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return 0; }
   bool scalar() const { return false; }
   const type* prev() const { return m_T->prev(); }
   void post(std::ostream&) const;
-  const type* patch(const type*, usr*) const;
+  const type* patch(const type* T, usr* u) const;
   const type* qualified(int) const;
   const type* complete_type() const;
   const pointer_type* ptr_gen() const;
   const type* return_type() const { return m_T; }
   const std::vector<const type*>& param() const { return m_param; }
-  bool temporary(bool) const;
-  static const func_type* create(const type*, const std::vector<const type*>&, bool);
+  bool tmp() const;
+  bool variably_modified() const;
+  const type* vla2a() const;
+  static const func_type*
+  create(const type*, const std::vector<const type*>&, bool);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class array_type : public type {
-  struct table_t;
-  static table_t table;
   const type* m_T;
   int m_dim;;
+  struct table_t;
+  static table_t tmp_tbl, pmt_tbl;
   array_type(const type* T, int dim) : type(ARRAY), m_T(T), m_dim(dim) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
-  bool include_cvr(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return m_T->size() * m_dim; }
   int align() const { return m_T->align(); }
   bool scalar() const { return false; }
   bool modifiable() const { return m_T->modifiable(); }
-  const type* patch(const type*, usr*) const;
+  const type* patch(const type* T, usr* u) const;
   const type* qualified(int) const;
   const type* complete_type() const;
   const type* prev() const { return m_T->prev(); }
@@ -1672,37 +1684,42 @@ public:
   int dim() const { return m_dim; }
   std::pair<int, const type*> current(int) const;
   bool aggregate() const { return true; }
-  bool temporary(bool b) const { return m_T->temporary(b); }
-  void decide() const { m_T->decide(); }
+  bool tmp() const { return m_T->tmp(); }
+  bool variably_modified() const { return m_T->variably_modified(); }
+  const type* vla2a() const { return create(m_T->vla2a(), m_dim); }
   var* vsize() const;
-  static const array_type* create(const type*, int);
+  static const array_type* create(const type* T, int dim);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class pointer_type : public type {
-  struct table_t;
-  static table_t table;
+  typedef std::map<const type*, const pointer_type*> table_t;
+  static table_t tmp_tbl, pmt_tbl;
   const type* m_T;
   pointer_type(const type* T) : type(POINTER), m_T(T) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  bool include_cvr(const type*) const;
-  const type* composite(const type*) const;
-  const type* patch(const type*, usr*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
+  const type* patch(const type* T, usr* u) const;
   const type* referenced_type() const { return m_T; }
   int size() const;
   bool integer() const { return false; }
   const type* complete_type() const;
-  bool temporary(bool b) const { return m_T->temporary(b); }
-  void decide() const { m_T->decide(); }
+  bool tmp() const { return m_T->tmp(); }
+  bool variably_modified() const { return m_T->variably_modified(); }
+  const type* vla2a() const { return create(m_T->vla2a()); }
   static const pointer_type* create(const type*);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class ellipsis_type : public type {
   static ellipsis_type m_obj;
   ellipsis_type() : type(ELLIPSIS) {}
 public:
-  void decl(std::ostream&, std::string) const;
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 0; }
   bool scalar() const { return false; }
   static const ellipsis_type* create();
@@ -1710,17 +1727,22 @@ public:
 
 class incomplete_tagged_type : public type {
   tag* m_tag;
-  incomplete_tagged_type(tag* tag) : type(INCOMPLETE_TAGGED), m_tag(tag) {}
+  typedef std::set<const incomplete_tagged_type*> table_t;
+  static table_t tmp_tbl;
+  incomplete_tagged_type(tag* ptr) : type(INCOMPLETE_TAGGED), m_tag(ptr) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return 0; }
   bool scalar() const { return false; }
   tag* get_tag() const { return m_tag; }
   const type* complete_type() const;
-  bool temporary(bool) const;
+  bool tmp() const;
+  ~incomplete_tagged_type(){ delete m_tag; }
   static const incomplete_tagged_type* create(tag*);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class record_type : public type {
@@ -1730,11 +1752,13 @@ class record_type : public type {
   int m_size;
   bool m_modifiable;
   tag* m_tag;
-  record_type(tag* tag, const std::vector<usr*>& member);
+  typedef std::set<const record_type*> table_t;
+  static table_t tmp_tbl;
+  record_type(tag* ptr, const std::vector<usr*>& member);
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return m_size; }
   bool scalar() const { return false; }
   bool modifiable() const { return m_modifiable; }
@@ -1744,25 +1768,31 @@ public:
   const std::vector<usr*>& member() const { return m_member; }
   tag* get_tag() const { return m_tag; }
   bool aggregate() const { return true; }
-  bool temporary(bool) const;
-  static const record_type* create(tag*, const std::vector<usr*>&);
+  bool tmp() const;
   ~record_type();
+  static const record_type* create(tag*, const std::vector<usr*>&);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class enum_type : public type {
   tag* m_tag;
   const type* m_integer;
-  enum_type(tag* tag, const type* integer) : type(ENUM), m_tag(tag), m_integer(integer) {}
+  typedef std::set<const enum_type*> table_t;
+  static table_t tmp_tbl;
+  enum_type(tag* ptr, const type* integer) : type(ENUM), m_tag(ptr), m_integer(integer) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return m_integer->size(); }
   bool _signed() const { return m_integer->_signed(); }
   tag* get_tag() const { return m_tag; }
-  bool temporary(bool) const;
+  bool tmp() const;
   const type* get_integer() const { return m_integer; }
-  static const enum_type* create(tag*, const type*);
+  static const enum_type* create(tag* ptr, const type* integer);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 class bit_field_type : public type {
@@ -1770,47 +1800,47 @@ class bit_field_type : public type {
   static table_t table;
   int m_bit;
   const type* m_integer;
-  bit_field_type(int bit, const type* integer) : type(BIT_FIELD), m_bit(bit), m_integer(integer) {}
+  bit_field_type(int bit, const type* integer)
+    : type(BIT_FIELD), m_bit(bit), m_integer(integer) {}
 public:
   const type* integer_type() const { return m_integer; }
-  void decl(std::ostream&, std::string) const { assert(0); }
+  void decl(std::ostream& os, std::string name) const { assert(0); }
   int size() const { return 0; }
   bool _signed() const { return m_integer->_signed(); }
-  const type* patch(const type*, usr*) const;
+  const type* patch(const type* T, usr* u) const;
   int bit() const { return m_bit; }
   static const bit_field_type* create(int, const type*);
 };
 
 class varray_type : public type {
-  mutable const type* m_T;
-  std::pair<var*, var*> m_dim;
-  mutable bool m_decided;
-  mutable std::vector<tac*> m_code;
-  varray_type(const type*, var*);
-  varray_type(const type*, var*, const std::vector<tac*>&);
-  ~varray_type();
+  const type* m_T;
+  var* m_dim;
+  struct table_t;
+  static table_t table;
+  varray_type(const type* T, var* dim) : type(VARRAY), m_T(T), m_dim(dim) {}
 public:
-  void decl(std::ostream&, std::string) const;
-  bool compatible(const type*) const;
-  const type* composite(const type*) const;
-  bool include_cvr(const type*) const;
+  void decl(std::ostream& os, std::string name) const;
+  bool compatible(const type* T) const;
+  const type* composite(const type* T) const;
   int size() const { return 0; }
   int align() const { return m_T->align(); }
   bool scalar() const { return false; }
   bool modifiable() const { return m_T->modifiable(); }
-  const type* patch(const type*, usr*) const;
+  const type* patch(const type* T, usr* u) const;
   const type* qualified(int) const;
   const type* prev() const { return m_T->prev(); }
-  void post(std::ostream&) const;
+  void post(std::ostream& os) const;
   const type* complete_type() const;
   const pointer_type* ptr_gen() const;
   const type* element_type() const { return m_T; }
   bool aggregate() const { return true; }
-  bool temporary(bool) const { return true; }
-  void decide() const;
+  bool tmp() const { return true; }
+  bool variably_modified() const { return true; }
+  const type* vla2a() const { return array_type::create(m_T->vla2a(), 0); }
   var* vsize() const;
-  static const varray_type* create(const type*, var*);
-  static const varray_type* create(const type*, var*, const std::vector<tac*>&);
+  static const varray_type* create(const type* T, var* dim);
+  static void destroy_tmp();
+  static void collect_tmp(std::vector<const type*>&);
 };
 
 struct tac {
@@ -1826,7 +1856,7 @@ struct tac {
     ASM,
     VASTART, VAARG, VAEND
   };
-  id_t id;
+  id_t m_id;
   var* x;
   var* y;
   var* z;

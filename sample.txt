@@ -1,5 +1,4 @@
-long int f()
+void f(void* p)
 {
-  long int x = 5;
-  return x;
+  (int*)p;
 }

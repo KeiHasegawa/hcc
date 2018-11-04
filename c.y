@@ -31,7 +31,7 @@
 
 %union {
   int m_ival;
-  c_compiler::tag::kind m_kind;
+  c_compiler::tag::kind_t m_kind;
   const c_compiler::type* m_type;
   c_compiler::var* m_var;
   c_compiler::usr* m_usr;
@@ -263,8 +263,8 @@ constant_expression
   ;
 
 declaration
-  : declaration_specifiers                      ';'  { c_compiler::declaration1(0,false); delete c_compiler::parse::decl_specs::m_stack.top(); }
-  | declaration_specifiers init_declarator_list ';'  { delete c_compiler::parse::decl_specs::m_stack.top(); }
+  : declaration_specifiers                      ';'  { c_compiler::declaration1(0,false); delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::work_around = 0; }
+  | declaration_specifiers init_declarator_list ';'  { delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::work_around = 0; }
   ;
 
 declaration_specifiers
@@ -418,7 +418,7 @@ direct_declarator
   ;
 
 begin_array
-  : '[' { c_compiler::parse::decl_specs::m_stack.push(0); c_compiler::decl::declarator::array_impl::point = c_compiler::code.size(); }
+  : '[' { c_compiler::parse::decl_specs::m_stack.push(0); c_compiler::decl::declarator::array_impl::csz = c_compiler::code.size(); }
   ;
 
 end_array
@@ -470,17 +470,17 @@ abstract_declarator
   ;
 
 direct_abstract_declarator
-  : '(' abstract_declarator ')'                               { $$ = $2; }
-  |                            '['                       ']'  { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),0,false); }
-  |                            '[' assignment_expression ']'  { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),$2,false); }
-  | direct_abstract_declarator '['                       ']'  { using namespace c_compiler; $$ = decl::declarator::array($1,0,false); }
-  | direct_abstract_declarator '[' assignment_expression ']'  { using namespace c_compiler; $$ = decl::declarator::array($1,$3,false); }
-  |                            '[' '*' ']'                    { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),0,true); }
-  | direct_abstract_declarator '[' '*' ']'                    { using namespace c_compiler; $$ = decl::declarator::array($1,0,true); }
-  |                            '('                     ')'    { using namespace c_compiler; $$ = decl::declarator::func(backpatch_type::create()); }
-  |                            '(' enter_parameter parameter_type_list leave_parameter ')'    { using namespace c_compiler; $$ = decl::declarator::func(backpatch_type::create(),$3); }
-  | direct_abstract_declarator '('                     ')'    { using namespace c_compiler; $$ = decl::declarator::func($1); }
-  | direct_abstract_declarator '(' enter_parameter parameter_type_list leave_parameter ')'    { using namespace c_compiler; $$ = decl::declarator::func($1,$4); }
+  : '(' abstract_declarator ')'  { $$ = $2; }
+  | begin_array  end_array  { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),0,false); }
+  | begin_array assignment_expression end_array  { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),$2,false); }
+  | direct_abstract_declarator begin_array end_array  { using namespace c_compiler; $$ = decl::declarator::array($1,0,false); }
+  | direct_abstract_declarator begin_array assignment_expression end_array  { using namespace c_compiler; $$ = decl::declarator::array($1,$3,false); }
+  | begin_array '*' end_array  { using namespace c_compiler; $$ = decl::declarator::array(backpatch_type::create(),0,true); }
+  | direct_abstract_declarator begin_array '*' end_array  { using namespace c_compiler; $$ = decl::declarator::array($1,0,true); }
+  | '(' ')'  { using namespace c_compiler; $$ = decl::declarator::func(backpatch_type::create()); }
+  | '(' enter_parameter parameter_type_list leave_parameter ')'  { using namespace c_compiler; $$ = decl::declarator::func(backpatch_type::create(),$3); }
+  | direct_abstract_declarator '(' ')'  { using namespace c_compiler; $$ = decl::declarator::func($1); }
+  | direct_abstract_declarator '(' enter_parameter parameter_type_list leave_parameter ')'  { using namespace c_compiler; $$ = decl::declarator::func($1,$4); }
   ;
 
 initializer
@@ -648,7 +648,7 @@ function_definition
   : function_definition_begin compound_statement
     {
       using namespace c_compiler;
-      if ( fundef::current ){
+      if (fundef::current) {
         function_definition::action(fundef::current,code,true);
         delete fundef::current;
         fundef::current = 0;

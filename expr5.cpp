@@ -117,7 +117,7 @@ namespace c_compiler { namespace constant_impl {
           binary::invalid(parse::position,
                           ANDAND ? ANDAND_MK : OROR_MK,y->m_type,Tz);
         }
-        for_each(code.begin()+n,code.end(),deleter<tac>());
+        for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
         code.resize(n);
         return integer::create(0);
       }
@@ -133,7 +133,7 @@ namespace c_compiler { namespace constant_impl {
           binary::invalid(parse::position,
                           ANDAND ? ANDAND_MK : OROR_MK,y->m_type,Tz);
         }
-        for_each(code.begin()+n,code.end(),deleter<tac>());
+        for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
         code.resize(n);
         return integer::create(1);
       }
@@ -283,29 +283,41 @@ c_compiler::cond_impl::valid(var* expr2, var* expr3)
       {
         using namespace std;
         using namespace c_compiler;
-        for_each(code.begin()+n,code.end(),deleter<tac>());
+        for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
         code.resize(n);
       }
     } sweeper;
     return conversion::arithmetic(&v2,&v3);
   }
-  T2 = T2->complete_type();
-  if ( T2->compatible(T3) )
-    return T2->composite(T3);
-  typedef const pointer_type PT;
-  const type* pv = pointer_type::create(void_type::create());
   T2 = T2->unqualified();
-  if ( T2->m_id == type::POINTER ){
-    if ( T3->integer() && expr3->zero() )
-      return T2;
-    if ( T3->compatible(pv) )
+  T3 = T3->unqualified();
+  T2 = T2->complete_type();
+  if (compatible(T2, T3))
+    return T2;
+
+  if (T2->m_id == type::POINTER && T3->m_id == type::POINTER) {
+    typedef const pointer_type PT;
+    PT* p2 = static_cast<PT*>(T2);
+    PT* p3 = static_cast<PT*>(T3);
+    const type* R2 = p2->referenced_type();
+    const type* R3 = p3->referenced_type();
+    int cvr2 = 0, cvr3 = 0;
+    const type* R2u = R2->unqualified(&cvr2);
+    const type* R3u = R3->unqualified(&cvr3);
+    if (compatible(R2u, R3u))
+      return pointer_type::create(R2->qualified(cvr3));
+    if (R2u->m_id == type::VOID)
+      return p3;
+    if (R3u->m_id == type::VOID)
+      return p2;
+  }
+
+  if (T2->m_id == type::POINTER) {
+    if (T3->integer() && expr3->zero())
       return T2;
   }
-  T3 = T3->unqualified();
-  if ( T3->m_id == type::POINTER ){
-    if ( T2->integer() && expr2->zero() )
-      return T3;
-    if ( T2->compatible(pv) )
+  if (T3->m_id == type::POINTER) {
+    if (T2->integer() && expr2->zero())
       return T3;
   }
   return 0;
@@ -315,7 +327,8 @@ namespace c_compiler { namespace var_impl {
   var* cond(var*, int, var*, int, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::cond(var* expr1, int y, var* expr2, int x, var* expr3)
+c_compiler::var*
+c_compiler::var_impl::cond(var* expr1, int y, var* expr2, int x, var* expr3)
 {
   using namespace std;
   vector<tac*> code3;
@@ -343,21 +356,21 @@ c_compiler::var* c_compiler::var_impl::cond(var* expr1, int y, var* expr2, int x
   copy(code.begin()+z,code.end(),back_inserter(code3));
   code.resize(z);
   const type* T = cond_impl::valid(expr2,expr3);
-  if ( !T ){
+  if (!T) {
     using namespace error::expr::cond;
     mismatch(parse::position);
     T = int_type::create();
   }
   var* ret = new var(T);
-  block* b = scope::current->m_id == scope::BLOCK ? static_cast<block*>(scope::current) : 0;
-  bool v = T->compatible(void_type::create());
-  if ( b && !v )
+  block* b = scope::current->m_id == scope::BLOCK ?
+    static_cast<block*>(scope::current) : 0;
+  if (b && T->m_id != type::VOID)
     b->m_vars.push_back(ret);
   else
     garbage.push_back(ret);
   if ( T->scalar() )
     expr2 = expr2->cast(T);
-  if ( !v )
+  if (T->m_id != type::VOID)
     code.push_back(new assign3ac(ret,expr2));
   goto3ac* goto2 = new goto3ac;
   code.push_back(goto2);
@@ -368,7 +381,7 @@ c_compiler::var* c_compiler::var_impl::cond(var* expr1, int y, var* expr2, int x
   copy(code3.begin(),code3.end(),back_inserter(code));
   if ( T->scalar() )
     expr3 = expr3->cast(T);
-  if ( !v )
+  if (T->m_id != type::VOID)
     code.push_back(new assign3ac(ret,expr3));
   to3ac* to2 = new to3ac;
   code.push_back(to2);
@@ -394,10 +407,10 @@ namespace c_compiler { namespace constant_impl {
         // destroy y code
         vector<tac*>::iterator p1 = code.begin() + n;
         vector<tac*>::iterator q1 = code.begin() + m;
-        for_each(p1, q1, deleter<tac>());
+        for_each(p1, q1, [](tac* p){ delete p; });
         vector<tac*>::iterator p2 = code.begin() + N;
         vector<tac*>::iterator q2 = code.begin() + M;
-        for_each(p2, q2, deleter<tac>());
+        for_each(p2, q2, [](tac* p){ delete p; });
         code.erase(p2, q2);
         code.erase(p1, q1);
         return z->cast(T);
@@ -406,10 +419,10 @@ namespace c_compiler { namespace constant_impl {
         // destroy z code
         vector<tac*>::iterator p1 = code.begin() + m;
         vector<tac*>::iterator q1 = code.begin() + N;
-        for_each(p1, q1, deleter<tac>());
+        for_each(p1, q1, [](tac* p){ delete p; });
         vector<tac*>::iterator p2 = code.begin() + M;
         vector<tac*>::iterator q2 = code.end();
-        for_each(p2, q2, deleter<tac>());
+        for_each(p2, q2, [](tac* p){ delete p; });
         code.erase(p2, q2);
         code.erase(p1, q1);
         return y->cast(T);
@@ -494,15 +507,15 @@ c_compiler::var* c_compiler::var01::cond(int y, int x, var* expr2, var* expr3)
   }
   decl::check(expr2);
   const type* T = cond_impl::valid(expr2,expr3);
-  if ( !T ){
+  if (!T) {
     using namespace error::expr::cond;
     mismatch(parse::position);
     T = int_type::create();
   }
   var* ret = new var(T);
-  block* b = scope::current->m_id == scope::BLOCK ? static_cast<block*>(scope::current) : 0;
-  bool v = T->compatible(void_type::create());
-  if ( b && !v )
+  block* b = scope::current->m_id == scope::BLOCK ?
+    static_cast<block*>(scope::current) : 0;
+  if (b && T->m_id != type::VOID)
     b->m_vars.push_back(ret);
   else
     garbage.push_back(ret);
@@ -522,7 +535,7 @@ c_compiler::var* c_compiler::var01::cond(int y, int x, var* expr2, var* expr3)
       code.resize(n);
     }
   }
-  if ( !v ){
+  if (T->m_id != type::VOID){
     code2.push_back(new assign3ac(ret,expr2));
     code3.push_back(new assign3ac(ret,expr3));
   }
