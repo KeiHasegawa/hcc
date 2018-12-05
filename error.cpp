@@ -1368,23 +1368,6 @@ void c_compiler::error::decl::func_spec::main(const usr* u)
   ++counter;
 }
 
-void c_compiler::error::decl::func_spec::no_definition(const usr* u)
-{
-  using namespace std;
-  switch (lang) {
-  case jpn:
-    header(u->m_file,"エラー");
-    cerr << "inline 函数 `" << u->m_name << "' が宣言されていますが, 定義されていません.\n";
-    break;
-  default:
-    header(u->m_file,"error");
-    cerr << "inline function `" << u->m_name << "' is declared but not defined.\n";
-    cerr << ".\n";
-    break;
-  }
-  ++counter;
-}
-
 void c_compiler::error::decl::func_spec::static_storage(const usr* u)
 {
   using namespace std;
@@ -2621,20 +2604,28 @@ void c_compiler::error::extdef::fundef::invalid_initializer(const usr* u)
   ++counter;
 }
 
-void c_compiler::error::extdef::fundef::nodef(const file_t& file, std::string name, const file_t& ref)
+void c_compiler::error::extdef::fundef::nodef(const ref_t& r)
 {
   using namespace std;
+  string name = r.m_name;
+  usr::flag_t flag = r.m_flag;
+  const file_t& def = r.m_def;
+  const file_t& use = r.m_use;
   switch (lang) {
   case jpn:
-    header(file,"エラー");
-    cerr << "static な函数 `" << name << "' の函数定義がありません.\n";
-    header(ref,"エラー");
+    header(def,"エラー");
+    if (flag & usr::STATIC)
+      cerr << "static ";
+    if (flag & usr::INLINE)
+      cerr << "inline ";
+    cerr << "な函数 `" << name << "' の函数定義がありません.\n";
+    header(use,"エラー");
     cerr << "ここで参照されています.\n";
     break;
   default:
-    header(file,"error");
+    header(def,"error");
     cerr << "no function definition of static function `" << name << "'.\n";
-    header(ref,"error");
+    header(use,"error");
     cerr << "referenced here.\n";
     break;
   }

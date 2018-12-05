@@ -316,15 +316,17 @@ int c_compiler::cmdline::nodag_optimize_option(char** argv)
   return 0;
 }
 
-namespace c_compiler { namespace cmdline {
-  void help(const std::pair<std::string, int (*)(char**)>& p)
-  {
-    using namespace std;
-    cerr << '\t' << p.first;
-    p.second(0);
-    cerr << '\n';
-  }
-} } // end of namespace cmdline
+namespace c_compiler {
+  namespace cmdline {
+    using namespace std;    
+    void help(const pair<string, int (*)(char**)>& p)
+    {
+      cerr << '\t' << p.first;
+      p.second(0);
+      cerr << '\n';
+    }
+  } // end of namespace cmdline
+} // end of namespace c_compiler
 
 int c_compiler::cmdline::help_option(char** argv)
 {

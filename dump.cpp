@@ -3,11 +3,14 @@
 #include "parse.h"
 #include "misc.h"
 
-namespace c_compiler { namespace scope_impl {
-  int usrs_entry(std::pair<std::string, std::vector<usr*> >, int);
-  int tags_entry(std::pair<std::string, tag*>, int);
-  int dump_var(var*, int);
-} } // end of namespace scope_impl and c_compiler
+namespace c_compiler {
+  namespace scope_impl {
+    using namespace std;
+    void usrs_entry(pair<string, vector<usr*> >, int);
+    void tags_entry(pair<string, tag*>, int);
+    void dump_var(var*, int);
+  } // end of namespace scope_impl
+} // end of namespace c_compiler
 
 void c_compiler::scope_impl::dump(scope* ptr, int ntab)
 {
@@ -26,19 +29,19 @@ void c_compiler::scope_impl::dump(scope* ptr, int ntab)
 }
 
 namespace c_compiler { namespace scope_impl {
-  int dump_usr(usr*, int);
-  int dump_tag(tag*, int);
+  void dump_usr(usr*, int);
+  void dump_tag(tag*, int);
 } } // end of namespace scope_impl and c_compiler
 
-int c_compiler::scope_impl::usrs_entry(std::pair<std::string, std::vector<usr*> > entry, int ntab)
+void c_compiler::scope_impl::usrs_entry(std::pair<std::string, std::vector<usr*> > entry, int ntab)
 {
   using namespace std;
   const vector<usr*>& v = entry.second;
   for_each(v.begin(),v.end(),bind2nd(ptr_fun(dump_usr),ntab));
-  return 0;
 }
 
-int c_compiler::scope_impl::tags_entry(std::pair<std::string, tag*> entry, int ntab)
+void
+c_compiler::scope_impl::tags_entry(std::pair<std::string, tag*> entry, int ntab)
 {
   return dump_tag(entry.second,ntab);
 }
@@ -51,7 +54,7 @@ namespace c_compiler { namespace names {
   std::string ref(var*);
 } } // end of namespace names and c_compiler
 
-int c_compiler::scope_impl::dump_usr(usr* u, int ntab)
+void c_compiler::scope_impl::dump_usr(usr* u, int ntab)
 {
   using namespace std;
   for ( int i = 0 ; i < ntab; ++i )
@@ -79,7 +82,6 @@ int c_compiler::scope_impl::dump_usr(usr* u, int ntab)
     }
   }
   cout << '\n';
-  return 0;
 }
 
 std::string c_compiler::scope_impl::dump_initial(std::pair<int,var*> p)
@@ -103,13 +105,12 @@ std::string c_compiler::scope_impl::dump_initial(std::pair<int,var*> p)
   return os.str();
 }
 
-int c_compiler::scope_impl::dump_tag(tag* T, int ntab)
+void c_compiler::scope_impl::dump_tag(tag* T, int ntab)
 {
   using namespace std;
   for ( int i = 0 ; i < ntab; ++i )
     cout << '\t';
   cout << tag::keyword(T->m_kind) << ' ' << T->m_name << '\n';
-  return 0;
 }
 
 namespace c_compiler { namespace names {
@@ -160,7 +161,7 @@ std::string c_compiler::names::ref(var* v)
   return os.str();
 }
 
-int c_compiler::scope_impl::dump_var(var* v, int ntab)
+void c_compiler::scope_impl::dump_var(var* v, int ntab)
 {
   using namespace std;
   for ( int i = 0 ; i < ntab; ++i )
@@ -170,7 +171,6 @@ int c_compiler::scope_impl::dump_var(var* v, int ntab)
     T->decl(cout,names::ref(v));
     cout << '\n';
   }
-  return 0;
 }
 
 namespace c_compiler { namespace tac_impl {
@@ -211,8 +211,7 @@ namespace c_compiler { namespace tac_impl {
   void dump_to(std::ostream&, const tac*);
   void dump_loff(std::ostream&, const tac*);
   void dump_roff(std::ostream&, const tac*);
-  void dump_alloc(std::ostream&, const tac*);
-  void dump_dealloc(std::ostream&, const tac*);
+  void dump_alloca(std::ostream&, const tac*);
   void dump_va_start(std::ostream&, const tac*);
   void dump_va_arg(std::ostream&, const tac*);
   void dump_va_end(std::ostream&, const tac*);
@@ -245,8 +244,7 @@ c_compiler::tac_impl::table_t::table_t()
   (*this)[tac::TO] = dump_to;
   (*this)[tac::LOFF] = dump_loff;
   (*this)[tac::ROFF] = dump_roff;
-  (*this)[tac::ALLOC] = dump_alloc;
-  (*this)[tac::DEALLOC] = dump_dealloc;
+  (*this)[tac::ALLOCA] = dump_alloca;
   (*this)[tac::VASTART] = dump_va_start;
   (*this)[tac::VAARG] = dump_va_arg;
   (*this)[tac::VAEND] = dump_va_end;
@@ -486,28 +484,20 @@ void c_compiler::tac_impl::dump_roff(std::ostream& os, const tac* ptr)
   os << x << " := " << y << '[' << z << ']';
 }
 
-void c_compiler::tac_impl::dump_alloc(std::ostream& os, const tac* ptr)
+void c_compiler::tac_impl::dump_alloca(std::ostream& os, const tac* ptr)
 {
   using namespace std;
   string x = names::ref(ptr->x);
   string y = names::ref(ptr->y);
-  os << "alloc " << x << ", " << y;
-}
-
-void c_compiler::tac_impl::dump_dealloc(std::ostream& os, const tac* ptr)
-{
-  using namespace std;
-  string y = names::ref(ptr->y);
-  string z = names::ref(ptr->z);
-  os << "dealloc " << y << ", " << z;
+  os << "alloca " << x << ", " << y;
 }
 
 void c_compiler::tac_impl::dump_va_start(std::ostream& os, const tac* ptr)
 {
-        using namespace std;
-        string x = names::ref(ptr->x);
-        string y = names::ref(ptr->y);
-        os << x << " := va_start " << y;
+  using namespace std;
+  string x = names::ref(ptr->x);
+  string y = names::ref(ptr->y);
+  os << x << " := va_start " << y;
 }
 
 void c_compiler::tac_impl::dump_va_arg(std::ostream& os, const tac* ptr)
@@ -523,9 +513,9 @@ void c_compiler::tac_impl::dump_va_arg(std::ostream& os, const tac* ptr)
 
 void c_compiler::tac_impl::dump_va_end(std::ostream& os, const tac* ptr)
 {
-        using namespace std;
-        string y = names::ref(ptr->y);
-        os << "va_end " << y;
+  using namespace std;
+  string y = names::ref(ptr->y);
+  os << "va_end " << y;
 }
 
 void c_compiler::tac_impl::dump_asm(std::ostream& os, const tac* ptr)
@@ -535,59 +525,35 @@ void c_compiler::tac_impl::dump_asm(std::ostream& os, const tac* ptr)
   os << "asm " << '"' << p->m_inst << '"' ;
 }
 
-namespace c_compiler { namespace live_var {
-  int live1(const std::pair<optimize::basic_block::info*, std::set<var*> >&);
-} } // end of namespace live_var and cxx_compiler
-
-void
-c_compiler::live_var::dump(std::string name,
-                           const std::map<optimize::basic_block::info*, std::set<var*> >& m)
-{
+namespace c_compiler {
   using namespace std;
-  cout << name << '\n';
-  for_each(m.begin(),m.end(),live1);
-}
+  using namespace optimize::basic_block;
+  namespace names {
+    table<info_t*> bbs;
+    string refb(info_t*);
+  } // end of namespace names
+  namespace live_var {
+    void liveB(const pair<info_t*, set<var*> >& p)
+    {
+      info_t* B = p.first;
+      cout << '\t' << names::refb(B) << " :";
+      const set<var*>& s = p.second;
+      for_each(s.begin(),s.end(),[](var* v){ cout << ' ' << names::ref(v); });
+      cout << '\n';
+    }
+    void dump(string name, const map<info_t*, set<var*> >& m)
+    {
+      cout << name << '\n';
+      for_each(m.begin(),m.end(),liveB);
+    }
+  } // end of namespace live_var
+} // end of namespace c_compiler
 
-namespace c_compiler { namespace live_var {
-  std::string refb(optimize::basic_block::info*);
-} } // end of namespace live_var and cxx_compiler
-
-namespace c_compiler { namespace live_var {
-  int live2(var*);
-} } // end of namespace live_var and cxx_compiler
-
-namespace c_compiler { namespace names {
-  std::string refb(optimize::basic_block::info*);
-} } // end of namespace names, dump and cxx_compiler
-
-int
-c_compiler::live_var::live1(const std::pair<optimize::basic_block::info*, std::set<var*> >& p)
-{
-  using namespace std;
-  optimize::basic_block::info* B = p.first;
-  cout << '\t' << names::refb(B) << " :";
-  const set<var*>& v = p.second;
-  for_each(v.begin(),v.end(),live2);
-  cout << '\n';
-  return 0;
-}
-
-int c_compiler::live_var::live2(var* v)
-{
-  using namespace std;
-  cout << ' ' << names::ref(v);
-  return 0;
-}
-
-namespace c_compiler { namespace names {
-  table<optimize::basic_block::info*> bbs;
-} } // end of namespace names, dump and cxx_compiler
-
-std::string c_compiler::names::refb(optimize::basic_block::info* B)
+std::string c_compiler::names::refb(optimize::basic_block::info_t* B)
 {
   using namespace std;
   if ( cmdline::simple_medium ){
-    table<optimize::basic_block::info*>::const_iterator p = bbs.find(B);
+    table<optimize::basic_block::info_t*>::const_iterator p = bbs.find(B);
     if ( p != bbs.end() )
       return p->second;
     ostringstream os;

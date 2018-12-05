@@ -12,7 +12,8 @@ namespace c_compiler { namespace conversion {
     }
 } } // end of namespace conversion and c_compiler
 
-const c_compiler::type* c_compiler::conversion::arithmetic_impl::match(const type* Tx, var** y, var** z)
+const c_compiler::type*
+c_compiler::conversion::arithmetic_impl::match(const type* Tx, var** y, var** z)
 {
   const type* Ty = (*y)->m_type;
   const type* Tz = (*z)->m_type;
@@ -3081,7 +3082,7 @@ namespace c_compiler {
       Ty = Ty->unqualified();
       Tz = Tz->unqualified();
       if (!compatible(Ty, Tz))
-	return var_impl::sub(y, z);
+        return var_impl::sub(y, z);
       int size = Ty->size();
       if ( !size )
         return var_impl::sub(y, z);

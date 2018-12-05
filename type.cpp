@@ -95,30 +95,30 @@ int c_compiler::type::align() const
 
 void c_compiler::type::destroy_tmp()
 {
-	const_type::destroy_tmp();
-	volatile_type::destroy_tmp();
-	restrict_type::destroy_tmp();
-	func_type::destroy_tmp();
-	array_type::destroy_tmp();
-	pointer_type::destroy_tmp();
-	incomplete_tagged_type::destroy_tmp();
-	record_type::destroy_tmp();
-	enum_type::destroy_tmp();
-	varray_type::destroy_tmp();
+  const_type::destroy_tmp();
+  volatile_type::destroy_tmp();
+  restrict_type::destroy_tmp();
+  func_type::destroy_tmp();
+  array_type::destroy_tmp();
+  pointer_type::destroy_tmp();
+  incomplete_tagged_type::destroy_tmp();
+  record_type::destroy_tmp();
+  enum_type::destroy_tmp();
+  varray_type::destroy_tmp();
 }
 
 void c_compiler::type::collect_tmp(std::vector<const type*>& vt)
 {
-	const_type::collect_tmp(vt);
-	volatile_type::collect_tmp(vt);
-	restrict_type::collect_tmp(vt);
-	func_type::collect_tmp(vt);
-	array_type::collect_tmp(vt);
-	pointer_type::collect_tmp(vt);
-	incomplete_tagged_type::collect_tmp(vt);
-	record_type::collect_tmp(vt);
-	enum_type::collect_tmp(vt);
-	varray_type::collect_tmp(vt);
+  const_type::collect_tmp(vt);
+  volatile_type::collect_tmp(vt);
+  restrict_type::collect_tmp(vt);
+  func_type::collect_tmp(vt);
+  array_type::collect_tmp(vt);
+  pointer_type::collect_tmp(vt);
+  incomplete_tagged_type::collect_tmp(vt);
+  record_type::collect_tmp(vt);
+  enum_type::collect_tmp(vt);
+  varray_type::collect_tmp(vt);
 }
 
 c_compiler::void_type c_compiler::void_type::obj;
@@ -695,8 +695,8 @@ bool c_compiler::func_type::compatible(const type* T) const
     return true;
   if ( T->m_id != type::FUNC )
     return false;
-  typedef const func_type FUNC;
-  FUNC* that = static_cast<FUNC*>(T);
+  typedef const func_type FT;
+  FT* that = static_cast<FT*>(T);
   if ( !this->m_T->compatible(that->m_T) )
     return false;
   if ( this->m_old_style != that->m_old_style ){
@@ -724,8 +724,8 @@ c_compiler::func_impl::old_new::compatible(const std::vector<const type*>& o,
 {
   using namespace std;
   typedef const ellipsis_type ET;
-  if ( ET* et = olddecl_nodef(o) ){
-    if ( n.back()->m_id == type::ELLIPSIS )
+  if (ET* et = olddecl_nodef(o)) {
+    if (n.back()->m_id == type::ELLIPSIS)
       return false;
     vector<const type*> p;
     transform(n.begin(),n.end(),back_inserter(p),mem_fun(&type::varg));

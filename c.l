@@ -22,27 +22,27 @@ void line_control(bool ms)
   if (ms) {
     string line;
     is >> line;
-	assert(line == "line");
+    assert(line == "line");
   }
   is >> position.m_lineno;
   --position.m_lineno;
   if (ms) {
     char dq = '\0';
-	is >> dq;
-	if (dq == '"') {
-	  string fn;
-	  char c;
-	  while (is.get(c)) {
-	    if (c == dq)
-		  break;
-		if (c == '\\') {
-		  is.get(c);
-		  assert(c == '\\');
-		}
-	    fn += c;
-	  }
-	  position.m_name = fn;
-	}
+    is >> dq;
+    if (dq == '"') {
+      string fn;
+      char c;
+      while (is.get(c)) {
+        if (c == dq)
+          break;
+        if (c == '\\') {
+          is.get(c);
+          assert(c == '\\');
+        }
+        fn += c;
+      }
+      position.m_name = fn;
+    }
   }
   else {
     std::string fn;
@@ -215,33 +215,7 @@ c_compiler::file_t c_compiler::parse::position;
 
 bool c_compiler::parse::is_last_decl;
 
-int yywrap()
-{
-  using namespace std;
-  using namespace c_compiler;
-  if ( parse::is_last_decl ){
-    if ( cmdline::output_medium )
-      c_compiler::scope_impl::dump();
-    if ( !error::counter ){
-      if ( generator::generate ){
-        generator::interface_t tmp = {
-          &scope::root
-        };
-        generator::generate(&tmp);
-      }
-    }
-  }
-  function_definition::Inline::resolve::action();
-  {
-    using namespace function_definition::static_inline;
-    for_each(just_refed::table.begin(),just_refed::table.end(),just_refed::nodef);
-  }
-  {
-    const map<string, vector<usr*> >& m = function_definition::Inline::decled;
-    for_each(m.begin(),m.end(),function_definition::Inline::nodef);
-  }
-  return 1;
-}
+int yywrap(){ return 1; }
 
 void c_compiler::parse::unputer(std::string s)
 {

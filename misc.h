@@ -10,7 +10,7 @@ namespace ucn {
 struct genaddr;
 
 namespace literal {
-  extern genaddr* stringa(std::string);
+  genaddr* stringa(std::string);
 } // end of namespace literal
 
 namespace integer {
@@ -78,17 +78,17 @@ namespace expr {
 
 namespace decl {
   namespace declarator {
-    extern const type* func(const type*, parse::parameter_list* = 0, usr* = 0);
-    extern const type* func(const type*, parse::identifier_list*, usr* = 0);
-    extern const type* array(const type*, var*, bool, usr* = 0);
+    const type* func(const type*, parse::parameter_list* = 0, usr* = 0);
+    const type* func(const type*, parse::identifier_list*, usr* = 0);
+    const type* array(const type*, var*, bool, usr* = 0);
     namespace array_impl {
       extern int csz;
     }
-    extern const type* pointer(const type*, const type*);
+    const type* pointer(const type*, const type*);
   } // end of namespace declarator
-  extern bool static_storage_duration(const usr*);
-  extern int gen_loff(usr*, std::pair<int,var*>);
-  extern void check(var*);
+  bool static_storage_duration(const usr*);
+  int gen_loff(usr*, std::pair<int,var*>);
+  void check(var*);
 } // end of namespace decl
 
 namespace stmt {
@@ -99,7 +99,8 @@ namespace stmt {
       file_t m_file;
       scope* m_scope;
       data_t() : m_to(0), m_scope(0) {}
-      data_t(to3ac* a, const file_t& b, scope* c) : m_to(a), m_file(b), m_scope(c) {}
+      data_t(to3ac* a, const file_t& b, scope* c)
+      : m_to(a), m_file(b), m_scope(c) {}
     };
     extern std::map<std::string, data_t> data;
     struct used_t {
@@ -178,92 +179,77 @@ inline const type* composite(const type* x, const type* y)
 extern std::vector<var*> garbage;
 
 namespace type_impl {
-  extern void update(int (*)(int));
+  void update(int (*)(int));
 } // end of namespace type_impl
 
 namespace tac_impl {
-  extern void dump(std::ostream&, const tac*);
+  void dump(std::ostream&, const tac*);
 } // end of namespace tac_impl
 
 namespace scope_impl {
-  extern void dump(scope* = &scope::root, int = 0);
+  void dump(scope* = &scope::root, int = 0);
 } // end of namespace scope_impl
 
-extern void destroy_temporary();
+void destroy_temporary();
 
 namespace function_definition {
   using namespace std;
-  extern void begin(parse::decl_specs*, usr*);
-  extern void action(fundef* fdef, vector<tac*>& vcode, bool from_parser);
-  extern map<string, usr*> table;
-  namespace static_inline {
-    struct info {
-      fundef* m_fundef;
-      vector<tac*> m_code;
-      vector<const type*> m_tmp;
-      var* m_ret;
-      vector<tac*> m_expanded;
-      block* m_param;
-      info(){}
-      info(fundef* f, const vector<tac*>& c, const vector<const type*>& t)
-        : m_fundef(f), m_code(c), m_tmp(t), m_ret(0), m_param(0) {}
-      ~info();
-    };
-    namespace expand { extern void action(info*); }
-    struct skipped_t : map<usr*,info*> {
-#ifdef _DEBUG
-      ~skipped_t()
-      {
-        for_each(begin(),end(),[](const pair<usr*,info*>& x){ delete x.second; });
-      }
-#endif // _DEBUG
-    };
-    extern skipped_t skipped;
-    namespace just_refed {
-      struct info {
-        file_t m_file;
-        usr::flag_t m_flag;
-        usr* m_func;
-      info(file_t file, usr::flag_t flag, usr* u)
-      : m_file(file), m_flag(flag), m_func(u) {}
-      };
-      struct table_t : map<string, info*> {
-#ifdef _DEBUG
-        ~table_t()
-        {
-          for (auto p : *this)
-            delete p.second;
-        }
-#endif // _DEBUG
-      };
-      extern table_t table;
-      void nodef(const pair<string, info*>&);
-    }  // end of namespace just_refed
-    void check_skipped(tac*);
-    void gencode(info*);
-  } // end of namespace static_inline
-  namespace Inline {
-    extern std::map<std::string, std::vector<usr*> > decled;
-    extern void nodef(const std::pair<std::string, std::vector<usr*> >&);
-    struct after : var {
-      usr* m_func;
-      std::vector<var*>* m_arg;
-      scope* m_scope;
-      tac* m_point;
-      static std::vector<after*> lists;
-      after(const type*, usr*, std::vector<var*>*, tac*);
-      bool expand(std::string, std::vector<tac*>&);
-    };
-    namespace resolve {
-      extern void action();
-      extern bool flag;
-    } // end of namespace resolve
-  } // end of namespace Inline
-  extern void dump(const fundef* fdef, const std::vector<tac*>&);
+  extern map<string, usr*> table;  
+  void begin(parse::decl_specs*, usr*);
+  void action(fundef* fdef, vector<tac*>& vc);
+  void dump(const fundef* fdef, const vector<tac*>&);
 } // end of namespace function_definition
 
-extern usr* declaration1(usr*, bool);
-extern void declaration2(usr*, parse::initializer*);
+namespace static_inline {
+  using namespace std;
+  struct info_t {
+    fundef* m_fundef;
+    vector<tac*> m_code;
+    vector<const type*> m_tmp;
+    info_t(fundef* f, const vector<tac*>& c, const vector<const type*>& t)
+    : m_fundef(f), m_code(c), m_tmp(t) {}
+    ~info_t();
+  };
+  void substitute(vector<tac*>& vt, int pos, info_t* info);
+  namespace skip {
+    struct table_t : map<usr*, info_t*> {
+#ifdef _DEBUG
+      ~table_t(){ for (auto p : *this) delete p.second; }
+#endif // _DEBUG
+    };
+    extern table_t table;
+    void add(fundef* fdef, vector<tac*>& vc, bool b);
+    struct chk_t {
+      int m_pos;
+      bool m_wait_inline;
+      fundef* m_fundef;
+      chk_t(fundef* f) : m_pos(-1), m_wait_inline(false), m_fundef(f) {}
+    };
+    void check(tac* ptac, chk_t* arg);
+  } // end of namespace skip
+  void gencode(info_t*);
+  namespace defer {
+    struct ref_t {
+      string m_name;
+      usr::flag_t m_flag;
+      file_t m_def;
+      file_t m_use;
+      ref_t(string name, usr::flag_t flag, const file_t& def, const file_t& use)
+      : m_name(name), m_flag(flag), m_def(def), m_use(use) {}
+    };
+    extern map<string, vector<ref_t> > refs;
+    
+    // inline function -> callers
+    extern map<string, set<usr*> > callers;
+
+    // caller -> position at caller
+    extern map<usr*, vector<int> > positions;
+    void last();
+  }  // end of namespace defer
+} // end of namespace static_inline
+
+usr* declaration1(usr*, bool);
+void declaration2(usr*, parse::initializer*);
 
 struct generated : virtual var {
   const type* m_org;
@@ -274,17 +260,12 @@ struct generated : virtual var {
   var* ppmm(bool, bool);
   var* size();
   var* assign(var*);
-  ~generated()
-  {
-    using namespace std;
-    for_each(m_code.begin(),m_code.end(),[](tac* p){ delete p;});
-  }
+  ~generated(){ for (auto p : m_code) delete p; }
 };
 
 #pragma warning ( disable : 4250 )
 struct genaddr : generated, addrof {
   var* m_tmp;
-  void mark();
   genaddr(const pointer_type*, const type*, var*, int);
   var* rvalue();
   var* subscripting(var*);
@@ -343,7 +324,7 @@ template<class V> struct refimm : ref {
   var* rvalue()
   {
     using namespace std;
-    if ( scope::current->m_id == scope::BLOCK ){
+    if (scope::current->m_id == scope::BLOCK) {
       vector<var*>& v = garbage;
       vector<var*>::reverse_iterator p = find(v.rbegin(),v.rend(),this);
       assert(p != v.rend());
@@ -377,7 +358,8 @@ template<class V> struct refimm : ref {
 struct refsomewhere : ref {
   var* m_ref;
   var* m_offset;
-  refsomewhere(const pointer_type* pt, var* r, var* o) : ref(pt), m_ref(r), m_offset(o) {}
+  refsomewhere(const pointer_type* pt, var* r, var* o)
+    : ref(pt), m_ref(r), m_offset(o) {}
   var* rvalue();
   var* address();
   var* assign(var*);
@@ -553,7 +535,6 @@ namespace error {
     namespace func_spec {
       extern void not_function(const usr*);
       extern void main(const usr*);
-      extern void no_definition(const usr*);
       extern void static_storage(const usr*);
       extern void internal_linkage(const file_t&, const usr*);
     }
@@ -655,7 +636,8 @@ namespace error {
       extern void invalid_return(const usr*, const type*);
       extern void invalid_storage(const usr*);
       extern void invalid_initializer(const usr*);
-      extern void nodef(const file_t&, std::string, const file_t&);
+      typedef static_inline::defer::ref_t ref_t;
+      extern void nodef(const ref_t&);
       extern void typedefed(const file_t&);
     }
   } // end of namespace extdef
@@ -754,9 +736,13 @@ namespace initializer_list {
 } // end of namespace initializer_list
 
 namespace optimize {
-  extern void action(const fundef* fdef, std::vector<tac*>& v);
-  extern void remember_action(const std::vector<tac*>&);
-  extern void mark(usr*);
+  using namespace std;
+  void action(const fundef* fdef, vector<tac*>& v);
+  void remember_action(const vector<tac*>&);
+  void mark(usr*);
+  namespace basic_block {
+    struct info_t;
+  } // end of namespace basic_block
 } // end of namespace optimize
 
 namespace names {
@@ -765,7 +751,7 @@ namespace names {
 
 namespace live_var {
   using namespace std;
-  void dump(string, const map<optimize::basic_block::info*, set<var*> >&);
+  void dump(string, const map<optimize::basic_block::info_t*, set<var*> >&);
 } // end of namespace live_var
 
 namespace character_impl {

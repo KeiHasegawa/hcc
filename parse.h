@@ -5,11 +5,7 @@ namespace c_compiler {
 
 template<class C> class pvector : public std::vector<C*> {
 public:
-  ~pvector()
-  {
-    for (auto p : *this)
-      delete p;
-  }
+  ~pvector(){ for (auto p : *this) delete p; }
 };
 
 } // end of namespace c_compiler

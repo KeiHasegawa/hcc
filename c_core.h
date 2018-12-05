@@ -8,15 +8,15 @@ struct tag;
 struct block;
 
 struct scope {
-  enum id { NONE, PARAM, BLOCK };
-  id m_id;
+  enum id_t { NONE, PARAM, BLOCK };
+  id_t m_id;
   scope* m_parent;
   std::vector<scope*> m_children;
   std::map<std::string, std::vector<usr*> > m_usrs;
   std::map<std::string, tag*> m_tags;
   static scope* current;
   static scope root;
-  scope(id id = NONE) : m_id(id), m_parent(0) {}
+  scope(id_t id = NONE) : m_id(id), m_parent(0) {}
   virtual ~scope();
 };
 
@@ -27,11 +27,8 @@ struct param_scope : scope {
 
 struct var;
 
-struct tac;
-
 struct block : scope {
   std::vector<var*> m_vars;
-  std::vector<tac*> m_dealloc;
   block() : scope(BLOCK) {}
   ~block();
 };
@@ -39,7 +36,8 @@ struct block : scope {
 struct file_t {
   std::string m_name;
   int m_lineno;
-  file_t(std::string name = "", int lineno = 0) : m_name(name), m_lineno(lineno) {}
+  file_t(std::string name = "", int lineno = 0)
+  : m_name(name), m_lineno(lineno) {}
 };
 
 struct type;
@@ -63,10 +61,7 @@ template<class T> struct constant;
 struct addrof;
 struct generated;
 struct genaddr;
-class func_type;
 struct to3ac;
-
-namespace optimize { namespace basic_block { struct info; } }
 
 struct var {
   const type* m_type;
@@ -1852,7 +1847,7 @@ struct tac {
     PARAM, CALL, RETURN,
     GOTO, TO,
     ADDR, INVLADDR, INVRADDR, LOFF, ROFF,
-    ALLOC, DEALLOC,
+    ALLOCA,
     ASM,
     VASTART, VAARG, VAEND
   };
@@ -1994,14 +1989,9 @@ struct roff3ac : tac {
   tac* new3ac(){ return new roff3ac(*this); }
 };
 
-struct alloc3ac : tac {
-  alloc3ac(var* x, var* y) : tac(ALLOC,x,y,0) {}
-  tac* new3ac(){ return new alloc3ac(*this); }
-};
-
-struct dealloc3ac : tac {
-  dealloc3ac(var* y, var* z) : tac(DEALLOC,0,y,z) {}
-  tac* new3ac(){ return new dealloc3ac(*this); }
+struct alloca3ac : tac {
+  alloca3ac(var* x, var* y) : tac(ALLOCA,x,y,0) {}
+  tac* new3ac(){ return new alloca3ac(*this); }
 };
 
 struct asm3ac : tac {

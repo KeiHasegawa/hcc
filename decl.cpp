@@ -87,7 +87,7 @@ void c_compiler::declaration2(usr* curr, parse::initializer* ini)
 }
 
 namespace c_compiler {
-  void check_skipped2(const std::pair<int, var*>&);
+  void skipchk(const std::pair<int, var*>&);
 } // end of namespace c_compiler
 
 int c_compiler::declaration3(usr* curr, parse::initializer* ini)
@@ -113,7 +113,7 @@ int c_compiler::declaration3(usr* curr, parse::initializer* ini)
     if ( scope::current != &scope::root )
       expr::constant_flag = false;
     map<int, var*>& v = wi->m_value;
-    for_each(v.begin(), v.end(), check_skipped2);
+    for_each(v.begin(), v.end(), skipchk);
     return n;
   }
   else {
@@ -129,17 +129,19 @@ int c_compiler::declaration3(usr* curr, parse::initializer* ini)
   }
 }
 
-void c_compiler::check_skipped2(const std::pair<int, var*>& x)
+void c_compiler::skipchk(const std::pair<int, var*>& x)
 {
   using namespace std;
+  using namespace static_inline;
   var* v = x.second;
   addrof * a = v->addrof_cast();
   if (!a)
     return;
   var* r = a->m_ref;
   usr* u = r->usr_cast();
-  call3ac dummy(0, u);
-  function_definition::static_inline::check_skipped(&dummy);
+  addr3ac tmp(0, u);
+  skip::chk_t arg(0);
+  skip::check(&tmp, &arg);
 }
 
 namespace c_compiler { namespace decl_impl {
@@ -696,7 +698,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       varray::initializer(curr);
     }
   }
-  if ( b ){
+  if (b) {
     usr::flag_t mask = usr::flag_t(usr::STATIC | usr::EXTERN);
     if ( flag & mask ){
           usr::flag_t& fun_flag = fundef::current->m_usr->m_flag;
@@ -707,7 +709,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       }
     }
   }
-  if ( flag & usr::INLINE ){
+  if (flag & usr::INLINE) {
     using namespace error::decl::func_spec;
     if ( !(flag & usr::FUNCTION) ){
       not_function(curr);
@@ -718,7 +720,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       flag = usr::flag_t(flag & ~usr::INLINE);
     }
   }
-  if ( b ){
+  if (b) {
     scope* param = b->m_parent;
     if ( param->m_parent == &scope::root ){
       const map<string, vector<usr*> >& usrs = param->m_usrs;
@@ -731,7 +733,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       }
     }
   }
-  else if ( scope::current == &scope::root ){
+  else if (scope::current == &scope::root) {
     usr::flag_t mask = usr::flag_t(usr::AUTO | usr::REGISTER);
     if ( flag & mask ){
       using namespace error::extdef;
@@ -740,14 +742,14 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
     }
   }
 
-  if ( ini && decl::static_storage_duration(curr) ){
+  if (ini && decl::static_storage_duration(curr)) {
     with_initial* tmp = new with_initial(*curr);
     delete curr;
     curr = tmp;
     if ( scope::current != &scope::root )
       expr::constant_flag = true;
   }
-  if ( ini && parse::parameter::old_style ){
+  if (ini && parse::parameter::old_style) {
     using namespace error::extdef::fundef;
     invalid_initializer(curr);
   }
@@ -756,7 +758,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
 
 void c_compiler::decl_impl::variable_length::allocate(usr* u)
 {
-  if ( scope::current == &scope::root )
+  if (scope::current == &scope::root)
     return;
   assert(scope::current->m_parent != &scope::root);
   usr::flag_t& flag = u->m_flag;
@@ -771,16 +773,12 @@ void c_compiler::decl_impl::variable_length::allocate(usr* u)
     return;
   const type* T = u->m_type;
   var* size = T->vsize();
-  code.push_back(new alloc3ac(u,size));
-  block* b = static_cast<block*>(scope::current);
-  b->m_dealloc.push_back(new dealloc3ac(u,size));
+  code.push_back(new alloca3ac(u,size));
 }
 
 namespace c_compiler { namespace decl_impl {
   bool conflict(usr* prev, usr* curr);
 } } // end of namespace decl_impl and c_compiler
-
-std::map<std::string,std::vector<c_compiler::usr*> > c_compiler::function_definition::Inline::decled;
 
 c_compiler::usr* c_compiler::decl_impl::install2(usr* curr)
 {
@@ -803,38 +801,21 @@ c_compiler::usr* c_compiler::decl_impl::install2(usr* curr)
       curr->m_type = composite(prev->m_type, curr->m_type);
       usr::flag_t flag = curr->m_flag;
       if ((flag & usr::FUNCTION) && (flag & usr::EXTERN)){
-        using namespace function_definition::static_inline;
-        skipped_t::iterator r = skipped.find(prev);
-        if (r != skipped.end()) {
-          info* i = r->second;
-          usr::flag_t& f = i->m_fundef->m_usr->m_flag;
-          f = usr::flag_t(f | usr::EXTERN);
-          skipped.erase(r);
-          gencode(i);
+        using namespace static_inline;
+        using namespace skip;
+        table_t::iterator r = table.find(prev);
+        if (r != table.end()) {
+          info_t* info = r->second;
+          usr::flag_t& flag = info->m_fundef->m_usr->m_flag;
+          flag = usr::flag_t(flag | usr::EXTERN);
+          table.erase(r);
+          gencode(info);
         }
       }
     }
   }
-  usr::flag_t flag = curr->m_flag;
-  if ( (flag & usr::INLINE) && (flag & usr::FUNCTION) ){
-    if ( c_compiler_text[0] == ';' )
-      function_definition::Inline::decled[name].push_back(curr);
-    else {
-      typedef map<string, vector<usr*> >::iterator IT;
-      IT p = function_definition::Inline::decled.find(name);
-      if ( p != function_definition::Inline::decled.end() )
-        function_definition::Inline::decled.erase(p);
-    }
-  }
   usrs[name].push_back(curr);
   return curr;
-}
-
-void c_compiler::function_definition::Inline::nodef(const std::pair<std::string, std::vector<usr*> >& p)
-{
-  using namespace std;
-  const vector<usr*>& v = p.second;
-  for_each(v.begin(),v.end(),error::decl::func_spec::no_definition);
 }
 
 namespace c_compiler { namespace decl_impl {
@@ -954,11 +935,12 @@ c_compiler::decl::declarator::func(const type* T, parse::parameter_list* pl, usr
 }
 
 namespace c_compiler { namespace decl { namespace declarator { namespace func_impl {
+  using namespace std;
   struct old_style {
-    std::string operator()(var* v){ return static_cast<usr*>(v)->m_name; }
-    static std::vector<std::string> il;
+    string operator()(var* v){ return static_cast<usr*>(v)->m_name; }
+    static vector<string> il;
   };
-  std::vector<std::string> old_style::il;
+  vector<string> old_style::il;
 } } } } // end of namespace func_impl, declarator, decl and c_compiler
 
 const c_compiler::type*
@@ -980,7 +962,7 @@ namespace c_compiler {
       namespace array_impl {
         bool inblock(scope* ptr)
         {
-	  assert(ptr);
+          assert(ptr);
           switch (ptr->m_id) {
           case scope::NONE:
             return false;
@@ -990,15 +972,15 @@ namespace c_compiler {
             return inblock(ptr->m_parent);
           }
         }
-	bool inblock_param(scope* ptr)
-	{
-	  assert(ptr);
-	  if (ptr->m_id == scope::PARAM)
-	    return inblock(ptr->m_parent);
-	  else
-	    return false;
-	}
-	int csz;
+        bool inblock_param(scope* ptr)
+        {
+          assert(ptr);
+          if (ptr->m_id == scope::PARAM)
+            return inblock(ptr->m_parent);
+          else
+            return false;
+        }
+        int csz;
       } // end of namespace array_impl
     } // end of namespace declarator
   } // end of namespace decl
@@ -1032,9 +1014,9 @@ c_compiler::decl::declarator::array(const type* T, var* v, bool asterisc, usr* u
           v = tmp;
         }
         if (array_impl::inblock_param(scope::current)) {
-	  int n = array_impl::csz;
-	  for_each(code.begin()+n, code.end(), [](tac* p){ delete p; });
-	  code.resize(n);
+          int n = array_impl::csz;
+          for_each(code.begin()+n, code.end(), [](tac* p){ delete p; });
+          code.resize(n);
           return T->patch( array_type::create(bt, 0), u);
         }
         return T->patch(varray_type::create(bt, v), u);
@@ -1050,7 +1032,7 @@ c_compiler::decl::declarator::array(const type* T, var* v, bool asterisc, usr* u
       dim = 1;
     }
   }
-  else if ( asterisc ){
+  else if (asterisc) {
     if (scope::current->m_id != scope::PARAM) {
       using namespace error::decl::declarator::array;
       asterisc_dimension(parse::position,u);
@@ -1148,7 +1130,7 @@ void c_compiler::destroy_temporary()
     names::reset();
 }
 
-c_compiler::function_definition::static_inline::info::~info()
+c_compiler::static_inline::info_t::~info_t()
 {
   using namespace std;
   for (auto p : m_code) delete p;
@@ -1159,30 +1141,77 @@ c_compiler::function_definition::static_inline::info::~info()
 }
 
 namespace c_compiler {
+  using namespace std;
   namespace function_definition {
-    namespace static_inline {
-      skipped_t skipped;
-    } // end of namespace static_inline
-    extern void just_remember(std::vector<tac*>& v);
+    void remember(fundef* fdef, vector<tac*>& vt);
   } // end of namespace function_definition
+  namespace static_inline {
+    skip::table_t skip::table;
+    namespace defer {
+      map<string, vector<ref_t> > refs;
+      map<string, set<usr*> > callers;
+      map<usr*, vector<int> > positions;
+    } // end of namespace defer
+  } // end of namespace static_inline
 } // end of namespace c_compiler
 
-void c_compiler::function_definition::static_inline::gencode(info* info)
+void c_compiler::static_inline::gencode(info_t* info)
 {
-  if (generator::last)
+  using namespace function_definition;
+  fundef* fdef = info->m_fundef;
+  vector<tac*>& vc = info->m_code;
+  skip::chk_t arg(fdef);
+  for_each(vc.begin(), vc.end(), bind2nd(ptr_fun(skip::check), &arg));
+  if (arg.m_wait_inline) {
+    assert(skip::table.find(fdef->m_usr) == skip::table.end());
+    skip::table[fdef->m_usr] = info;
     return;
+  }
   scope* param = info->m_fundef->m_param;
-  scope::root.m_children.push_back(param);
-  function_definition::action(info->m_fundef, info->m_code, false);
-  scope::root.m_children.pop_back();
-}
-
-void
-c_compiler::function_definition::static_inline::just_refed::nodef(const std::pair<std::string,just_refed::info*>& p)
-{
-  usr::flag_t flag = p.second->m_flag;
-  if ( flag & usr::STATIC )
-    error::extdef::fundef::nodef(parse::position,p.first,p.second->m_file);
+  struct ss {
+    scope* m_org;
+    ss(scope* ptr) : m_org(0)
+    {
+      vector<scope*>& ch = scope::root.m_children;
+      if (ch.empty())
+        ch.push_back(ptr);
+      else {
+        assert(ch.size() == 1);
+        m_org = ch[0];
+        ch[0] = ptr;
+      }
+    }
+    ~ss()
+    {
+      vector<scope*>& ch = scope::root.m_children;
+      if (ch.size() == 1)
+        ch.pop_back();
+      else
+        assert(generator::last && ch.empty());
+      if (m_org)
+        ch.push_back(m_org);
+    }
+  } ss(param);
+  if (cmdline::output_medium) {
+    if (cmdline::output_optinfo)
+      cout << "\nAfter optimization\n";
+    dump(fdef, vc);
+  }
+  if (!error::counter) {
+    if (generator::generate) {
+      generator::interface_t tmp = {
+        &scope::root,
+        fdef,
+        &vc
+      };
+      generator::generate(&tmp);
+    }
+    else if (generator::last) {
+      remember(fdef, vc);
+      info = 0;
+    }
+  }
+  delete info;
 }
 
 const c_compiler::type*
@@ -1244,65 +1273,47 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, const type* T)
   return T;
 }
 
-namespace c_compiler { namespace stmt {
-  inline void
-  label_blame(const std::pair<std::string, std::vector<label::used_t> >&);
-} } // end of namespace stmt and c_compiler
-
-c_compiler::function_definition::static_inline::just_refed::table_t
-c_compiler::function_definition::static_inline::just_refed::table;
-
-namespace c_compiler { namespace function_definition { namespace Inline { namespace remember {
-  extern void action(std::vector<tac*>&);
-} } } } // end of namespace remember, Inline, function_definition and c_compiler
-
-namespace c_compiler { namespace function_definition { namespace static_inline {
-  extern void remember(std::vector<tac*>&);
-} } } // end of namespace static_inline, function_definition and c_compiler
+namespace c_compiler {
+  namespace stmt {
+    using namespace std;
+    inline void
+    label_blame(const pair<string, vector<label::used_t> >& p)
+    {
+      using namespace error::stmt::label;
+      string name = p.first;
+      const vector<label::used_t>& v = p.second;
+      for (auto u : v)
+        not_defined(name, u.m_file);
+    }
+  } // end of namespace stmt
+} // end of namespace c_compiler
 
 void
-c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc, bool skip)
+c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc)
 {
   using namespace std;
-  if (skip){
-    map<string, vector<stmt::label::used_t> >& m = stmt::label::used;
-    for (auto p : m) stmt::label_blame(p);
-    m.clear();
-#if 0
-    if (!Inline::after::lists.empty())
-      return Inline::remember::action(vc);
-#endif
-    if (!error::counter)
-      optimize::action(fdef, vc);
-    usr::flag_t flag = fdef->m_usr->m_flag;
-    usr::flag_t mask = usr::flag_t(usr::INLINE | usr::STATIC);
-    if (flag & mask){
-      string name = fdef->m_usr->m_name;
-      using namespace static_inline;
-      just_refed::table_t::iterator p = just_refed::table.find(name);
-      if (p != just_refed::table.end()) {
-        just_refed::info* info = p->second;
-        usr::flag_t prev = info->m_func->m_flag;
-        delete info;
-        just_refed::table.erase(p);
-#if 0
-        if ((prev & mask) && !(prev & usr::EXTSTATIC))
-          return static_inline::remember(v);
-#endif
-      }
-      else if (!generator::last)
-        return static_inline::remember(vc);
-    }
-  }
+  using namespace static_inline;
+  map<string, vector<stmt::label::used_t> >& m = stmt::label::used;
+  for (auto p : m) stmt::label_blame(p);
+  m.clear();
+  if (!error::counter)
+    optimize::action(fdef, vc);
+  usr::flag_t flag = fdef->m_usr->m_flag;
+  usr::flag_t mask = usr::flag_t(usr::INLINE | usr::STATIC);
+  if (flag & mask)
+    return skip::add(fdef, vc, true);
 
-  for_each(vc.begin(), vc.end(), static_inline::check_skipped);
+  skip::chk_t arg(fdef);
+  for_each(vc.begin(), vc.end(), bind2nd(ptr_fun(skip::check), &arg));
+  if (arg.m_wait_inline)
+    return skip::add(fdef, vc, false);
 
-  if ( cmdline::output_medium ){
-    if ( cmdline::output_optinfo )
+  if (cmdline::output_medium) {
+    if (cmdline::output_optinfo)
       cout << "\nAfter optimization\n";
     dump(fdef, vc);
   }
-  if ( !error::counter ){
+  if (!error::counter) {
     if (generator::generate) {
       generator::interface_t tmp = {
         &scope::root,
@@ -1312,22 +1323,19 @@ c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc, boo
       generator::generate(&tmp);
     }
     else if (generator::last) {
-      just_remember(vc);
+      remember(fdef, vc);
+      fundef::current = 0;
     }
   }
   fdef->m_usr->m_type = fdef->m_usr->m_type->vla2a();
 }
 
-namespace c_compiler { namespace function_definition { namespace static_inline { 
-  bool cmp_name(std::pair<usr*, info*> p, std::string name)
-  {
-    return p.first->m_name == name;
-  }
-} } }  // end of namespace static_inline, function_definition and c_compiler
-
-void c_compiler::function_definition::static_inline::check_skipped(tac* tac)
+void
+c_compiler::static_inline::skip::check(tac* ptac, chk_t* arg)
 {
-  var* y = tac->y;
+  using namespace std;
+  ++arg->m_pos;
+  var* y = ptac->y;
   if (!y)
     return;
   usr* u = y->usr_cast();
@@ -1340,32 +1348,46 @@ void c_compiler::function_definition::static_inline::check_skipped(tac* tac)
   if (!(flag & mask))
     return;
 
-  skipped_t::iterator p = skipped.find(u);
-  if (p != skipped.end()) {
-    info* i = p->second;
-    skipped.erase(p);
-    return gencode(i);
+  table_t::iterator it = table.find(u);
+  if (it != table.end()) {
+    info_t* info = it->second;
+    table.erase(it);
+    return gencode(info);
   }
-        
-  using namespace std;
+
   string name = u->m_name;
-  if ( function_definition::table.find(name) == function_definition::table.end() )
-    just_refed::table[name] = new just_refed::info(tac->m_file, flag, fundef::current->m_usr);
-  else {
-    p = find_if(skipped.begin(), skipped.end(), bind2nd(ptr_fun(cmp_name), name));
-    if (p != skipped.end()) {
-      info* i = p->second;
-      skipped.erase(p);
-      return gencode(i);
-    }
+  it = find_if(table.begin(),table.end(),
+       [name](const pair<usr*, info_t*>& p){ return p.first->m_name == name; });
+  if (it != table.end()) {
+    info_t* info = it->second;
+    table.erase(it);
+    return gencode(info);
   }
+
+  const map<string, usr*>& fdt = function_definition::table;
+  if (fdt.find(name) != fdt.end())
+    return;
+
+  using namespace defer;
+  refs[name].push_back(ref_t(name, flag, u->m_file, ptac->m_file));
+  if (ptac->m_id == tac::ADDR)
+    return;
+  assert(ptac->m_id == tac::CALL);
+  if (!(flag & usr::INLINE))
+    return;
+  arg->m_wait_inline = true;
+  usr* v = arg->m_fundef->m_usr;
+  callers[name].insert(v);
+  positions[v].push_back(arg->m_pos);
 }
 
-void c_compiler::function_definition::dump(const fundef* fdef, const std::vector<tac*>& v)
+void
+c_compiler::function_definition::dump(const fundef* fdef,
+                                      const std::vector<tac*>& vc)
 {
   using namespace std;
   cout << fdef->m_usr->m_name << ":\n";
-  for (auto p : v) {
+  for (auto p : vc) {
     cout << '\t';
     tac_impl::dump(cout, p);
     cout << '\n';
@@ -1374,143 +1396,108 @@ void c_compiler::function_definition::dump(const fundef* fdef, const std::vector
   scope_impl::dump();
 }
 
-namespace c_compiler { namespace function_definition { namespace Inline { namespace remember { namespace update {
-  extern void action(std::string);
-} } } } } // end of namespace update, remember, Inline, function_definition and c_compiler
+namespace c_compiler {
+  namespace static_inline {
+    using namespace std;
+    using namespace defer;
+    namespace skip {
+      void after_substitute(usr* ucaller, pair<string, info_t*> pcallee)
+      {
+        map<usr*, vector<int> >::iterator p = positions.find(ucaller);
+        assert(p != positions.end());
+        vector<int>& vi = p->second;
+        table_t::iterator q = table.find(ucaller);
+        assert(q != table.end());
+        info_t* caller = q->second;
+        {
+          vector<tac*>& vc = caller->m_code;
+          vector<scope*>& ch = caller->m_fundef->m_param->m_children;
+          assert(!ch.empty());
+          struct sweeper {
+            scope* m_org;
+            sweeper(scope* org) : m_org(scope::current)
+            { scope::current = org; }
+            ~sweeper(){ scope::current = m_org; }
+          } sweeper(ch[0]);
+          int delta = 0;
+          typedef vector<int>::iterator IT;
+          for (IT r = vi.begin() ; r != vi.end() ; ) {
+            *r += delta;
+            int n = *r;
+            tac* ptac = vc[n];
+            assert(ptac->m_id == tac::CALL);
+            var* y = ptac->y;
+            usr* fn = y->usr_cast();
+            assert(fn);
+            string name = pcallee.first;
+            info_t* callee = pcallee.second;
+            if (fn->m_name == name) {
+              int before = vc.size();
+              if (!error::counter)
+                substitute(vc, n, callee);
+              int after = vc.size();
+              delta += after - before;
+              r = vi.erase(r);
+            }
+            else
+              ++r;
+          }
+        }
+        if (vi.empty()) {
+          positions.erase(p);
+          optimize::action(caller->m_fundef, caller->m_code);      
+          usr::flag_t flag = ucaller->m_flag;
+          if (!(flag & (usr::STATIC|usr::INLINE))) {
+            table.erase(q);
+            gencode(caller);
+          }
+        }
+      }
+      void add(fundef* fdef, vector<tac*>& vc, bool f)
+      {
+        usr* u = fdef->m_usr;
+        u->m_type = u->m_type->vla2a();
+        vector<const type*> vt;
+        type::collect_tmp(vt);
+        info_t* info = new info_t(fdef,vc,vt);
+        table[u] = info;
+        vector<scope*>& ch = scope::root.m_children;
+        assert(ch.size() == 1 && ch[0] == fdef->m_param);
+        ch.clear();
+        vc.clear();
+        fundef::current = 0;
+        if (!f)
+          return;
 
-void c_compiler::function_definition::static_inline::remember(std::vector<tac*>& vc)
+        string callee = u->m_name;
+        map<string, vector<ref_t> >::iterator p = refs.find(callee);
+        if (p == refs.end())
+          return;
+
+        refs.erase(p);
+        map<string, set<usr*> >::iterator q = callers.find(callee);
+        if (q == callers.end()) {
+          table.erase(u);
+          return gencode(info);
+        }
+
+        const set<usr*>& su = q->second;	
+        usr::flag_t flag = u->m_flag;
+        assert(flag & usr::INLINE);
+        for_each(begin(su), end(su),
+                 bind2nd(ptr_fun(after_substitute),make_pair(callee,info)));
+        callers.erase(q);
+      }
+    } // end of namespace skip
+  } // end of namespace static_inline
+} // end of namespace c_compiler
+
+void
+c_compiler::function_definition::remember(fundef* fdef, std::vector<tac*>& vc)
 {
-  using namespace std;
-  usr* u = fundef::current->m_usr;
-  u->m_type = u->m_type->vla2a();
-  vector<const type*> vt;
-  type::collect_tmp(vt);
-  static_inline::skipped[u] = new static_inline::info(fundef::current,vc,vt);
+  funcs.push_back(make_pair(fdef, vc));
   scope::root.m_children.clear();
   vc.clear();
-  usr::flag_t flag = u->m_flag;
-  if ( flag & usr::INLINE )
-    Inline::remember::update::action(u->m_name);
-  fundef::current = 0;
-}
-
-void c_compiler::function_definition::just_remember(std::vector<tac*>& v)
-{
-  funcs.push_back(make_pair(fundef::current, v));
-  scope::root.m_children.clear();
-  v.clear();
-  fundef::current = 0;
-}
-
-namespace c_compiler { namespace function_definition { namespace Inline { namespace remember { namespace update {
-  extern int handler(std::string, std::vector<std::string>*);
-} } } } } // end of namespace update, remember, Inline, function_definition and c_compiler
-
-void c_compiler::function_definition::Inline::remember::update::action(std::string name)
-{
-  using namespace std;
-  vector<string> vs;
-  handler(name,&vs);
-  for_each(vs.begin(),vs.end(),action);
-}
-
-namespace c_compiler { namespace function_definition { namespace Inline { namespace remember {
-  struct info {
-    fundef* m_fundef;
-    std::vector<tac*> m_code;
-    std::vector<after*> m_list;
-    info(fundef* a, const std::vector<tac*>& b, const std::vector<after*>& c)
-      : m_fundef(a), m_code(b), m_list(c) {}
-    ~info();
-  };
-  std::list<info*> todo;
-  extern bool finish(info*, std::string);
-} } } } // end of namespace remember, Inline, function_definition and c_compiler
-
-int c_compiler::function_definition::Inline::remember::update::handler(std::string in, std::vector<std::string>* vs)
-{
-  using namespace std;
-  list<info*> tmp;
-  while ( !todo.empty() ){
-    Inline::remember::info* info = todo.front();
-    todo.pop_front();
-    string name = info->m_fundef->m_usr->m_name;
-    usr::flag_t flag = info->m_fundef->m_usr->m_flag;
-    if ( finish(info,in) ){
-      if ( flag & usr::INLINE )
-        vs->push_back(name);
-    }
-    else
-      tmp.push_back(info);
-  }
-  todo = tmp;
-  return 0;
-}
-
-namespace c_compiler { namespace function_definition { namespace Inline { namespace remember {
-  std::string name(info* info){ return info->m_fundef->m_usr->m_name; }
-} } } } // end of namespace remember, Inline, function_definition and c_compiler
-
-
-bool c_compiler::function_definition::Inline::resolve::flag;
-
-void c_compiler::function_definition::Inline::resolve::action()
-{
-  using namespace std;
-  vector<string> vs;
-  transform(remember::todo.begin(),remember::todo.end(),back_inserter(vs),remember::name);
-  flag = true;
-  vector<string> dummy;
-  for_each(vs.begin(),vs.end(),bind2nd(ptr_fun(remember::update::handler),&dummy));
-  for (auto p : garbage) delete p;
-  garbage.clear();
-}
-
-
-void c_compiler::function_definition::Inline::remember::action(std::vector<tac*>& v)
-{
-  optimize::remember_action(v);
-  todo.push_back(new info(fundef::current,v,after::lists));
-  scope::root.m_children.clear();
-  v.clear();
-  fundef::current = 0;
-  after::lists.clear();
-}
-
-bool c_compiler::function_definition::Inline::remember::finish(info* info, std::string name)
-{
-  using namespace std;
-  vector<after*>& v = info->m_list;
-  assert(!v.empty());
-  typedef vector<after*>::iterator IT;
-  for ( IT p = v.begin() ; p != v.end() ; ){
-    if ( (*p)->expand(name,info->m_code) )
-      p = v.erase(p);
-    else
-      ++p;
-  }
-  if ( !v.empty() )
-    return false;
-  param_scope* param = info->m_fundef->m_param;
-  scope::root.m_children.push_back(param);
-  function_definition::action(info->m_fundef,info->m_code,true);
-  if ( !scope::root.m_children.empty() )
-    scope::root.m_children.pop_back();
-  delete info;
-  return true;
-}
-
-c_compiler::function_definition::Inline::remember::info::~info()
-{
-  using namespace std;
-  usr::flag_t flag = m_fundef->m_usr->m_flag;
-  if ( !(flag & usr::INLINE) ){
-    param_scope* param = m_fundef->m_param;
-    delete param;
-    delete m_fundef;
-    for (auto p : m_code) delete p;
-  }
-  fundef::current = 0;
 }
 
 namespace c_compiler {
@@ -1520,15 +1507,15 @@ namespace c_compiler {
   }
 } // end of namespace c_compiler
 
-c_compiler::tac::tac(id_t ii, var* xx, var* yy, var* zz)
-  : m_id(ii), x(xx), y(yy), z(zz), m_file(parse::position)
+c_compiler::tac::tac(id_t id, var* xx, var* yy, var* zz)
+  : m_id(id), x(xx), y(yy), z(zz), m_file(parse::position)
 {
   if ( fundef::current ){
     usr::flag_t flag = fundef::current->m_usr->m_flag;
     if ( (flag & usr::INLINE) && !(flag & usr::STATIC) ){
-      if ( x ) tac_impl::inline_code(x);
-      if ( y ) tac_impl::inline_code(y);
-      if ( z ) tac_impl::inline_code(z);
+      if (x) tac_impl::inline_code(x);
+      if (y) tac_impl::inline_code(y);
+      if (z) tac_impl::inline_code(z);
     }
   }
 }
@@ -1538,10 +1525,10 @@ bool c_compiler::internal_linkage(usr* u)
   using namespace std;
   if (u->m_scope != &scope::root)
     return false;
-  usr::flag_t f = u->m_flag;
-  if (f & usr::FUNCTION)
+  usr::flag_t flag = u->m_flag;
+  if (flag & usr::FUNCTION)
     return false;
-  if (!(f & usr::STATIC))
+  if (!(flag & usr::STATIC))
     return false;
   string name = u->m_name;
   if (name[name.length() - 1] == '"')
@@ -1551,26 +1538,15 @@ bool c_compiler::internal_linkage(usr* u)
 
 void c_compiler::tac_impl::inline_code(var* v)
 {
-  if ( v ){
-    if ( usr* u = v->usr_cast() ){
-      if ( internal_linkage(u) ){
+  if (v) {
+    if (usr* u = v->usr_cast()) {
+      if (internal_linkage(u)) {
         error::decl::func_spec::internal_linkage(parse::position,u);
         usr::flag_t& flag = fundef::current->m_usr->m_flag;
         flag = usr::flag_t(flag & ~usr::INLINE);
       }
     }
   }
-}
-
-inline void
-c_compiler::stmt::label_blame(const std::pair<std::string, std::vector<label::used_t> >& p)
-{
-  using namespace std;
-  using namespace error::stmt::label;  
-  string name = p.first;
-  const vector<label::used_t>& v = p.second;
-  for (auto u : v)
-    not_defined(name, u.m_file);
 }
 
 namespace c_compiler { namespace parse { namespace parameter {
@@ -1615,15 +1591,9 @@ void c_compiler::parse::block::enter()
 void c_compiler::parse::block::leave()
 {
   using namespace std;
-  if (scope::current->m_id == scope::BLOCK) {
-    c_compiler::block* b = static_cast<c_compiler::block*>(scope::current);
-    vector<tac*>& v = b->m_dealloc;
-    copy(v.rbegin(), v.rend(), back_inserter(code));
-  }
   scope::current = scope::current->m_parent;
   if ( scope::current->m_parent == &scope::root )
     scope::current = &scope::root;
-
 }
 
 namespace c_compiler { namespace parse { namespace parameter {
@@ -1635,13 +1605,14 @@ void c_compiler::parse::parameter::old_style0()
 {
   using namespace std;
   vector<string>& v = decl::declarator::func_impl::old_style::il;
-  if ( v.empty() )
+  if (v.empty())
     return;
   vector<const type*> param;
   transform(v.begin(),v.end(),back_inserter(param),old_styler1);
   typedef const func_type FUNC;
   FUNC* func = static_cast<FUNC*>(fundef::current->m_usr->m_type);
-  fundef::current->m_usr->m_type = func_type::create(func->return_type(),param,true);
+  const type* T = func_type::create(func->return_type(),param,true);
+  fundef::current->m_usr->m_type = T;
   map<string, vector<usr*> >& u = scope::current->m_usrs;
   for_each(u.begin(),u.end(),old_styler2);
   v.clear();
@@ -1655,7 +1626,7 @@ c_compiler::parse::parameter::old_styler1(std::string name)
   param_scope* param = static_cast<param_scope*>(scope::current);
   map<string, vector<usr*> >& usrs = param->m_usrs;
   map<string, vector<usr*> >::const_iterator p = usrs.find(name);
-  if ( p == usrs.end() ){
+  if (p == usrs.end()) {
     using namespace error::decl::declarator::func;
     not_declared(parse::position,name);
     return int_type::create();
@@ -1665,7 +1636,7 @@ c_compiler::parse::parameter::old_styler1(std::string name)
   usr* u = v.back();
   usr::flag_t& flag = u->m_flag;
   usr::flag_t mask = usr::flag_t(usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO);
-  if ( flag & mask ){
+  if (flag & mask) {
     using namespace error::extdef::fundef;
     invalid_storage(u);
     flag = usr::flag_t(flag & ~mask);
@@ -1681,29 +1652,31 @@ void c_compiler::parse::parameter::old_styler2(const std::pair<std::string, std:
   string name = e.first;
   vector<string>& v = decl::declarator::func_impl::old_style::il;
   vector<string>::const_iterator p = find(v.begin(),v.end(),name);
-  if ( p == v.end() ){
+  if (p == v.end()) {
     using namespace error::decl::declarator::func;
     usr* u = e.second.back();
     not_parameter(u);
   }
 }
 
-const c_compiler::type* c_compiler::decl::declarator::pointer(const type* pointer, const type* T)
+const c_compiler::type*
+c_compiler::decl::declarator::pointer(const type* pointer, const type* T)
 {
   return T->patch(pointer,0);
 }
 
-const c_compiler::type* c_compiler::parse::pointer(type_qualifier_list* p)
+const c_compiler::type*
+c_compiler::parse::pointer(type_qualifier_list* p)
 {
   using namespace std;
   auto_ptr<type_qualifier_list> sweeper(p);
   const type* ret = pointer_type::create(backpatch_type::create()); 
-  if ( p ){
-    if ( find(p->begin(),p->end(),CONST_KW) != p->end() )
+  if (p) {
+    if (find(p->begin(),p->end(),CONST_KW) != p->end())
       ret = const_type::create(ret);
-    if ( find(p->begin(),p->end(),VOLATILE_KW) != p->end() )
+    if (find(p->begin(),p->end(),VOLATILE_KW) != p->end())
       ret = volatile_type::create(ret);
-    if ( find(p->begin(),p->end(),RESTRICT_KW) != p->end() )
+    if (find(p->begin(),p->end(),RESTRICT_KW) != p->end())
       ret = restrict_type::create(ret);
   }
   return ret;
@@ -1767,7 +1740,7 @@ c_compiler::parse::struct_or_union_specifier(tag* T, struct_declaration_list* sd
   using namespace std;
   auto_ptr<struct_declaration_list> sweeper(sdl);
   vector<usr*> member(*sdl);
-  if ( const type* r = T->m_types.second ){
+  if (const type* r = T->m_types.second) {
     for (auto p : member) delete p;
     return r;
   }
@@ -1778,8 +1751,9 @@ namespace c_compiler { namespace decl_impl { namespace member {
   usr* conv(const type*, usr*);
 } } } // end of member, namespace decl_impl and c_compiler
 
-c_compiler::parse::struct_declaration_list* c_compiler::parse::struct_declaration(decl_specs* ds,
-                                                                                  struct_declarator_list* sdl)
+c_compiler::parse::struct_declaration_list*
+c_compiler::parse::struct_declaration(decl_specs* ds,
+                                      struct_declarator_list* sdl)
 {
   using namespace std;
   using namespace decl_impl;
@@ -1789,7 +1763,7 @@ c_compiler::parse::struct_declaration_list* c_compiler::parse::struct_declaratio
   specifier spec = accumulate(p->begin(),p->end(),specifier());
   struct_declaration_list* ret = new struct_declaration_list;
   auto_ptr<struct_declarator_list> q(sdl);
-  if ( q.get() )
+  if (q.get())
     transform(q->begin(),q->end(),back_inserter(*ret),bind1st(ptr_fun(conv),spec.m_type));
   return ret;
 }
@@ -1841,15 +1815,15 @@ void c_compiler::parse::enumerator::action(usr* u, var* v)
   using namespace std;
   using namespace error::decl::_enum;
   auto_ptr<usr> sweeper(u);
-  if ( v && !v->isconstant() ){
+  if (v && !v->isconstant()) {
     not_constant(u);
     v = 0;
   }
-  if ( v && !v->m_type->integer() ){
+  if (v && !v->m_type->integer()) {
     not_integer(u);
     v = 0;
   }
-  if ( !v )
+  if (!v)
     v = prev;
   u->m_type = v->m_type;
   string name = u->m_name;
@@ -1861,14 +1835,15 @@ void c_compiler::parse::enumerator::action(usr* u, var* v)
 
 c_compiler::usr* c_compiler::parse::enumerator::prev;
 
-const c_compiler::type* c_compiler::parse::type_name(decl_specs* sql, const type* T)
+const c_compiler::type*
+c_compiler::parse::type_name(decl_specs* sql, const type* T)
 {
   using namespace std;
   using namespace decl_impl;
   auto_ptr<decl_specs> sweeper(sql);
   sort(sql->begin(),sql->end(),comp_spec);
   specifier spec = accumulate(sql->begin(),sql->end(),specifier());
-  if ( !T )
+  if (!T)
     return spec.m_type;
   return T->patch(spec.m_type,0);
 }

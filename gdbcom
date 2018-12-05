@@ -4,7 +4,7 @@
 #c
 #end
 
-break c_compiler::c_compiler::expr::cast
+#b expr0.cpp:660
 run --no-generator --output-medium --simple-medium sample.txt
 
 

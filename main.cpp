@@ -31,6 +31,19 @@ int main(int argc, char** argv)
 #ifdef _DEBUG
   parse::delete_buffer();
 #endif // _DEBUG
+  static_inline::defer::last();
+
+  if (parse::is_last_decl) {
+    if (cmdline::output_medium)
+      c_compiler::scope_impl::dump();
+    if (!error::counter) {
+      if (generator::generate) {
+        generator::interface_t tmp = { &scope::root };
+        generator::generate(&tmp);
+      }
+    }
+  }
+  
   if (!error::counter) {
     if (generator::last) {
       transform(funcs.begin(), funcs.end(), back_inserter(scope::root.m_children), get_pm);
@@ -41,9 +54,20 @@ int main(int argc, char** argv)
       generator::last(&tmp);
     }
   }
+
   generator::terminate();
 #ifdef USE_PROFILE
   simple_profiler::sentry::output();
 #endif // USE_PROFILE
   return error::counter;
+}
+
+void c_compiler::static_inline::defer::last()
+{
+  using namespace std;
+  for (auto p : refs) {
+    const vector<ref_t>& v = p.second;
+    assert(!v.empty());
+    error::extdef::fundef::nodef(v[0]);
+  }
 }

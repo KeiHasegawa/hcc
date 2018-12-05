@@ -758,7 +758,7 @@ namespace c_compiler { namespace constant_impl {
     if (Ty->m_id == type::LONG_DOUBLE) {
       int sz = long_double_type::create()->size();
       auto_ptr<unsigned char> p =
-	auto_ptr<unsigned char>(new unsigned char[sz]);
+        auto_ptr<unsigned char>(new unsigned char[sz]);
 #ifndef _MSC_VER
       (*generator::long_double->from_double)(p.get(),z->m_value);
 #else // _MSC_VER
@@ -789,8 +789,8 @@ namespace c_compiler { namespace constant_impl {
     Tz = Tz->unqualified();
     if (Tz->m_id == type::LONG_DOUBLE) {
       int sz = long_double_type::create()->size();
-      auto_ptr<unsigned char> p	=
-	auto_ptr<unsigned char>(new unsigned char[sz]);
+      auto_ptr<unsigned char> p        =
+        auto_ptr<unsigned char>(new unsigned char[sz]);
 #ifndef _MSC_VER
       (*generator::long_double->from_double)(p.get(),y->m_value);
 #else // _MSC_VER
@@ -830,14 +830,14 @@ namespace c_compiler { namespace constant_impl {
         return b ? integer::create(1) : integer::create(0);
       }
       auto_ptr<unsigned char> p =
-	auto_ptr<unsigned char>(new unsigned char[sz]);
+        auto_ptr<unsigned char>(new unsigned char[sz]);
       (*generator::long_double->from_double)(p.get(),z->m_value);
       bool b = (*generator::long_double->cmp)(op,yy->b,p.get());
       return b ? integer::create(1) : integer::create(0);
     }
     if (Tz->m_id == type::LONG_DOUBLE) {
       auto_ptr<unsigned char> p =
-	auto_ptr<unsigned char>(new unsigned char[sz]);
+        auto_ptr<unsigned char>(new unsigned char[sz]);
       (*generator::long_double->from_double)(p.get(),y->m_value);
       constant<long double>* zz = reinterpret_cast<constant<long double>*>(z);
       bool b = (*generator::long_double->cmp)(op,p.get(),zz->b);

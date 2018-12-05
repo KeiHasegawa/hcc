@@ -649,7 +649,7 @@ function_definition
     {
       using namespace c_compiler;
       if (fundef::current) {
-        function_definition::action(fundef::current,code,true);
+        function_definition::action(fundef::current, code);
         delete fundef::current;
         fundef::current = 0;
       }
