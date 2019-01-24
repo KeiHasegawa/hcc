@@ -540,7 +540,7 @@ namespace c_compiler {
         const map<string, vector<usr*> >& u = b->m_usrs;
         map<string, vector<usr*> >& d = ret->m_usrs;
         typedef map<string, vector<usr*> >::const_iterator IT;
-        for (auto p : u) {
+        for (auto& p : u) {
           string name = p.first;
           const vector<usr*>& v = p.second;
           transform(v.begin(),v.end(),back_inserter(d[name]),

@@ -777,6 +777,13 @@ namespace simple_profiler {
 } // end of namespace simple_profiler
 #endif // USE_PROFILE
 
+namespace optimize {
+  namespace basic_block {
+    using namespace std;
+    void create(const vector<tac*>&, vector<info_t*>&);
+  } // end of namespace basic_block
+} // end of namespace optimize
+
 } // end of namespace c_compiler
 
 #endif // _MISC_H_

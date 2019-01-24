@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 void c_compiler::static_inline::defer::last()
 {
   using namespace std;
-  for (auto p : refs) {
+  for (auto& p : refs) {
     const vector<ref_t>& v = p.second;
     assert(!v.empty());
     error::extdef::fundef::nodef(v[0]);

@@ -1,35 +1,14 @@
-int printf(const char*, ...);
-
-inline int g(int);
-
-inline int f(int n)
+typedef int test000(void)
 {
-  printf("`f' called with %d\n", n);
-  if ( n )
-    return g(n-1);
-  return 1;
+  return 0;
 }
 
-inline int h(int);
-
-inline int g(int n)
+register int test001(void)
 {
-  printf("`g' called with %d\n", n);
-  if ( n )
-    return h(n-1);
-  return 1;
+  return 0;
 }
 
-inline int h(int n)
+auto int test002(void)
 {
-  printf("`h' called with %d\n", n);
-  if ( n )
-    return f(n-1);
-  return 1;
-}
-
-int main()
-{
-  f(10);
   return 0;
 }

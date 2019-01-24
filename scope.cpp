@@ -11,23 +11,30 @@ c_compiler::scope* c_compiler::scope::current = &c_compiler::scope::root;
 
 c_compiler::scope::~scope()
 {
-  for (auto p : m_children) delete p;
+  for (auto p : m_children)
+    delete p;
 
-  for (auto u : m_usrs)
+  for (auto& u : m_usrs)
     for (auto p : u.second)
       delete p;
 
-  for (auto p : m_tags) p.second->m_scope = 0;
+  for (auto& p : m_tags)
+    p.second->m_scope = 0;
 }
 
 c_compiler::block::~block()
 {
-  for (auto p : m_vars) delete p;
+  for (auto p : m_vars)
+    delete p;
 }
 
 bool c_compiler::parse::maybe_absdecl;
 
-int c_compiler::parse::work_around;
+int c_compiler::parse::index_depth;
+
+int c_compiler::parse::cond_depth;
+
+int c_compiler::parse::struct_or_union_depth;
 
 namespace c_compiler { namespace parse { namespace identifier {
   namespace judge_impl {
@@ -52,8 +59,8 @@ int c_compiler::parse::identifier::judge(std::string name)
 {
   using namespace std;
   using namespace judge_impl;
-  if (work_around)
-	return no_spec(name);
+  if (index_depth)
+    return no_spec(name);
   if ( peek_impl::nest )
     return IDENTIFIER_LEX;
   if ( !decl_specs::m_curr.empty() ){
@@ -66,8 +73,10 @@ int c_compiler::parse::identifier::judge(std::string name)
         return new_identifier(name);
       v.push_back(TAG_NAME_LEX);
     }
-    if ( int r = lookup(name) )
-      return r;
+    if (decl_specs::m_stack.empty() || !decl_specs::m_stack.top()) {
+      if (int r = lookup(name))
+        return r;
+    }
     return new_identifier(name);
   }
   else if ( !decl_specs::m_stack.empty() && decl_specs::m_stack.top() ){
@@ -123,8 +132,11 @@ int c_compiler::parse::identifier::judge_impl::lookup(std::string name, scope* p
         return INTEGER_CONSTANT_LEX;
       }
       c_compiler_lval.m_usr = u;
-      if (u->m_flag & usr::TYPEDEF)
+      if (u->m_flag & usr::TYPEDEF) {
+        type_def* t = static_cast<type_def*>(u);
+        t->m_refed.push_back(parse::position);
         return TYPEDEF_NAME_LEX;
+      }
       const type* T = u->m_type;
       if (const pointer_type* G = T->ptr_gen())
         garbage.push_back(c_compiler_lval.m_var = new genaddr(G,T,u,0));
@@ -164,6 +176,13 @@ int c_compiler::parse::identifier::judge_impl::no_spec(std::string name)
   using namespace std;
   if ( prev == '.' || prev == ARROW_MK || prev == GOTO_KW )
     return new_identifier(name);
+  if (cond_depth) {
+    if (int r = lookup(name))
+      return r;
+  }
+  int c = peek();
+  if (!struct_or_union_depth && !expr::constant_flag && c == ':')  // label: statement
+    return new_identifier(name);
   if ( int r = lookup(name) )
     return r;
   if ( name == "__func__" ){
@@ -187,12 +206,10 @@ int c_compiler::parse::identifier::judge_impl::no_spec(std::string name)
     garbage.push_back(c_compiler_lval.m_var);
     return IDENTIFIER_LEX;
   }
-  int c = peek();
   switch ( c ){
   case ')': // identifiler list of old style
   case ',': // identifiler list of old style
-  case '(': // function call, function declaration without return value 
-  case ':': // labeled statement
+  case '(': // function call or function declaration without return value 
     return new_identifier(name);
   }
   error::undeclared(parse::position,name);

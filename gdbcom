@@ -4,7 +4,6 @@
 #c
 #end
 
-#b expr0.cpp:660
-run --no-generator --output-medium --simple-medium sample.txt
+run --no-generator sample.txt --output-medium 
 
 

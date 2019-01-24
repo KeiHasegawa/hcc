@@ -227,11 +227,11 @@ logical_OR1st
 
 conditional_expression
   : logical_OR_expression
-  | cond1st cond2nd conditional_expression  { $$ = c_compiler::expr::cond($1,$2,$3); }
+  | cond1st cond2nd conditional_expression  { using namespace c_compiler; $$ = expr::cond($1,$2,$3); --parse::cond_depth; }
   ;
 
 cond1st
-  : logical_OR_expression '?'  { using namespace c_compiler; $$ = new expr::seq(code.size(),$1); }
+  : logical_OR_expression '?'  { using namespace c_compiler; $$ = new expr::seq(code.size(),$1); ++parse::cond_depth; }
   ;
 
 cond2nd
@@ -263,8 +263,8 @@ constant_expression
   ;
 
 declaration
-  : declaration_specifiers                      ';'  { c_compiler::declaration1(0,false); delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::work_around = 0; }
-  | declaration_specifiers init_declarator_list ';'  { delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::work_around = 0; }
+  : declaration_specifiers                      ';'  { c_compiler::declaration1(0,false); delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::index_depth = 0; }
+  | declaration_specifiers init_declarator_list ';'  { delete c_compiler::parse::decl_specs::m_stack.top(); c_compiler::parse::index_depth = 0; }
   ;
 
 declaration_specifiers
@@ -312,14 +312,14 @@ type_specifier
   ;
 
 struct_or_union_specifier
-  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace c_compiler::parse; $$ = struct_or_union_specifier($1,$2); c_compiler::parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); }
+  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace c_compiler::parse; $$ = struct_or_union_specifier($1,$2); c_compiler::parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); --struct_or_union_depth; }
   | struct_or_union IDENTIFIER_LEX                               { $$ = c_compiler::parse::tag_begin($1,$2)->m_types.first; }
   | struct_or_union TAG_NAME_LEX                                 { $$ = c_compiler::parse::tag_type($1,$2); }
   ;
 
 struct_or_union_specifier_begin
-  : struct_or_union IDENTIFIER_LEX '{' { using namespace c_compiler::parse; $$ = tag_begin($1,$2); decl_specs::m_curr.clear(); }
-  | struct_or_union                '{' { using namespace c_compiler::parse; $$ = tag_begin($1,static_cast<c_compiler::usr*>(0)); decl_specs::m_curr.clear(); }
+  : struct_or_union IDENTIFIER_LEX '{' { using namespace c_compiler::parse; $$ = tag_begin($1,$2); decl_specs::m_curr.clear(); ++struct_or_union_depth; }
+  | struct_or_union                '{' { using namespace c_compiler::parse; $$ = tag_begin($1,static_cast<c_compiler::usr*>(0)); decl_specs::m_curr.clear(); ++struct_or_union_depth; }
   ;
 
 struct_or_union

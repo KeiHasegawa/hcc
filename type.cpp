@@ -421,7 +421,7 @@ void c_compiler::const_type::destroy_tmp()
 void c_compiler::const_type::collect_tmp(std::vector<const type*>& vs)
 {
   for (auto p : tmp_tbl)
-	vs.push_back(p.second);
+    vs.push_back(p.second);
   tmp_tbl.clear();
 }
 

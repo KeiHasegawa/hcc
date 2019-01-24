@@ -193,11 +193,11 @@ while               { c_compiler_lval.m_ival = c_compiler::code.size(); return W
                              return ')';
                            }
 \[                         {
-                             ++c_compiler::parse::work_around;
+                             ++c_compiler::parse::index_depth;
                              return '[';
                            }
 \]                         {
-                             --c_compiler::parse::work_around;
+                             --c_compiler::parse::index_depth;
                              return ']';
                            }
 .                          { return yytext[0]; }
@@ -220,6 +220,12 @@ int yywrap(){ return 1; }
 void c_compiler::parse::unputer(std::string s)
 {
   int size = s.length();
-  for ( int i = 0 ; i < size ; ++i )
-    unput(s[size-i-1]);
+  for ( int i = 0 ; i != size ; ++i ) {
+    char c = s[size-i-1];
+    if (c == '[')
+      --index_depth;
+    if (c == ']')
+      ++index_depth;
+    unput(c);
+  }
 }

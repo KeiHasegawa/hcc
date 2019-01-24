@@ -77,9 +77,7 @@ void c_compiler::optimize::empty_to3ac(std::vector<tac*>& v)
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block {
-  struct info_t;
   using namespace std;    
-  void create(vector<tac*>&, vector<info_t*>&);
   namespace dag {
     struct action_t {
       vector<tac*> conv;
@@ -104,14 +102,6 @@ namespace c_compiler {
         void simplify(const vector<tac*>&);
       } // end of namespace literal
     } // end of namespace symtab
-    namespace basic_block {
-      struct info_t {
-        tac** m_leader;
-        int m_size;
-        vector<info_t*> m_follow, m_preceed;
-        info_t(tac** leader) : m_leader(leader), m_size(0) {}
-      };
-    } // end of namespace basic_block
   } // end of namespace optimize
 } // end of namespace c_compiler
 
@@ -129,9 +119,9 @@ c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<tac*>&
   if (cmdline::dag_optimize) {
     dag::action_t seed;
     for_each(bbs.begin(),bbs.end(),bind2nd(ptr_fun(dag::action),&seed));
-        for (auto p : seed.loffs)
-          for (auto q : p.second)
-            delete q.first;
+    for (auto& p : seed.loffs)
+      for (auto& q : p.second)
+        delete q.first;
     v = seed.conv;
   }
   for (auto p : bbs) delete p;
@@ -148,11 +138,11 @@ c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<tac*>&
 namespace c_compiler { namespace optimize { namespace basic_block {
   using namespace std;
   void devide(set<tac**>&, const vector<tac*>&);
-  void build(vector<info_t*>::iterator, vector<info_t*>::iterator, tac**);
+  void build(vector<info_t*>::iterator, vector<info_t*>::iterator, tac* const*);
 } } } // end of namespace basic_block, optimize and c_compiler
 
 void
-c_compiler::optimize::basic_block::create(std::vector<tac*>& v, std::vector<info_t*>& bbs)
+c_compiler::optimize::basic_block::create(const std::vector<tac*>& v, std::vector<info_t*>& bbs)
 {
   using namespace std;
   if ( v.empty() )
@@ -161,7 +151,7 @@ c_compiler::optimize::basic_block::create(std::vector<tac*>& v, std::vector<info
   devide(leader,v);
   transform(leader.begin(),leader.end(),back_inserter(bbs),
             [](tac** ptr){ return new info_t(ptr); } );
-  tac** tmp = &v[0] + v.size();
+  tac* const* tmp = &v[0] + v.size();
   build(bbs.begin(),bbs.end(),tmp);
 }
 
@@ -197,7 +187,7 @@ namespace c_compiler { namespace optimize { namespace basic_block {
 void
 c_compiler::optimize::basic_block::build(std::vector<info_t*>::iterator begin,
                                          std::vector<info_t*>::iterator end,
-                                         tac** end3ac)
+                                         tac* const* end3ac)
 {
   std::vector<tac*> vv;
   using namespace std;
@@ -619,9 +609,9 @@ namespace c_compiler { namespace optimize { namespace live_var {
 
 void c_compiler::optimize::live_var::add_global1(basic_block::info_t* B)
 {
-  for (auto p : def)
+  for (auto& p : def)
     add_global2(p.second,B);
-  for (auto p : use)
+  for (auto& p : use)
     add_global2(p.second,B);
 }
 

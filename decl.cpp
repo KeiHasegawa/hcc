@@ -50,6 +50,7 @@ c_compiler::usr* c_compiler::declaration1(usr* u, bool ini)
   sort(ds->begin(),ds->end(),comp_spec);
   specifier::sweeper sweepr2(u);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
+  decl_specs::m_curr.clear();
   if (u) {
     if (scope::current == &scope::root)
       u->m_type = u->m_type->vla2a();
@@ -188,6 +189,7 @@ void c_compiler::function_definition::begin(parse::decl_specs* ds, usr* u)
   if (ds) {
     sort(ds->begin(),ds->end(),comp_spec);
     spec = accumulate(ds->begin(),ds->end(),spec);
+    decl_specs::m_curr.clear();
   }
   else {
     using namespace error::decl;
@@ -225,7 +227,7 @@ void c_compiler::function_definition::begin(parse::decl_specs* ds, usr* u)
       u->m_type = func_type::create(func->return_type(),param,true);
     }
   }
-  install1(&spec,u,false);
+  u = install1(&spec,u,false);
   fundef::current = new fundef(u,param);
   {
     const type* T = fundef::current->m_usr->m_type;
@@ -741,7 +743,18 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       flag = usr::flag_t(flag & ~mask);
     }
   }
-
+  if (flag & usr::TYPEDEF) {
+    type_def* tmp = new type_def(*curr);
+    if (flag & usr::VL) {
+      vector<usr*>& v = stmt::label::vm;
+      typedef vector<usr*>::reverse_iterator IT;
+      IT p = find(rbegin(v), rend(v), curr);
+      assert(p != rend(v));
+      *p = tmp;
+    }
+	delete curr;
+	curr = tmp;
+  }
   if (ini && decl::static_storage_duration(curr)) {
     with_initial* tmp = new with_initial(*curr);
     delete curr;
@@ -949,7 +962,7 @@ c_compiler::decl::declarator::func(const type* T, parse::identifier_list* il, us
   using namespace std;
   using namespace func_impl;
   auto_ptr<parse::identifier_list> sweeper(il);
-  assert(old_style::il.empty());
+  // old_style::il.empty() is almost always true, but sometimes not.
   transform(il->begin(),il->end(),back_inserter(old_style::il),old_style());
   vector<const type*> param;
   param.push_back(ellipsis_type::create());
@@ -968,7 +981,8 @@ namespace c_compiler {
             return false;
           case scope::BLOCK:
             return true;
-          case scope::PARAM:
+          default:
+            assert(ptr->m_id == scope::PARAM);
             return inblock(ptr->m_parent);
           }
         }
@@ -1222,6 +1236,7 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, usr* u)
   auto_ptr<decl_specs> sweeper(ds);
   sort(ds->begin(),ds->end(),comp_spec);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
+  decl_specs::m_curr.clear();
   usr::flag_t& flag = spec.m_flag;
   usr::flag_t mask = usr::flag_t(usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO);
   if ( flag & mask ){
@@ -1230,12 +1245,17 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, usr* u)
     flag = usr::flag_t(flag & ~mask);
   }
   const type* T = spec.m_type;
-  if ( u ){
+  if (u) {
     T = u->m_type;
-    if ( const type* ptr = T->ptr_gen() )
+    if (const type* ptr = T->ptr_gen())
       T = u->m_type = ptr;
     u = install1(&spec,u,false);
     T = u->m_type;
+  }
+  if (const type* ptr = T->ptr_gen()) {
+    T = ptr;
+    if (u)
+      u->m_type = T;
   }
 
   const type* U = T->unqualified();
@@ -1260,6 +1280,7 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, const type* T)
   auto_ptr<decl_specs> sweeper(ds);
   sort(ds->begin(),ds->end(),comp_spec);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
+  decl_specs::m_curr.clear();
   usr::flag_t& flag = spec.m_flag;
   usr::flag_t mask = usr::flag_t(usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO);
   if ( flag & mask ){
@@ -1282,7 +1303,7 @@ namespace c_compiler {
       using namespace error::stmt::label;
       string name = p.first;
       const vector<label::used_t>& v = p.second;
-      for (auto u : v)
+      for (auto& u : v)
         not_defined(name, u.m_file);
     }
   } // end of namespace stmt
@@ -1294,9 +1315,9 @@ c_compiler::function_definition::action(fundef* fdef, std::vector<tac*>& vc)
   using namespace std;
   using namespace static_inline;
   map<string, vector<stmt::label::used_t> >& m = stmt::label::used;
-  for (auto p : m) stmt::label_blame(p);
+  for (auto& p : m) stmt::label_blame(p);
   m.clear();
-  if (!error::counter)
+  if (!error::counter && cmdline::optimize_level >= 1)
     optimize::action(fdef, vc);
   usr::flag_t flag = fdef->m_usr->m_flag;
   usr::flag_t mask = usr::flag_t(usr::INLINE | usr::STATIC);
@@ -1445,7 +1466,8 @@ namespace c_compiler {
         }
         if (vi.empty()) {
           positions.erase(p);
-          optimize::action(caller->m_fundef, caller->m_code);      
+          if (cmdline::optimize_level >= 1)
+            optimize::action(caller->m_fundef, caller->m_code);
           usr::flag_t flag = ucaller->m_flag;
           if (!(flag & (usr::STATIC|usr::INLINE))) {
             table.erase(q);
@@ -1481,7 +1503,7 @@ namespace c_compiler {
           return gencode(info);
         }
 
-        const set<usr*>& su = q->second;	
+        const set<usr*>& su = q->second;
         usr::flag_t flag = u->m_flag;
         assert(flag & usr::INLINE);
         for_each(begin(su), end(su),
@@ -1761,6 +1783,7 @@ c_compiler::parse::struct_declaration(decl_specs* ds,
   auto_ptr<decl_specs> p(ds);
   sort(p->begin(),p->end(),comp_spec);
   specifier spec = accumulate(p->begin(),p->end(),specifier());
+  decl_specs::m_curr.clear();
   struct_declaration_list* ret = new struct_declaration_list;
   auto_ptr<struct_declarator_list> q(sdl);
   if (q.get())
@@ -1843,6 +1866,7 @@ c_compiler::parse::type_name(decl_specs* sql, const type* T)
   auto_ptr<decl_specs> sweeper(sql);
   sort(sql->begin(),sql->end(),comp_spec);
   specifier spec = accumulate(sql->begin(),sql->end(),specifier());
+  decl_specs::m_curr.clear();
   if (!T)
     return spec.m_type;
   return T->patch(spec.m_type,0);
@@ -1852,7 +1876,7 @@ int c_compiler::parse::guess(int kw)
 {
   using namespace std;
   using namespace c_compiler::parse;
-  vector<int>& v = decl_specs::m_curr;
+  const vector<int>& v = decl_specs::m_curr;
   vector<int>::const_iterator p = find(v.begin(),v.end(),TAG_NAME_LEX);
   if ( p != v.end() ){
     switch ( kw ){

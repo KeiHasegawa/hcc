@@ -434,7 +434,7 @@ namespace c_compiler { namespace stmt {
       info(var* expr, goto3ac* start)
         : m_expr(expr), m_start(start), m_default(0,file_t(),0) {}
     };
-    std::vector<info> switchs;
+    std::vector<info*> switchs;
   }
 } } // end of namespace stmt and c_compiler
 
@@ -452,8 +452,9 @@ void c_compiler::stmt::switch_expr(var* expr)
     expr->m_type = int_type::create();
   }
   goto3ac* start = new goto3ac;
-  switchs.push_back(info(expr,start));
-  break_impl::outer.push_back(&switchs.back());
+  info* ptr = new info(expr, start);
+  switchs.push_back(ptr);
+  break_impl::outer.push_back(ptr);
   code.push_back(start);
 }
 
@@ -481,8 +482,8 @@ void c_compiler::stmt::_case(var* expr)
     no_switch(parse::position);
   }
   else {
-    info& info = switchs.back();
-    vector<info::case_t>& v = info.m_cases;
+    info* ptr = switchs.back();
+    vector<info::case_t>& v = ptr->m_cases;
     vector<info::case_t>::const_iterator p =
       find_if(v.begin(),v.end(),bind2nd(ptr_fun(info::case_t::cmp),expr));
     if ( p != v.end() ){
@@ -506,15 +507,15 @@ void c_compiler::stmt::_default()
     no_switch(parse::position);
   }
   else {
-    info& info = switchs.back();
-    if ( !info.m_default.m_to ){
+    info* ptr = switchs.back();
+    if ( !ptr->m_default.m_to ){
       to3ac* to = new to3ac;
       code.push_back(to);
-      info.m_default = info::default_t(to,parse::position,scope::current);
+	  ptr->m_default = info::default_t(to,parse::position,scope::current);
     }
     else {
       using namespace error::stmt::_default;
-      multiple(parse::position,info.m_default.m_file);
+      multiple(parse::position, ptr->m_default.m_file);
     }
   }
 }
@@ -529,26 +530,26 @@ void c_compiler::stmt::end_switch()
   using namespace switch_impl;
   break_impl::outer.pop_back();
   assert(!switchs.empty());
-  info& info = switchs.back();
+  info* ptr = switchs.back();
   goto3ac* end = new goto3ac;
   code.push_back(end);
-  goto3ac* start = info.m_start;
+  goto3ac* start = ptr->m_start;
   to3ac* to1 = new to3ac;
   code.push_back(to1);
   to1->m_goto.push_back(start);
   start->m_to = to1;
-  var* expr = info.m_expr;
-  vector<info::case_t>& cases = info.m_cases;
+  var* expr = ptr->m_expr;
+  vector<info::case_t>& cases = ptr->m_cases;
   for_each(cases.begin(),cases.end(),bind1st(ptr_fun(gencode),expr));
-  if ( to3ac* to = info.m_default.m_to ){
+  if ( to3ac* to = ptr->m_default.m_to ){
     using namespace goto_impl;
-    if ( outside(scope::current,info.m_default.m_scope) ){
+    if ( outside(scope::current, ptr->m_default.m_scope) ){
       const vector<usr*>& v = label::vm;
       vector<usr*>::const_iterator p =
-        find_if(v.begin(),v.end(),bind2nd(ptr_fun(cmp),info.m_default.m_scope));
+        find_if(v.begin(),v.end(),bind2nd(ptr_fun(cmp), ptr->m_default.m_scope));
       if ( p != v.end() ){
         using namespace error::stmt::_switch;
-        invalid(false,info.m_default.m_file,*p);
+        invalid(false, ptr->m_default.m_file,*p);
       }
     }
     goto3ac* go = new goto3ac;
@@ -558,11 +559,12 @@ void c_compiler::stmt::end_switch()
   }
   to3ac* to2 = new to3ac;
   code.push_back(to2);
-  for_each(info.begin(),info.end(),bind2nd(ptr_fun(update),to2));
-  copy(info.begin(),info.end(),back_inserter(to2->m_goto));
+  for_each(ptr->begin(), ptr->end(),bind2nd(ptr_fun(update),to2));
+  copy(ptr->begin(), ptr->end(),back_inserter(to2->m_goto));
   to2->m_goto.push_back(end);
   end->m_to = to2;
   switchs.pop_back();
+  delete ptr;
 }
 
 int c_compiler::stmt::switch_impl::gencode(var* x, info::case_t _case)
@@ -606,7 +608,7 @@ namespace c_compiler { namespace stmt {
       info(var01* expr, to3ac* to)
         : m_expr(expr), m_to(to), m_goto(0), m_point(code.size()) {}
     };
-    std::vector<info> whiles;
+    std::vector<info*> whiles;
   }
 } } // end of namespace stmt and c_compiler
 
@@ -631,17 +633,19 @@ void c_compiler::var::while_expr(to3ac* to)
   zero = zero->cast(T);
   goto3ac* go = new goto3ac(goto3ac::EQ,expr,zero);
   code.push_back(go);
-  whiles.push_back(info(this,to,go));
-  break_impl::outer.push_back(&whiles.back());
-  continue_impl::outer.push_back(&whiles.back());
+  info* ptr = new info(this,to,go);
+  whiles.push_back(ptr);
+  break_impl::outer.push_back(ptr);
+  continue_impl::outer.push_back(ptr);
 }
 
 namespace c_compiler { namespace stmt { namespace while_impl {
-  template<class T> void expr(constant<T>* ptr, to3ac* to)
+  template<class T> void expr(constant<T>* cons, to3ac* to)
   {
-    whiles.push_back(info(ptr,to));
-    break_impl::outer.push_back(&whiles.back());
-    continue_impl::outer.push_back(&whiles.back());
+    info* ptr = new info(cons,to);
+    whiles.push_back(ptr);
+    break_impl::outer.push_back(ptr);
+    continue_impl::outer.push_back(ptr);
   }
 } } } // end of namespace while_impl, stmt and c_compiler
 
@@ -679,16 +683,17 @@ void c_compiler::var01::while_expr(to3ac* to)
 {
   using namespace stmt;
   using namespace while_impl;
-  whiles.push_back(info(this,to));
-  break_impl::outer.push_back(&whiles.back());
-  continue_impl::outer.push_back(&whiles.back());
+  info* ptr = new info(this,to);
+  whiles.push_back(ptr);
+  break_impl::outer.push_back(ptr);
+  continue_impl::outer.push_back(ptr);
 }
 
 void c_compiler::stmt::end_while()
 {
   using namespace while_impl;
-  info& info = whiles.back();
-  info.m_expr->end_while();
+  info* ptr = whiles.back();
+  ptr->m_expr->end_while();
 }
 
 void c_compiler::var::end_while()
@@ -696,23 +701,23 @@ void c_compiler::var::end_while()
   using namespace std;
   using namespace stmt;
   using namespace while_impl;
-  info& info = whiles.back();
+  info* ptr = whiles.back();
   goto3ac* goto1 = new goto3ac;
   code.push_back(goto1);
-  to3ac* to_continue = info.m_to;
+  to3ac* to_continue = ptr->m_to;
   goto1->m_to = to_continue;
   to_continue->m_goto.push_back(goto1);
   {
-    const continue_impl::info& p = info;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
   }
-  goto3ac* goto2 = info.m_goto;
+  goto3ac* goto2 = ptr->m_goto;
   to3ac* to_break = new to3ac;
   code.push_back(to_break);
   {
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
@@ -720,28 +725,29 @@ void c_compiler::var::end_while()
   to_break->m_goto.push_back(goto2);
   goto2->m_to = to_break;
   whiles.pop_back();
+  delete ptr;
 }
 
 namespace c_compiler { namespace stmt { namespace while_impl {
-  template<class T> void end(constant<T>* ptr)
+  template<class T> void end(constant<T>* cons)
   {
     using namespace std;
-    info& info = whiles.back();
-    assert(info.m_expr == ptr);
-    if ( ptr->zero() ){
-      int n = info.m_point;
+    info* ptr = whiles.back();
+    assert(ptr->m_expr == cons);
+    if ( cons->zero() ){
+      int n = ptr->m_point;
       for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
       code.resize(n);
     }
     else {
       goto3ac* goto1 = new goto3ac;
       code.push_back(goto1);
-      to3ac* to1 = info.m_to;
+      to3ac* to1 = ptr->m_to;
       goto1->m_to = to1;
       to1->m_goto.push_back(goto1);
       {
         to3ac* to_continue = to1;
-        const continue_impl::info& p = info;
+        const continue_impl::info& p = *ptr;
         for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
         copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
         continue_impl::outer.pop_back();
@@ -749,7 +755,7 @@ namespace c_compiler { namespace stmt { namespace while_impl {
       {
         to3ac* to_break = new to3ac;
         code.push_back(to_break);
-        const break_impl::info& p = info;
+        const break_impl::info& p = *ptr;
         for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
         copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
         break_impl::outer.pop_back();
@@ -795,15 +801,15 @@ void c_compiler::var01::end_while()
   using namespace stmt;
   using namespace while_impl;
   sweep();
-  info& info = whiles.back();
-  int n = info.m_point;
+  info* ptr = whiles.back();
+  int n = ptr->m_point;
   vector<tac*> stmt;
   copy(code.begin()+n,code.end(),back_inserter(stmt));
   code.resize(n);
   if ( m_one < m_zero ){
     goto3ac* goto1 = new goto3ac;
     stmt.push_back(goto1);
-    to3ac* to1 = info.m_to;
+    to3ac* to1 = ptr->m_to;
     goto1->m_to = to1;
     to1->m_goto.push_back(goto1);
     vector<tac*>::iterator p = code.begin() + m_one;
@@ -821,7 +827,7 @@ void c_compiler::var01::end_while()
     p = code.erase(p);
     goto3ac* goto1 = new goto3ac;
     stmt.push_back(goto1);
-    to3ac* to1 = info.m_to;
+    to3ac* to1 = ptr->m_to;
     goto1->m_to = to1;
     to1->m_goto.push_back(goto1);
     vector<tac*>::iterator q = code.begin() + m_one - 1;
@@ -830,20 +836,21 @@ void c_compiler::var01::end_while()
     code.insert(q,stmt.begin(),stmt.end());
   }
   {
-    to3ac* to_continue = info.m_to;
-    const continue_impl::info& p = info;
+    to3ac* to_continue = ptr->m_to;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
   }
   {
     to3ac* to_break = static_cast<to3ac*>(code.back());
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   whiles.pop_back();
+  delete ptr;
 }
 
 namespace c_compiler { namespace stmt {
@@ -852,7 +859,7 @@ namespace c_compiler { namespace stmt {
       to3ac* m_to;
       info(to3ac* to) : m_to(to) {}
     };
-    std::vector<info> dos;
+    std::vector<info*> dos;
   }
 } } // end of namespace stmt and c_compiler
 
@@ -861,9 +868,10 @@ void c_compiler::stmt::_do()
   using namespace do_impl;
   to3ac* to = new to3ac;
   code.push_back(to);
-  dos.push_back(info(to));
-  break_impl::outer.push_back(&dos.back());
-  continue_impl::outer.push_back(&dos.back());
+  info* ptr = new info(to);
+  dos.push_back(ptr);
+  break_impl::outer.push_back(ptr);
+  continue_impl::outer.push_back(ptr);
 }
 
 void c_compiler::stmt::end_do(to3ac* to2, var* expr)
@@ -886,14 +894,14 @@ void c_compiler::var::end_do(to3ac* to_continue)
   }
   var* zero = integer::create(0);
   zero = zero->cast(T);
-  info& info = dos.back();
-  to3ac* to1 = info.m_to;
+  info* ptr = dos.back();
+  to3ac* to1 = ptr->m_to;
   goto3ac* goto1 = new goto3ac(goto3ac::NE,expr,zero);
   code.push_back(goto1);
   goto1->m_to = to1;
   to1->m_goto.push_back(goto1);
   {
-    const continue_impl::info& p = info;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
@@ -901,21 +909,22 @@ void c_compiler::var::end_do(to3ac* to_continue)
   to3ac* to_break = new to3ac;
   code.push_back(to_break);
   {
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   dos.pop_back();
+  delete ptr;
 }
 
 namespace c_compiler { namespace stmt { namespace do_impl {
-  template<class T> void end(constant<T>* ptr, to3ac* to_continue)
+  template<class T> void end(constant<T>* cons, to3ac* to_continue)
   {
     using namespace std;
-    info& info = dos.back();
-    if ( !ptr->zero() ){
-      to3ac* to = info.m_to;
+    info* ptr = dos.back();
+    if ( !cons->zero() ){
+      to3ac* to = ptr->m_to;
       goto3ac* go = new goto3ac;
       code.push_back(go);
       go->m_to = to;
@@ -924,18 +933,19 @@ namespace c_compiler { namespace stmt { namespace do_impl {
     to3ac* to_break = new to3ac;
     code.push_back(to_break);
     {
-      const continue_impl::info& p = info;
+      const continue_impl::info& p = *ptr;
       for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
       copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
       continue_impl::outer.pop_back();
     }
     {
-      const break_impl::info& p = info;
+      const break_impl::info& p = *ptr;
       for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
       copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
       break_impl::outer.pop_back();
     }
     dos.pop_back();
+    delete ptr;
   }
 } } } // end of namespace while_impl, stmt and c_compiler
 
@@ -975,8 +985,8 @@ void c_compiler::var01::end_do(to3ac* to_continue)
   using namespace stmt;
   using namespace do_impl;
   sweep();
-  info& info = dos.back();
-  to3ac* to = info.m_to;
+  info* ptr = dos.back();
+  to3ac* to = ptr->m_to;
   vector<tac*>::iterator p = code.begin() + m_one - 1;
   goto3ac* go = static_cast<goto3ac*>(*p);
   go->m_op = opposite[go->m_op];
@@ -989,7 +999,7 @@ void c_compiler::var01::end_do(to3ac* to_continue)
   q = code.erase(q);
   sweep(q);
   {
-    const continue_impl::info& v = info;
+    const continue_impl::info& v = *ptr;
     for_each(v.begin(),v.end(),bind2nd(ptr_fun(update),to_continue));
     copy(v.begin(),v.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
@@ -998,12 +1008,13 @@ void c_compiler::var01::end_do(to3ac* to_continue)
   // `static_cast<to3ac*>(*p)' is runtime error in Visual Studio 2017.
   to_break->m_goto.clear();
   {
-    const break_impl::info& v = info;
+    const break_impl::info& v = *ptr;
     for_each(v.begin(),v.end(),bind2nd(ptr_fun(update),to_break));
     copy(v.begin(),v.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   dos.pop_back();
+  delete ptr;
 }
 
 void c_compiler::log01::end_do(to3ac* to_continue)
@@ -1012,8 +1023,8 @@ void c_compiler::log01::end_do(to3ac* to_continue)
   using namespace stmt;
   using namespace do_impl;
   sweep();
-  info& info = dos.back();
-  to3ac* begin = info.m_to;
+  info* ptr = dos.back();
+  to3ac* begin = ptr->m_to;
   to3ac* to_break;
   if ( m_one < m_zero ){
     vector<tac*>::iterator p = code.begin() + m_one;
@@ -1054,18 +1065,19 @@ void c_compiler::log01::end_do(to3ac* to_continue)
     to_break->m_goto.clear();
   }
   {
-    const continue_impl::info& p = info;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
   }
   {
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   dos.pop_back();
+  delete ptr;
 }
 
 namespace c_compiler { namespace stmt {
@@ -1078,7 +1090,7 @@ namespace c_compiler { namespace stmt {
       std::vector<tac*> m_expr3;
       info(to3ac* to, int point) : m_to(to), m_point(point), m_goto(0), m_expr(0) {}
     };
-    std::vector<info> fors;
+    std::vector<info*> fors;
   }
 } } // end of namespace stmt and c_compiler
 
@@ -1089,9 +1101,10 @@ void c_compiler::stmt::for_expr1(var* expr)
     expr->rvalue();
   to3ac* to = new to3ac;
   code.push_back(to);
-  fors.push_back(info(to,code.size()));
-  break_impl::outer.push_back(&fors.back());
-  continue_impl::outer.push_back(&fors.back());
+  info* ptr = new info(to,code.size());
+  fors.push_back(ptr);
+  break_impl::outer.push_back(ptr);
+  continue_impl::outer.push_back(ptr);
 }
 
 bool c_compiler::stmt::for_decl;
@@ -1119,18 +1132,18 @@ void c_compiler::var::for_expr2()
   zero = zero->cast(T);
   goto3ac* go = new goto3ac(goto3ac::EQ,expr,zero);
   code.push_back(go);
-  info& info = fors.back();
-  info.m_goto = go;
-  info.m_point = code.size();
-  info.m_expr = this;
+  info* ptr = fors.back();
+  ptr->m_goto = go;
+  ptr->m_point = code.size();
+  ptr->m_expr = this;
 }
 
 namespace c_compiler { namespace stmt { namespace for_impl {
-  template<class T> void expr(constant<T>* ptr)
+  template<class T> void expr(constant<T>* cons)
   {
-    info& info = fors.back();
-    info.m_point = code.size();
-    info.m_expr = ptr;
+    info* ptr = fors.back();
+    ptr->m_point = code.size();
+    ptr->m_expr = cons;
   }
 } } } // end of namespace for_impl, stmt and c_compiler
 
@@ -1168,9 +1181,9 @@ void c_compiler::var01::for_expr2()
 {
   using namespace stmt;
   using namespace for_impl;
-  info& info = fors.back();
-  info.m_point = code.size();
-  info.m_expr = this;
+  info* ptr = fors.back();
+  ptr->m_point = code.size();
+  ptr->m_expr = this;
 }
 
 void c_compiler::stmt::for_expr3(var* expr)
@@ -1179,9 +1192,9 @@ void c_compiler::stmt::for_expr3(var* expr)
   using namespace for_impl;
   if ( expr )
     expr = expr->rvalue();
-  info& info = fors.back();
-  int n = info.m_point;
-  copy(code.begin()+n,code.end(),back_inserter(info.m_expr3));
+  info* ptr = fors.back();
+  int n = ptr->m_point;
+  copy(code.begin()+n,code.end(),back_inserter(ptr->m_expr3));
   code.resize(n);
 }
 
@@ -1192,9 +1205,9 @@ namespace c_compiler { namespace stmt { namespace for_impl {
 void c_compiler::stmt::end_for(int leave)
 {
   using namespace for_impl;
-  info& info = fors.back();
-  if ( var* expr2 = info.m_expr )
-    info.m_expr->end_for(leave);
+  info* ptr = fors.back();
+  if ( var* expr2 = ptr->m_expr )
+    ptr->m_expr->end_for(leave);
   else
     end(leave);
 }
@@ -1211,55 +1224,57 @@ void c_compiler::stmt::for_impl::end(int leave)
   using namespace for_impl;
   to3ac* to_continue = new to3ac;
   code.push_back(to_continue);
-  info& info = fors.back();
-  vector<tac*>& c = info.m_expr3;
+  info* ptr = fors.back();
+  vector<tac*>& c = ptr->m_expr3;
   copy(c.begin(),c.end(),back_inserter(code));
   goto3ac* goto2 = new goto3ac;
   code.push_back(goto2);
-  to3ac* to2 = info.m_to;
+  to3ac* to2 = ptr->m_to;
   goto2->m_to = to2;
   to2->m_goto.push_back(goto2);
   to3ac* to_break = new to3ac;
   code.push_back(to_break);
-  if ( goto3ac* goto3 = info.m_goto ){
+  if ( goto3ac* goto3 = ptr->m_goto ){
     to_break->m_goto.push_back(goto3);
     goto3->m_to = to_break;
   }
   {
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   {
-    const continue_impl::info& p = info;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
   }
   fors.pop_back();
+  delete ptr;
   if ( leave )
     c_compiler::parse::block::leave();
 }
 
 namespace c_compiler { namespace stmt { namespace for_impl {
-  template<class T> void end(constant<T>* ptr, int leave)
+  template<class T> void end(constant<T>* cons, int leave)
   {
     using namespace std;
-    info& info = fors.back();
-    assert(info.m_expr == ptr);
-    if ( ptr->zero() ){
-      int n = info.m_point;
+    info* ptr = fors.back();
+    assert(ptr->m_expr == cons);
+    if ( cons->zero() ){
+      int n = ptr->m_point;
       for_each(code.begin()+n,code.end(),[](tac* p){ delete p; });
       code.resize(n);
-      vector<tac*>& v = info.m_expr3;
+      vector<tac*>& v = ptr->m_expr3;
       for_each(v.begin(),v.end(),[](tac* p){ delete p; });
     }
     else {
-      ptr->var::end_for(leave);
+      cons->var::end_for(leave);
       return;
     }
     fors.pop_back();
+    delete ptr;
     if ( leave )
       c_compiler::parse::block::leave();
   }
@@ -1301,18 +1316,18 @@ void c_compiler::var01::end_for(int leave)
   using namespace stmt;
   using namespace for_impl;
   sweep();
-  info& info = fors.back();
-  assert(info.m_expr == this);
-  int n = info.m_point;
+  info* ptr = fors.back();
+  assert(ptr->m_expr == this);
+  int n = ptr->m_point;
   vector<tac*> stmt;
   copy(code.begin()+n,code.end(),back_inserter(stmt));
   code.resize(n);
   to3ac* to_continue = new to3ac;
   stmt.push_back(to_continue);
-  copy(info.m_expr3.begin(),info.m_expr3.end(),back_inserter(stmt));
+  copy(ptr->m_expr3.begin(),ptr->m_expr3.end(),back_inserter(stmt));
   goto3ac* goto1 = new goto3ac;
   stmt.push_back(goto1);
-  to3ac* to1 = info.m_to;
+  to3ac* to1 = ptr->m_to;
   goto1->m_to = to1;
   to1->m_goto.push_back(goto1);
   if ( m_one < m_zero ){
@@ -1335,19 +1350,20 @@ void c_compiler::var01::end_for(int leave)
     code.insert(q,stmt.begin(),stmt.end());
   }
   {
-    const continue_impl::info& p = info;
+    const continue_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_continue));
     copy(p.begin(),p.end(),back_inserter(to_continue->m_goto));
     continue_impl::outer.pop_back();
   }
   {
     to3ac* to_break = static_cast<to3ac*>(code.back());
-    const break_impl::info& p = info;
+    const break_impl::info& p = *ptr;
     for_each(p.begin(),p.end(),bind2nd(ptr_fun(update),to_break));
     copy(p.begin(),p.end(),back_inserter(to_break->m_goto));
     break_impl::outer.pop_back();
   }
   fors.pop_back();
+  delete ptr;
   if ( leave )
     c_compiler::parse::block::leave();
 }

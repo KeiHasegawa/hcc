@@ -1266,6 +1266,11 @@ struct with_initial : usr {
     : usr(name,type,flag_t(usr::STATIC|usr::WITH_INI),file) {}
 };
 
+struct type_def : usr {
+  std::vector<file_t> m_refed;
+  type_def(const usr& u) : usr(u) {}
+};
+
 struct fundef {
   usr* m_usr;
   param_scope* m_param;
@@ -2048,6 +2053,18 @@ inline bool is_string(std::string name)
   else
     return name[0] == '"';
 }
+
+namespace optimize {
+  namespace basic_block {
+    using namespace std;
+    struct info_t {
+      tac** m_leader;
+      int m_size;
+      vector<info_t*> m_follow, m_preceed;
+    info_t(tac** leader) : m_leader(leader), m_size(0) {}
+    };
+  } // end of namespace basic_block
+} // end of namespace optimize
 
 } // end of namespace c_compiler
 

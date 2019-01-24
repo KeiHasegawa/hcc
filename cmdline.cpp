@@ -268,7 +268,7 @@ int c_compiler::cmdline::version_option(char** argv)
   return 0;
 }
 
-int c_compiler::cmdline::optimize_level;
+int c_compiler::cmdline::optimize_level = 1;
 
 int c_compiler::cmdline::optimize_option(char** argv)
 {
