@@ -4,6 +4,6 @@
 #c
 #end
 
-run --no-generator sample.txt --output-medium 
+run --no-generator sample.txt --output-medium --simple-medium
 
 

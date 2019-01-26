@@ -1,14 +1,17 @@
-typedef int test000(void)
-{
-  return 0;
-}
+struct S {
+  int i;
+  char c[10];
+  double d;
+};
 
-register int test001(void)
-{
-  return 0;
-}
+struct T {
+  struct S* x;
+  struct S* y;
+  struct S* z;
+};
 
-auto int test002(void)
+
+double f(struct T* ptr)
 {
-  return 0;
+  return ptr->y->d;
 }

@@ -329,9 +329,9 @@ c_compiler::var* c_compiler::var::offref(const type* T, var* offset)
     else
       garbage.push_back(ret);
     if ( offset->isconstant() && !offset->value() )
-      code.push_back(new assign3ac(ret,this));
+      code.push_back(new assign3ac(ret, this));
     else
-      code.push_back(new add3ac(ret,this,offset));
+      code.push_back(new add3ac(ret, this, offset));
     return ret;
   }
   if ( offset->isconstant() ){
@@ -798,7 +798,11 @@ c_compiler::var* c_compiler::var::member(usr* id, bool dot)
     return ret;
   }
   T = T->qualified(cvr);
-  return offref(T,integer::create(offset));
+  var* O = integer::create(offset);
+  if (dot)
+    return offref(T, O);
+  else
+    return rvalue()->offref(T, O);
 }
 
 c_compiler::var* c_compiler::var::ppmm(bool plus, bool post)
