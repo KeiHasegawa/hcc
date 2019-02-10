@@ -130,7 +130,8 @@ c_compiler::var* c_compiler::var_impl::opt_mul(var* y, var* z)
   if ( z->zero() )
     return z;
   const type* T = z->m_type;
-  if ( !T->integer() )
+  T = T->unqualified();
+  if (!T->integer() || T->size() > sizeof(int))
     return 0;
   __int64 n = z->value();
   int m = log2(n);

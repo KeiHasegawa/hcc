@@ -15,7 +15,7 @@ c_compiler::var* c_compiler::expr::cast(const type* T, var* expr)
   expr = expr->rvalue();
   T = T->unqualified();
   if (T->m_id == type::VOID) {
-    var* ret = new var(void_type::create());
+    var* ret = new var(T);
     garbage.push_back(ret);
     return ret;
   }

@@ -69,16 +69,22 @@ void c_compiler_error(const char* msg)
 #ifndef __GNUC__
   case error::jpn:
     error::header(parse::position,"エラー");
-    if ( strlen(c_compiler_text) )
-      cerr << '`' << c_compiler_text << "' で";
+    if (*c_compiler_text) {
+      cerr << '`';
+      istringstream ist(c_compiler_text); string s; ist >> s; cerr << s;
+      cerr << "' で";
+    }
     cerr << "構文エラーです.";
     break;
 #endif // __GNUC__
   default:
     error::header(parse::position,"error");
     cerr << "syntax error";
-    if ( strlen(c_compiler_text) )
-      cerr << " before `" << c_compiler_text << "' token.";
+    if (*c_compiler_text) {
+      cerr << " before `";
+      istringstream ist(c_compiler_text); string s; ist >> s; cerr << s;
+      cerr << "' token.";
+    }
     break;
   }
   cerr << '\n';

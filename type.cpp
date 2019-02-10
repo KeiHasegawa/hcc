@@ -625,7 +625,6 @@ void c_compiler::restrict_type::collect_tmp(std::vector<const type*>& vs)
 
 namespace c_compiler {
   using namespace std;
-  using namespace std;
   struct func_type::table_t
   : map<pair<pair<const type*, vector<const type*> >,bool>, const func_type*>
   {};
@@ -933,7 +932,7 @@ void c_compiler::array_type::decl(std::ostream& os, std::string name) const
         tmp << "const ";
       if ( cvr & 2 )
         tmp << "volatile ";
-      if ( cvr & 2 )
+      if ( cvr & 4 )
         tmp << "restrict ";
       tmp << name;
       y->decl(os,tmp.str());
@@ -1392,7 +1391,7 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
     m_current = current();
     string name = member->m_name;
     const type* T = member->m_type;
-    if (T->tmp()) {
+    if (T->variably_modified()) {
       using namespace error::decl::struct_or_union;
       not_ordinary(member);
       T = member->m_type = int_type::create();

@@ -752,8 +752,8 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
       assert(p != rend(v));
       *p = tmp;
     }
-	delete curr;
-	curr = tmp;
+    delete curr;
+    curr = tmp;
   }
   if (ini && decl::static_storage_duration(curr)) {
     with_initial* tmp = new with_initial(*curr);

@@ -101,7 +101,7 @@ void c_compiler::generator::initialize()
   if (spell) {
     void* magic[] = {
       (void*)&tac_impl::dump,
-	  (void*)&optimize::basic_block::create,
+      (void*)&optimize::basic_block::create,
     };
     (*spell)(&magic[0]);
   }

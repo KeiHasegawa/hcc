@@ -401,7 +401,7 @@ struct opposite_t : std::map<goto3ac::op,goto3ac::op> {
 extern opposite_t opposite;
 
 typedef std::pair<const fundef*, std::vector<tac*> > FUNCS_ELEMENT_TYPE;
-extern std::vector<std::pair<const fundef*, std::vector<tac*> > > funcs;
+extern std::vector<FUNCS_ELEMENT_TYPE> funcs;
 inline param_scope* get_pm(FUNCS_ELEMENT_TYPE& elem)
 {
   return elem.first->m_param;

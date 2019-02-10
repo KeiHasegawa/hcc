@@ -1,17 +1,7 @@
-struct S {
-  int i;
-  char c[10];
-  double d;
-};
+inline void g(int (*)[]);
 
-struct T {
-  struct S* x;
-  struct S* y;
-  struct S* z;
-};
-
-
-double f(struct T* ptr)
+void f(int n, int (*pa)[n+5])
 {
-  return ptr->y->d;
+  ++pa;
+  g(pa);
 }

@@ -626,11 +626,7 @@ template<class V> struct constant : usr {
   var* cond(int, int, var*, var*);
   var* plus()
   {
-    if (m_flag & CONST_PTR) {
-      // assert(sizeof(void*) < m_type->size());
-      return var::plus();
-    }
-    return promotion();
+    return (m_flag & CONST_PTR) ? var::plus() : promotion();
   }
   var* minus();
   var* tilde();
@@ -1262,8 +1258,8 @@ struct with_initial : usr {
   with_initial(const usr& u) : usr(u) { m_flag = flag_t(m_flag|usr::WITH_INI);  }
 
   // for string literal
-  with_initial(std::string name, const type* type, const file_t& file)
-    : usr(name,type,flag_t(usr::STATIC|usr::WITH_INI),file) {}
+  with_initial(std::string name, const type* T, const file_t& file)
+    : usr(name,T,flag_t(usr::STATIC|usr::WITH_INI),file) {}
 };
 
 struct type_def : usr {
@@ -2061,7 +2057,7 @@ namespace optimize {
       tac** m_leader;
       int m_size;
       vector<info_t*> m_follow, m_preceed;
-    info_t(tac** leader) : m_leader(leader), m_size(0) {}
+      info_t(tac** leader) : m_leader(leader), m_size(0) {}
     };
   } // end of namespace basic_block
 } // end of namespace optimize

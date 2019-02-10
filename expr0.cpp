@@ -509,18 +509,18 @@ namespace c_compiler {
       map<var*, var*> symtab;
       usr* new_usr(usr* u, scope* s)
       {
-	usr::flag_t flag = u->m_flag;
-	usr* ret = 0;
-	if (flag & usr::WITH_INI) {
-	  with_initial* p = static_cast<with_initial*>(u);
-	  ret = new with_initial(*p);
-	}
-	else if (flag & usr::ENUM_MEMBER) {
-	  enum_member* p = static_cast<enum_member*>(u);
-	  ret = new enum_member(*p);
-	}
-	else
-	  ret = new usr(*u);
+        usr::flag_t flag = u->m_flag;
+        usr* ret = 0;
+        if (flag & usr::WITH_INI) {
+          with_initial* p = static_cast<with_initial*>(u);
+          ret = new with_initial(*p);
+        }
+        else if (flag & usr::ENUM_MEMBER) {
+          enum_member* p = static_cast<enum_member*>(u);
+          ret = new enum_member(*p);
+        }
+        else
+          ret = new usr(*u);
         ret->m_scope = s;
         symtab[u] = ret;
         return ret;
@@ -728,6 +728,7 @@ c_compiler::var* c_compiler::call_impl::convert::operator()(var* arg)
 {
   using namespace std;
   arg = arg->rvalue();
+  decl::check(arg);
   if ( ++m_counter == m_param.size() )
     --m_counter;
   const type* T = m_param[m_counter];
@@ -1553,13 +1554,21 @@ namespace c_compiler {
   {
     T = T->unqualified();
     switch (T->m_id) {
+    case type::ENUM:
+      {
+	typedef const enum_type ET;
+	ET* et = static_cast<ET*>(T);
+	T = et->get_integer();
+	return unsigned_type(T);
+      }
     case type::CHAR: return uchar_type::create();
     case type::SCHAR: return uchar_type::create();
     case type::SHORT: return ushort_type::create();
     case type::INT: return uint_type::create();
     case type::LONG: return ulong_type::create();
-    case type::LONGLONG: return ulong_long_type::create();
-    default:  return 0;
+	default:
+      assert(T->m_id == type::LONGLONG);
+      return ulong_long_type::create();
     }
   }
 }  // end of namespace c_compiler
@@ -1669,17 +1678,17 @@ c_compiler::var* c_compiler::refsomewhere::rvalue()
 
 void c_compiler::decl::check(var* v)
 {
-        using namespace std;
-        using namespace error;
-        const type* T = v->m_type;
-        if (T->m_id == type::BACKPATCH) {
-                usr* u = static_cast<usr*>(v);
-                string name = u->m_name;
-                undeclared(u->m_file, name);
-                map<string, vector<usr*> >& usrs = scope::current->m_usrs;
-                u->m_type = int_type::create();
-                usrs[name].push_back(u);
-        }
+  using namespace std;
+  using namespace error;
+  const type* T = v->m_type;
+  if (T->m_id == type::BACKPATCH) {
+    usr* u = static_cast<usr*>(v);
+    string name = u->m_name;
+    undeclared(u->m_file, name);
+    map<string, vector<usr*> >& usrs = scope::current->m_usrs;
+    u->m_type = int_type::create();
+    usrs[name].push_back(u);
+  }
 }
 
 c_compiler::var* c_compiler::var::size(int n)
