@@ -1,7 +1,0 @@
-inline void g(int (*)[]);
-
-void f(int n, int (*pa)[n+5])
-{
-  ++pa;
-  g(pa);
-}
