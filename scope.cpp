@@ -28,14 +28,6 @@ c_compiler::block::~block()
     delete p;
 }
 
-bool c_compiler::parse::maybe_absdecl;
-
-int c_compiler::parse::index_depth;
-
-int c_compiler::parse::cond_depth;
-
-int c_compiler::parse::struct_or_union_depth;
-
 namespace c_compiler { namespace parse { namespace identifier {
   namespace judge_impl {
     int prev;
@@ -59,8 +51,6 @@ int c_compiler::parse::identifier::judge(std::string name)
 {
   using namespace std;
   using namespace judge_impl;
-  if (index_depth)
-    return no_spec(name);
   if ( peek_impl::nest )
     return IDENTIFIER_LEX;
   if ( !decl_specs::m_curr.empty() ){
@@ -80,10 +70,10 @@ int c_compiler::parse::identifier::judge(std::string name)
     return new_identifier(name);
   }
   else if ( !decl_specs::m_stack.empty() && decl_specs::m_stack.top() ){
-    if ( maybe_absdecl ){
-      if ( int r = lookup(name) ){
-        if ( r == TYPEDEF_NAME_LEX )
-           return TYPEDEF_NAME_LEX;
+    if (prev == '(' && scope::current->m_id == scope::PARAM ) {
+      if (int r = lookup(name)) {
+	if (r == TYPEDEF_NAME_LEX)
+	  return TYPEDEF_NAME_LEX;
       }
     }
     const vector<type_specifier*>& v = *decl_specs::m_stack.top();
@@ -176,13 +166,6 @@ int c_compiler::parse::identifier::judge_impl::no_spec(std::string name)
   using namespace std;
   if ( prev == '.' || prev == ARROW_MK || prev == GOTO_KW )
     return new_identifier(name);
-  if (cond_depth) {
-    if (int r = lookup(name))
-      return r;
-  }
-  int c = peek();
-  if (!struct_or_union_depth && !expr::constant_flag && c == ':')  // label: statement
-    return new_identifier(name);
   if ( int r = lookup(name) )
     return r;
   if ( name == "__func__" ){
@@ -206,10 +189,12 @@ int c_compiler::parse::identifier::judge_impl::no_spec(std::string name)
     garbage.push_back(c_compiler_lval.m_var);
     return IDENTIFIER_LEX;
   }
+  int c = peek();
   switch ( c ){
   case ')': // identifiler list of old style
   case ',': // identifiler list of old style
-  case '(': // function call or function declaration without return value 
+  case '(': // function call or function declaration without return value
+  case ':': // label: statement
     return new_identifier(name);
   }
   error::undeclared(parse::position,name);

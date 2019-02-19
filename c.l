@@ -182,24 +182,6 @@ while               { c_compiler_lval.m_ival = c_compiler::code.size(); return W
 \n|\r\n                    { ++c_compiler::parse::position.m_lineno; }
 \?                         { c_compiler_lval.m_ival = c_compiler::code.size(); return '?'; }
 \:                         { c_compiler_lval.m_ival = c_compiler::code.size(); return ':'; }
-\(                         {
-                             if ( c_compiler::parse::parameter::depth )
-                               c_compiler::parse::maybe_absdecl = true;
-                             return '(';
-                           }
-\)                         {
-                             if ( c_compiler::parse::parameter::depth )
-                               c_compiler::parse::maybe_absdecl = false;
-                             return ')';
-                           }
-\[                         {
-                             ++c_compiler::parse::index_depth;
-                             return '[';
-                           }
-\]                         {
-                             --c_compiler::parse::index_depth;
-                             return ']';
-                           }
 .                          { return yytext[0]; }
 
 %%
@@ -222,10 +204,6 @@ void c_compiler::parse::unputer(std::string s)
   int size = s.length();
   for ( int i = 0 ; i != size ; ++i ) {
     char c = s[size-i-1];
-    if (c == '[')
-      --index_depth;
-    if (c == ']')
-      ++index_depth;
     unput(c);
   }
 }

@@ -229,11 +229,11 @@ logical_OR1st
 
 conditional_expression
   : logical_OR_expression
-  | cond1st cond2nd conditional_expression  { $$ = expr::cond($1,$2,$3); --parse::cond_depth; }
+  | cond1st cond2nd conditional_expression  { $$ = expr::cond($1,$2,$3); }
   ;
 
 cond1st
-  : logical_OR_expression '?'  { $$ = new expr::seq(code.size(),$1); ++parse::cond_depth; }
+  : logical_OR_expression '?'  { $$ = new expr::seq(code.size(),$1); }
   ;
 
 cond2nd
@@ -265,8 +265,8 @@ constant_expression
   ;
 
 declaration
-  : declaration_specifiers                      ';'  { declaration1(0,false); delete parse::decl_specs::m_stack.top(); parse::index_depth = 0; }
-  | declaration_specifiers init_declarator_list ';'  { delete parse::decl_specs::m_stack.top(); parse::index_depth = 0; }
+  : declaration_specifiers                      ';'  { declaration1(0,false); delete parse::decl_specs::m_stack.top(); }
+  | declaration_specifiers init_declarator_list ';'  { delete parse::decl_specs::m_stack.top(); }
   ;
 
 declaration_specifiers
@@ -314,14 +314,14 @@ type_specifier
   ;
 
 struct_or_union_specifier
-  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace parse; $$ = struct_or_union_specifier($1,$2); parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); --struct_or_union_depth; }
+  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace parse; $$ = struct_or_union_specifier($1,$2); parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); }
   | struct_or_union IDENTIFIER_LEX                               { $$ = parse::tag_begin($1,$2)->m_types.first; }
   | struct_or_union TAG_NAME_LEX                                 { $$ = parse::tag_type($1,$2); }
   ;
 
 struct_or_union_specifier_begin
-  : struct_or_union IDENTIFIER_LEX '{' { using namespace parse; $$ = tag_begin($1,$2); decl_specs::m_curr.clear(); ++struct_or_union_depth; }
-  | struct_or_union                '{' { using namespace parse; $$ = tag_begin($1,static_cast<usr*>(0)); decl_specs::m_curr.clear(); ++struct_or_union_depth; }
+  : struct_or_union IDENTIFIER_LEX '{' { using namespace parse; $$ = tag_begin($1,$2); decl_specs::m_curr.clear(); }
+  | struct_or_union                '{' { using namespace parse; $$ = tag_begin($1,static_cast<usr*>(0)); decl_specs::m_curr.clear(); }
   ;
 
 struct_or_union
@@ -409,7 +409,7 @@ declarator
 direct_declarator
   : IDENTIFIER_LEX
   | '(' declarator ')'                               { $$ = $2; }
-  | direct_declarator begin_array end_array                        { $$ = $1; $$->m_type = decl::declarator::array($1->m_type,0,false,$1); }
+  | direct_declarator begin_array end_array                       { $$ = $1; $$->m_type = decl::declarator::array($1->m_type,0,false,$1); }
   | direct_declarator begin_array assignment_expression end_array  { $$ = $1; $$->m_type = decl::declarator::array($1->m_type,$3,false,$1); }
   | direct_declarator begin_array '*' end_array                    { $$ = $1; $$->m_type = decl::declarator::array($1->m_type,0,true,$1); }
   | direct_declarator '(' enter_parameter parameter_type_list leave_parameter ')'    { $$ = $1; $$->m_type = decl::declarator::func($1->m_type,$4,$1); }
@@ -471,7 +471,7 @@ abstract_declarator
 
 direct_abstract_declarator
   : '(' abstract_declarator ')'  { $$ = $2; }
-  | begin_array  end_array  { $$ = decl::declarator::array(backpatch_type::create(),0,false); }
+  | begin_array end_array  { $$ = decl::declarator::array(backpatch_type::create(),0,false); }
   | begin_array assignment_expression end_array  { $$ = decl::declarator::array(backpatch_type::create(),$2,false); }
   | direct_abstract_declarator begin_array end_array  { $$ = decl::declarator::array($1,0,false); }
   | direct_abstract_declarator begin_array assignment_expression end_array  { $$ = decl::declarator::array($1,$3,false); }

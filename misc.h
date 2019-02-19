@@ -738,7 +738,6 @@ namespace initializer_list {
 namespace optimize {
   using namespace std;
   void action(const fundef* fdef, vector<tac*>& v);
-  void remember_action(const vector<tac*>&);
   void mark(usr*);
   namespace basic_block {
     struct info_t;

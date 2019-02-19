@@ -1124,10 +1124,3 @@ void c_compiler::optimize::symtab::literal::erase(usr* u)
   usrs.erase(it);
   delete u;
 }
-
-void c_compiler::optimize::remember_action(const std::vector<tac*>& vc)
-{
-  using namespace std;
-  using namespace symtab::literal;
-  for_each(vc.begin(),vc.end(),mark1);
-}

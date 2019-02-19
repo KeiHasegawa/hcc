@@ -22,6 +22,20 @@ void c_compiler::stmt::label::action(usr* u)
 {
   using namespace std;
   using namespace goto_impl;
+  if (genaddr* ga = u->genaddr_cast()) {
+    vector<var*>::reverse_iterator p = find(garbage.rbegin(), garbage.rend(), ga);
+    assert(p != garbage.rend());
+    var* v = ga->m_ref;
+    u = v->usr_cast();
+    assert(u);
+    usr* tmp = new usr(*u);
+    u = tmp;
+    garbage.erase(p.base()-1);
+  }
+  else if (u->m_type->m_id != type::BACKPATCH) {
+    usr* tmp = new usr(*u);
+    u = tmp;
+  }
   auto_ptr<usr> sweeper(u);
   string name = u->m_name;
   {

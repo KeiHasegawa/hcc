@@ -11,12 +11,7 @@ public:
 } // end of namespace c_compiler
 
 namespace c_compiler { namespace parse {
-
-extern bool maybe_absdecl;
-extern int index_depth;
-extern int cond_depth;
-extern int struct_or_union_depth;
-
+ 
 namespace identifier {
   extern int judge(std::string);
   namespace judge_impl {
