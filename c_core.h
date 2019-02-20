@@ -340,7 +340,7 @@ struct var {
   virtual var* offref(const type*, var*);
   virtual const type* result_type() const { return m_type; }
   virtual bool isconstant(bool = false) const { return false; }
-  virtual __int64 value(){ return 0; }
+  virtual __int64 value() const { return 0; }
   virtual void if_expr();
   virtual void else_action();
   virtual void end_if();
@@ -635,7 +635,7 @@ template<class V> struct constant : usr {
   var* _not();
   bool isconstant(bool = false) const { return true; }
   var* size(int);
-  __int64 value(){ return m_value; }
+  __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
   void end_if();
@@ -1237,7 +1237,7 @@ template<> struct constant<void*> : usr {
 
   bool zero() const { return m_value == 0; }
   var* _not();
-  __int64 value(){ return (__int64)m_value; }
+  __int64 value() const { return (__int64)m_value; }
   bool isconstant(bool = false) const { return true; }
   void if_expr();
   void else_action();
