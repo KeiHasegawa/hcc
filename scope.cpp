@@ -43,9 +43,14 @@ namespace c_compiler { namespace parse { namespace identifier {
   } // end of namespace judge_impl
 } } } // end of namespace identifier, parse and c_compiler
 
-std::vector<int> c_compiler::parse::decl_specs::m_curr;
-std::vector<int> c_compiler::parse::decl_specs::m_temp;
-std::stack<c_compiler::parse::decl_specs*> c_compiler::parse::decl_specs::m_stack;
+namespace c_compiler {
+  namespace parse {
+    using namespace std;
+    vector<int> decl_specs::s_curr;
+    vector<int> decl_specs::s_temp;
+    stack<decl_specs*> decl_specs::s_stack;
+  } // end of namespace parse
+} // end of namespace c_compiler
 
 int c_compiler::parse::identifier::judge(std::string name)
 {
@@ -53,8 +58,8 @@ int c_compiler::parse::identifier::judge(std::string name)
   using namespace judge_impl;
   if ( peek_impl::nest )
     return IDENTIFIER_LEX;
-  if ( !decl_specs::m_curr.empty() ){
-    vector<int>& v = decl_specs::m_curr;
+  if ( !decl_specs::s_curr.empty() ){
+    vector<int>& v = decl_specs::s_curr;
     if ( find_if(v.rbegin(),v.rend(),type_lex) != v.rend() )
       return new_identifier(name);
     int n = v.back();
@@ -63,20 +68,22 @@ int c_compiler::parse::identifier::judge(std::string name)
         return new_identifier(name);
       v.push_back(TAG_NAME_LEX);
     }
-    if (decl_specs::m_stack.empty() || !decl_specs::m_stack.top()) {
-      if (int r = lookup(name))
-        return r;
+    if (decl_specs::s_stack.empty() || !decl_specs::s_stack.top()) {
+      if (int r = lookup(name)) {
+        if (r == TYPEDEF_NAME_LEX || r == TAG_NAME_LEX)
+          return r;
+      }
     }
     return new_identifier(name);
   }
-  else if ( !decl_specs::m_stack.empty() && decl_specs::m_stack.top() ){
+  else if ( !decl_specs::s_stack.empty() && decl_specs::s_stack.top() ){
     if (prev == '(' && scope::current->m_id == scope::PARAM ) {
       if (int r = lookup(name)) {
-	if (r == TYPEDEF_NAME_LEX)
-	  return TYPEDEF_NAME_LEX;
+        if (r == TYPEDEF_NAME_LEX)
+          return TYPEDEF_NAME_LEX;
       }
     }
-    const vector<type_specifier*>& v = *decl_specs::m_stack.top();
+    const vector<type_specifier*>& v = *decl_specs::s_stack.top();
     if ( find_if(v.rbegin(),v.rend(),explicit_type) != v.rend() )
       return new_identifier(name);
     if ( int r = lookup(name) )

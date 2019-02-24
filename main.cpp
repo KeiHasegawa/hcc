@@ -10,11 +10,7 @@ int main(int argc, char** argv)
   using namespace c_compiler;
   cmdline::setup(argc,argv);
   if ( !cmdline::input.empty() ){
-#ifdef _MSC_VER
-    fopen_s(&c_compiler_in, cmdline::input.c_str(), "r");
-#else // _MSC_VER
     c_compiler_in = fopen(cmdline::input.c_str(),"r");
-#endif // _MSC_VER
     if ( !c_compiler_in ){
       error::cmdline::open(cmdline::input);
       exit(1);

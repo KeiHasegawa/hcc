@@ -2,7 +2,7 @@
 
 set path = ( /bin /usr/bin )
 
-bison -p c_compiler_ -d $argv[1] |& perl filter_vc.pl
+bison -v -p c_compiler_ -d $argv[1] |& perl filter_vc.pl
 if ( $status != 0 ) then
   exit 1
 endif

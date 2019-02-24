@@ -115,7 +115,7 @@ default             { return DEFAULT_KW; }
 double              { return DOUBLE_KW; }
 do                  { return DO_KW; }
 else                { return ELSE_KW; }
-enum                { c_compiler::parse::decl_specs::m_curr.push_back(ENUM_KW); return c_compiler::parse::guess(ENUM_KW); }
+enum                { c_compiler::parse::decl_specs::s_curr.push_back(ENUM_KW); return ENUM_KW; }
 extern              { return EXTERN_KW; }
 float               { return FLOAT_KW; }
 for                 { return FOR_KW; }
@@ -131,10 +131,10 @@ short               { return SHORT_KW; }
 signed              { return SIGNED_KW; }
 sizeof              { c_compiler_lval.m_ival = c_compiler::code.size(); return SIZEOF_KW; }
 static              { return STATIC_KW; }
-struct              { return c_compiler::parse::guess(STRUCT_KW); }
+struct              { return STRUCT_KW; }
 switch              { return SWITCH_KW; }
 typedef             { return TYPEDEF_KW; }
-union               { return c_compiler::parse::guess(UNION_KW); }
+union               { return UNION_KW; }
 unsigned            { return UNSIGNED_KW; }
 void                { return VOID_KW; }
 volatile            { return VOLATILE_KW; }

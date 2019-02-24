@@ -7,5 +7,8 @@ extern void c_compiler_error(const char*);
 extern char* c_compiler_text;
 extern FILE* c_compiler_in;
 extern int c_compiler_parse();
+#ifdef YYDEBUG
+extern int c_compiler_debug;
+#endif // YYDEBUG
 
 #endif // _YY_H_

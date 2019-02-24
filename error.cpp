@@ -16,13 +16,7 @@ namespace c_compiler { namespace error {
 c_compiler::error::init_lang::init_lang()
 {
   using namespace std;
-#ifdef _MSC_VER
-  char* p;
-  size_t n;
-  _dupenv_s(&p, &n, "LANG");
-#else // _MSC_VER
   char* p = getenv("LANG");
-#endif // _MSC_VER
   if ( !p )
     return;
   string s = p;
@@ -122,22 +116,6 @@ void c_compiler::error::undeclared(const file_t& file, std::string name)
   default:
     header(file,"error");
     cerr << "undeclared variable `" << name << "'.\n";
-    break;
-  }
-  ++counter;
-}
-
-void c_compiler::error::parse::missing(const file_t& file, char c)
-{
-  using namespace std;
-  switch (lang) {
-  case jpn:
-    header(file,"ƒGƒ‰[");
-    cerr << '`' << c << "' ‚ª‚ ‚è‚Ü‚¹‚ñ.\n";
-    break;
-  default:
-    header(file,"error");
-    cerr << "missing `" << c << "'.\n";
     break;
   }
   ++counter;

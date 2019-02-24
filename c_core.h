@@ -1515,10 +1515,10 @@ class backpatch_type : public type {
   static backpatch_type obj;
   backpatch_type() : type(BACKPATCH) {}
 public:
-  void decl(std::ostream& os, std::string name) const { assert(0); }
-  const type* patch(const type* T, usr*) const { return T; }
+  void decl(std::ostream& os, std::string name) const;
   int size() const { return 0; }
   bool scalar() const { return false; }
+  const type* patch(const type* T, usr*) const { return T; }
   bool backpatch() const { return true; }
   static const backpatch_type* create(){ return &obj; }
 };
@@ -1544,6 +1544,7 @@ public:
   const type* complete_type() const { return create(m_T->complete_type()); }
   const type* unqualified(int* cvr) const { if ( cvr ) *cvr |= 1; return m_T->unqualified(cvr); }
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }
   bool modifiable() const { return false; }
   const type* promotion() const { return create(m_T->promotion()); }
   const type* varg() const { return create(m_T->varg()); }
@@ -1571,6 +1572,7 @@ public:
   bool compatible(const type* T) const;
   const type* composite(const type* T) const;
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }  
   int size() const { return m_T->size(); }
   bool scalar() const { return m_T->scalar(); }
   bool real() const { return m_T->real(); }
@@ -1601,6 +1603,7 @@ class restrict_type : public type {
 public:
   void decl(std::ostream& os, std::string name) const;
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }  
   bool compatible(const type* T) const;
   const type* composite(const type* T) const;
   int size() const { return m_T->size(); }
@@ -1642,6 +1645,7 @@ public:
   const type* prev() const { return m_T->prev(); }
   void post(std::ostream&) const;
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }
   const type* qualified(int) const;
   const type* complete_type() const;
   const pointer_type* ptr_gen() const;
@@ -1671,6 +1675,7 @@ public:
   bool scalar() const { return false; }
   bool modifiable() const { return m_T->modifiable(); }
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }  
   const type* qualified(int) const;
   const type* complete_type() const;
   const type* prev() const { return m_T->prev(); }
@@ -1699,6 +1704,7 @@ public:
   bool compatible(const type* T) const;
   const type* composite(const type* T) const;
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }
   const type* referenced_type() const { return m_T; }
   int size() const;
   bool integer() const { return false; }
@@ -1804,6 +1810,7 @@ public:
   int size() const { return 0; }
   bool _signed() const { return m_integer->_signed(); }
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_integer->backpatch(); }  
   int bit() const { return m_bit; }
   static const bit_field_type* create(int, const type*);
 };
@@ -1823,6 +1830,7 @@ public:
   bool scalar() const { return false; }
   bool modifiable() const { return m_T->modifiable(); }
   const type* patch(const type* T, usr* u) const;
+  bool backpatch() const { return m_T->backpatch(); }
   const type* qualified(int) const;
   const type* prev() const { return m_T->prev(); }
   void post(std::ostream& os) const;

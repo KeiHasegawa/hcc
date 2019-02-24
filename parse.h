@@ -46,17 +46,17 @@ struct initializer : std::pair<var*, initializer_list*> {
 typedef std::pair<int, const type*> type_specifier;
 
 struct decl_specs : pvector<type_specifier> {
-  static std::vector<int> m_curr;
-  static std::vector<int> m_temp;
-  static std::stack<decl_specs*> m_stack;
+  static std::vector<int> s_curr;
+  static std::vector<int> s_temp;
+  static std::stack<decl_specs*> s_stack;
   decl_specs()
   {
-    m_curr.clear();
-    m_stack.push(this);
+    s_curr.clear();
+    s_stack.push(this);
   }
   ~decl_specs()
   {
-    m_stack.pop();
+    s_stack.pop();
   }
 };
 

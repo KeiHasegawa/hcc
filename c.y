@@ -265,8 +265,8 @@ constant_expression
   ;
 
 declaration
-  : declaration_specifiers                      ';'  { declaration1(0,false); delete parse::decl_specs::m_stack.top(); }
-  | declaration_specifiers init_declarator_list ';'  { delete parse::decl_specs::m_stack.top(); }
+  : declaration_specifiers                      ';'  { declaration1(0,false); delete parse::decl_specs::s_stack.top(); }
+  | declaration_specifiers init_declarator_list ';'  { delete parse::decl_specs::s_stack.top(); }
   ;
 
 declaration_specifiers
@@ -287,46 +287,46 @@ init_declarator_list
 
 init_declarator
   : declarator     { declaration1($1,false); }
-  | declarator '=' { $1 = declaration1($1,true); parse::decl_specs::m_stack.push(0); } initializer  { parse::decl_specs::m_stack.pop(); declaration2($1,$4); }
+  | declarator '=' { $1 = declaration1($1,true); parse::decl_specs::s_stack.push(0); } initializer  { parse::decl_specs::s_stack.pop(); declaration2($1,$4); }
   ;
 
 storage_class_specifier
-  : TYPEDEF_KW   { parse::decl_specs::m_curr.push_back($$ = TYPEDEF_KW); }
-  | EXTERN_KW    { parse::decl_specs::m_curr.push_back($$ = EXTERN_KW); }
-  | STATIC_KW    { parse::decl_specs::m_curr.push_back($$ = STATIC_KW); }
-  | AUTO_KW      { parse::decl_specs::m_curr.push_back($$ = AUTO_KW); }
-  | REGISTER_KW  { parse::decl_specs::m_curr.push_back($$ = REGISTER_KW); }
+  : TYPEDEF_KW   { parse::decl_specs::s_curr.push_back($$ = TYPEDEF_KW); }
+  | EXTERN_KW    { parse::decl_specs::s_curr.push_back($$ = EXTERN_KW); }
+  | STATIC_KW    { parse::decl_specs::s_curr.push_back($$ = STATIC_KW); }
+  | AUTO_KW      { parse::decl_specs::s_curr.push_back($$ = AUTO_KW); }
+  | REGISTER_KW  { parse::decl_specs::s_curr.push_back($$ = REGISTER_KW); }
   ;
 
 type_specifier
-  : VOID_KW                    { $$ = new parse::type_specifier(VOID_KW,0); parse::decl_specs::m_curr.push_back(VOID_KW); }
-  | CHAR_KW                    { $$ = new parse::type_specifier(CHAR_KW,0); parse::decl_specs::m_curr.push_back(CHAR_KW); }
-  | SHORT_KW                   { $$ = new parse::type_specifier(SHORT_KW,0); parse::decl_specs::m_curr.push_back(SHORT_KW); }
-  | INT_KW                     { $$ = new parse::type_specifier(INT_KW,0); parse::decl_specs::m_curr.push_back(INT_KW); }
-  | LONG_KW                    { $$ = new parse::type_specifier(LONG_KW,0); parse::decl_specs::m_curr.push_back(LONG_KW); }
-  | FLOAT_KW                   { $$ = new parse::type_specifier(FLOAT_KW,0); parse::decl_specs::m_curr.push_back(FLOAT_KW); }
-  | DOUBLE_KW                  { $$ = new parse::type_specifier(DOUBLE_KW,0); parse::decl_specs::m_curr.push_back(DOUBLE_KW); }
-  | SIGNED_KW                  { $$ = new parse::type_specifier(SIGNED_KW,0); parse::decl_specs::m_curr.push_back(SIGNED_KW); }
-  | UNSIGNED_KW                { $$ = new parse::type_specifier(UNSIGNED_KW,0); parse::decl_specs::m_curr.push_back(UNSIGNED_KW); }
+  : VOID_KW                    { $$ = new parse::type_specifier(VOID_KW,0); parse::decl_specs::s_curr.push_back(VOID_KW); }
+  | CHAR_KW                    { $$ = new parse::type_specifier(CHAR_KW,0); parse::decl_specs::s_curr.push_back(CHAR_KW); }
+  | SHORT_KW                   { $$ = new parse::type_specifier(SHORT_KW,0); parse::decl_specs::s_curr.push_back(SHORT_KW); }
+  | INT_KW                     { $$ = new parse::type_specifier(INT_KW,0); parse::decl_specs::s_curr.push_back(INT_KW); }
+  | LONG_KW                    { $$ = new parse::type_specifier(LONG_KW,0); parse::decl_specs::s_curr.push_back(LONG_KW); }
+  | FLOAT_KW                   { $$ = new parse::type_specifier(FLOAT_KW,0); parse::decl_specs::s_curr.push_back(FLOAT_KW); }
+  | DOUBLE_KW                  { $$ = new parse::type_specifier(DOUBLE_KW,0); parse::decl_specs::s_curr.push_back(DOUBLE_KW); }
+  | SIGNED_KW                  { $$ = new parse::type_specifier(SIGNED_KW,0); parse::decl_specs::s_curr.push_back(SIGNED_KW); }
+  | UNSIGNED_KW                { $$ = new parse::type_specifier(UNSIGNED_KW,0); parse::decl_specs::s_curr.push_back(UNSIGNED_KW); }
   | struct_or_union_specifier  { $$ = new parse::type_specifier(0,$1); }
   | enum_specifier             { $$ = new parse::type_specifier(0,$1); }
-  | TYPEDEF_NAME_LEX           { $$ = new parse::type_specifier(0,$1->m_type); parse::decl_specs::m_curr.push_back(TYPEDEF_NAME_LEX); }
+  | TYPEDEF_NAME_LEX           { $$ = new parse::type_specifier(0,$1->m_type); parse::decl_specs::s_curr.push_back(TYPEDEF_NAME_LEX); }
   ;
 
 struct_or_union_specifier
-  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace parse; $$ = struct_or_union_specifier($1,$2); parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); }
+  : struct_or_union_specifier_begin struct_declaration_list '}'  { using namespace parse; $$ = struct_or_union_specifier($1,$2); parse::decl_specs::s_curr.push_back(TAG_NAME_LEX); }
   | struct_or_union IDENTIFIER_LEX                               { $$ = parse::tag_begin($1,$2)->m_types.first; }
   | struct_or_union TAG_NAME_LEX                                 { $$ = parse::tag_type($1,$2); }
   ;
 
 struct_or_union_specifier_begin
-  : struct_or_union IDENTIFIER_LEX '{' { using namespace parse; $$ = tag_begin($1,$2); decl_specs::m_curr.clear(); }
-  | struct_or_union                '{' { using namespace parse; $$ = tag_begin($1,static_cast<usr*>(0)); decl_specs::m_curr.clear(); }
+  : struct_or_union IDENTIFIER_LEX '{' { using namespace parse; $$ = tag_begin($1,$2); decl_specs::s_curr.clear(); }
+  | struct_or_union                '{' { using namespace parse; $$ = tag_begin($1,static_cast<usr*>(0)); decl_specs::s_curr.clear(); }
   ;
 
 struct_or_union
-  : STRUCT_KW  { $$ = tag::STRUCT; parse::decl_specs::m_curr.push_back(STRUCT_KW); }
-  | UNION_KW   { $$ = tag::UNION;  parse::decl_specs::m_curr.push_back(UNION_KW); }
+  : STRUCT_KW  { $$ = tag::STRUCT; parse::decl_specs::s_curr.push_back(STRUCT_KW); }
+  | UNION_KW   { $$ = tag::UNION;  parse::decl_specs::s_curr.push_back(UNION_KW); }
   ;
 
 struct_declaration_list
@@ -337,6 +337,7 @@ struct_declaration_list
 struct_declaration
   : specifier_qualifier_list struct_declarator_list ';'  { $$ = parse::struct_declaration($1,$2); }
   | specifier_qualifier_list                        ';'  { $$ = parse::struct_declaration($1,0);  }
+  | error                                           ';'  { $$ = new parse::struct_declaration_list; }
   ;
 
 specifier_qualifier_list
@@ -353,8 +354,8 @@ struct_declarator_list
 
 struct_declarator
   : declarator
-  |            ':' { expr::constant_flag = true; parse::decl_specs::m_stack.push(0); } constant_expression  { parse::decl_specs::m_stack.pop(); expr::constant_flag = false; $$ = new usr("",backpatch_type::create(),usr::NONE,parse::position); $$->m_type = parse::bit_field($$->m_type,$3,$$); }
-  | declarator ':' { expr::constant_flag = true; parse::decl_specs::m_stack.push(0); } constant_expression  { parse::decl_specs::m_stack.pop(); expr::constant_flag = false; $$ = $1; $$->m_type = parse::bit_field($$->m_type,$4,$$); }
+  |            ':' { expr::constant_flag = true; parse::decl_specs::s_stack.push(0); } constant_expression  { parse::decl_specs::s_stack.pop(); expr::constant_flag = false; $$ = new usr("",backpatch_type::create(),usr::NONE,parse::position); $$->m_type = parse::bit_field($$->m_type,$3,$$); }
+  | declarator ':' { expr::constant_flag = true; parse::decl_specs::s_stack.push(0); } constant_expression  { parse::decl_specs::s_stack.pop(); expr::constant_flag = false; $$ = $1; $$->m_type = parse::bit_field($$->m_type,$4,$$); }
   ;
 
 enum_specifier
@@ -365,8 +366,8 @@ enum_specifier
   ;
 
 enum_specifier_begin
-  : ENUM_KW IDENTIFIER_LEX '{'  { $$ = parse::tag_begin(tag::ENUM,$2); parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); }
-  | ENUM_KW                '{'  { $$ = parse::tag_begin(tag::ENUM,static_cast<usr*>(0)); parse::decl_specs::m_curr.push_back(TAG_NAME_LEX); }
+  : ENUM_KW IDENTIFIER_LEX '{'  { $$ = parse::tag_begin(tag::ENUM,$2); parse::decl_specs::s_curr.push_back(TAG_NAME_LEX); }
+  | ENUM_KW                '{'  { $$ = parse::tag_begin(tag::ENUM,static_cast<usr*>(0)); parse::decl_specs::s_curr.push_back(TAG_NAME_LEX); }
   ;
 
 enumerator_list
@@ -379,22 +380,22 @@ enumerator
   | IDENTIFIER_LEX '='
     {
       expr::constant_flag = true;
-      parse::decl_specs::m_temp = parse::decl_specs::m_curr;
-      parse::decl_specs::m_curr.clear();
+      parse::decl_specs::s_temp = parse::decl_specs::s_curr;
+      parse::decl_specs::s_curr.clear();
     }
     constant_expression
     {
       using namespace std;
-      parse::decl_specs::m_curr = parse::decl_specs::m_temp;
+      parse::decl_specs::s_curr = parse::decl_specs::s_temp;
       expr::constant_flag = false;
       parse::enumerator::action($1,$4);
     }
   ;
 
 type_qualifier
-  : CONST_KW     { parse::decl_specs::m_curr.push_back($$ = CONST_KW); }
-  | RESTRICT_KW  { parse::decl_specs::m_curr.push_back($$ = RESTRICT_KW); }
-  | VOLATILE_KW  { parse::decl_specs::m_curr.push_back($$ = VOLATILE_KW); }
+  : CONST_KW     { parse::decl_specs::s_curr.push_back($$ = CONST_KW); }
+  | RESTRICT_KW  { parse::decl_specs::s_curr.push_back($$ = RESTRICT_KW); }
+  | VOLATILE_KW  { parse::decl_specs::s_curr.push_back($$ = VOLATILE_KW); }
   ;
 
 function_specifier
@@ -418,11 +419,11 @@ direct_declarator
   ;
 
 begin_array
-  : '[' { parse::decl_specs::m_stack.push(0); decl::declarator::array_impl::csz = code.size(); }
+  : '[' { parse::decl_specs::s_stack.push(0); decl::declarator::array_impl::csz = code.size(); }
   ;
 
 end_array
-  : ']' { parse::decl_specs::m_stack.pop(); }
+  : ']' { parse::decl_specs::s_stack.pop(); }
   ;
 
 pointer
@@ -539,6 +540,7 @@ block_item_list
 block_item
   : declaration
   | statement
+  | error ';'
   ;
 
 expression_statement
@@ -638,9 +640,24 @@ translation_unit
   ;
 
 external_declaration
-  : function_definition  { destroy_temporary(); parse::is_last_decl = false; }
-  | declaration          { destroy_temporary(); parse::is_last_decl = true; }
+  : function_definition
+    {
+      scope::current = &scope::root;  // work around. sytax error may causes invalid scope::current.
+      destroy_temporary();
+      parse::is_last_decl = false;
+    }
+  | declaration
+    {
+      scope::current = &scope::root;  // work around. sytax error may causes invalid scope::current.
+      destroy_temporary();
+      parse::is_last_decl = true;
+    }
   | ';'
+  | error ';'
+    {
+      scope::current = &scope::root;
+      destroy_temporary();
+    }
   ;
 
 function_definition
@@ -670,7 +687,7 @@ begin_declaration_list
       using namespace parse;
       parameter::old_style = true;
       parameter::enter2();
-      decl_specs::m_stack.push(0);
+      decl_specs::s_stack.push(0);
     }
   ;
 
@@ -678,7 +695,7 @@ end_declaration_list
   : {
       using namespace parse;
       parameter::leave();
-      decl_specs::m_stack.pop();
+      decl_specs::s_stack.pop();
       parameter::old_style = false;
     }
   ;
@@ -692,7 +709,7 @@ enter_parameter
   : {
       using namespace parse;
       parameter::enter();
-      decl_specs::m_stack.push(0);
+      decl_specs::s_stack.push(0);
     }
   ;
 
@@ -700,7 +717,7 @@ leave_parameter
   : {
       using namespace parse;
       parameter::leave();
-      decl_specs::m_stack.pop();
+      decl_specs::s_stack.pop();
     }
   ;
 

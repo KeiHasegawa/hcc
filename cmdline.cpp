@@ -2,6 +2,7 @@
 #include "c_core.h"
 #include "parse.h"
 #include "misc.h"
+#include "yy.h"
 
 namespace c_compiler {  namespace cmdline {
   struct table_t : std::map<std::string,int (*)(char**)> {
@@ -53,13 +54,7 @@ void c_compiler::cmdline::setup(int argc, char** argv)
   }
 
   if ( generator.empty() && !no_generator ){
-#ifdef _MSC_VER
-    char* p;
-    size_t n;
-    _dupenv_s(&p,&n,"CC1GENERATOR");
-#else // _MSC_VER
     char* p = getenv("CC1GENERATOR");
-#endif // _MSC_VER
     if ( p )
       generator = p;
     else
@@ -81,6 +76,10 @@ namespace c_compiler {
     int nobb_optimize_option(char**);
     int nodag_optimize_option(char**);
     int output_optinfo_option(char**);
+#ifdef YYDEBUG
+    int c_compiler_debug_option(char**);
+#endif // YYDEBUG
+    int no_inline_sub_option(char**);
     int help_option(char**);
   }
 }
@@ -99,6 +98,10 @@ c_compiler::cmdline::table_t::table_t()
   (*this)["--no-basic-block-optimize"] = nobb_optimize_option;
   (*this)["--no-dag-optimize"] = nodag_optimize_option;
   (*this)["--output-optinfo"] = output_optinfo_option;
+#ifdef YYDEBUG
+  (*this)["--c-compiler-debug"] = c_compiler_debug_option;
+#endif // YYDEBUG
+  (*this)["--no-inline-sub"] = no_inline_sub_option;
   (*this)["-h"] = help_option;
 }
 
@@ -153,6 +156,34 @@ int c_compiler::cmdline::output_optinfo_option(char** argv)
   }
 
   output_optinfo = true;
+  return 0;
+}
+
+#ifdef YYDEBUG
+int c_compiler::cmdline::c_compiler_debug_option(char** argv)
+{
+  using namespace std;
+  if (!argv) {
+    cerr << " : set c_compiler_debug";
+    return 0;
+  }
+
+  c_compiler_debug = 1;
+  return 0;
+}
+#endif // YYDEBUG
+
+bool c_compiler::cmdline::no_inline_sub;
+
+int c_compiler::cmdline::no_inline_sub_option(char** argv)
+{
+  using namespace std;
+  if (!argv) {
+    cerr << " : no inline substitution";
+    return 0;
+  }
+
+  no_inline_sub = true;
   return 0;
 }
 
@@ -264,7 +295,7 @@ int c_compiler::cmdline::version_option(char** argv)
     cerr << " : output version";
     return 0;
   }
-  cerr << prog << ": version " << "1.3" << '\n';
+  cerr << prog << ": version " << "1.4" << '\n';
   return 0;
 }
 

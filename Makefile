@@ -65,7 +65,7 @@ c_l.cpp:c.l
 $(OBJS):c_y.cpp
 
 DEBUG_FLAG = -g
-CXXFLAGS = -w $(DEBUG_FLAG)
+CXXFLAGS = -w $(DEBUG_FLAG) -DYYDEBUG
 
 debian = $(if $(wildcard /etc/debian_version),1,0)
 ifeq ($(debian),1)

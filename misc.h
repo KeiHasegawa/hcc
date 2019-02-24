@@ -417,9 +417,6 @@ namespace error {
   extern int counter;
   extern bool headered;
   extern void header(const file_t&, std::string);
-  namespace parse {
-    extern void missing(const file_t&, char);
-  }
   extern void undeclared(const file_t&, std::string);
   namespace literal {
     namespace integer {
@@ -691,6 +688,7 @@ namespace cmdline {
   extern bool bb_optimize;
   extern bool dag_optimize;
   extern bool output_optinfo;
+  extern bool no_inline_sub;
 } // end of namespace cmdline
 
 namespace generator {

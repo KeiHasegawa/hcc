@@ -440,7 +440,7 @@ c_compiler::var* c_compiler::genaddr::call(std::vector<var*>* arg)
   var* ret = call_impl::common(ft,m_ref,arg);
   usr* u = static_cast<usr*>(m_ref);
   usr::flag_t flag = u->m_flag;
-  if (!error::counter) {
+  if (!error::counter && !cmdline::no_inline_sub) {
     if (flag & usr::INLINE) {
       using namespace static_inline::skip;
       table_t::const_iterator p = table.find(u);

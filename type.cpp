@@ -344,6 +344,15 @@ c_compiler::long_double_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::backpatch_type c_compiler::backpatch_type::obj;
 
+void c_compiler::backpatch_type::decl(std::ostream& os, std::string name) const
+{
+  // If usr* `u' is installed to symbol table,
+  // assert(!u->m_type->backpatch()) should be passed normally.
+  // However some unexpected error (e.g. syntax error)
+  // may overwrite u->m_type where `u' is already installed to symbol table.
+  assert(error::counter);
+}
+
 namespace c_compiler {
   const_type::table_t const_type::tmp_tbl;
   const_type::table_t const_type::pmt_tbl;
@@ -824,12 +833,18 @@ c_compiler::func_type::patch(const type* T, usr* u) const
   if ( T->m_id == type::FUNC ){
     using namespace error::decl::declarator;
     func::of_func(parse::position,u);
-    T = int_type::create();
+    if (T->backpatch())
+      T = backpatch_type::create();
+    else
+      T = int_type::create();
   }
   if ( T->m_id == type::ARRAY ){
     using namespace error::decl::declarator;
     func::of_array(parse::position,u);
-    T = int_type::create();
+    if (T->backpatch())
+      T = backpatch_type::create();
+    else
+      T = int_type::create();
   }
   if (u) {
     usr::flag_t& flag = u->m_flag;
@@ -1097,10 +1112,8 @@ const c_compiler::type*
 c_compiler::pointer_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
-  if (u) {
-    usr::flag_t& flag = u->m_flag;
-    flag = usr::flag_t(flag & ~usr::FUNCTION & ~usr::VL);
-  }
+  if (u)
+	u->m_flag = usr::flag_t(u->m_flag & ~usr::FUNCTION & ~usr::VL);
   return create(T);
 }
 
@@ -1346,6 +1359,7 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
   using namespace std;
   if ( member->m_flag & usr::BIT_FIELD ){
     const type* T = member->m_type;
+	assert(T->m_id == type::BIT_FIELD);
     typedef const bit_field_type BF;
     BF* bf = static_cast<BF*>(T);
     T = bf->integer_type();
@@ -1668,8 +1682,7 @@ c_compiler::bit_field_type::patch(const type* T, usr* u) const
     not_integer_type(u);
     T = int_type::create();
   }
-  usr::flag_t& flag = u->m_flag;
-  flag = usr::flag_t(flag | usr::BIT_FIELD);
+  u->m_flag = usr::flag_t(u->m_flag | usr::BIT_FIELD);
   int n = T->size();
   n <<= 3;
   int bit = m_bit;

@@ -45,12 +45,12 @@ c_compiler::usr* c_compiler::declaration1(usr* u, bool ini)
   using namespace std;
   using namespace parse;
   using namespace decl_impl;
-  assert(!decl_specs::m_stack.empty());
-  decl_specs* ds = decl_specs::m_stack.top();
+  assert(!decl_specs::s_stack.empty());
+  decl_specs* ds = decl_specs::s_stack.top();
   sort(ds->begin(),ds->end(),comp_spec);
   specifier::sweeper sweepr2(u);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
-  decl_specs::m_curr.clear();
+  decl_specs::s_curr.clear();
   if (u) {
     if (scope::current == &scope::root)
       u->m_type = u->m_type->vla2a();
@@ -189,7 +189,7 @@ void c_compiler::function_definition::begin(parse::decl_specs* ds, usr* u)
   if (ds) {
     sort(ds->begin(),ds->end(),comp_spec);
     spec = accumulate(ds->begin(),ds->end(),spec);
-    decl_specs::m_curr.clear();
+    decl_specs::s_curr.clear();
   }
   else {
     using namespace error::decl;
@@ -271,11 +271,13 @@ bool c_compiler::decl_impl::comp_spec(parse::type_specifier* x, parse::type_spec
   if (int a = x->first) {
     if (int b = y->first)
       return a < b;
-    else
-      return false;
+    return false;
   }
-  else
-    return true;
+
+  const type* a = x->second;
+  if (const type* b = y->second)
+    return a < b;
+  return true;
 }
 
 namespace c_compiler { namespace decl_impl { namespace specifier_impl {
@@ -636,6 +638,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
   using namespace std;
   curr->m_flag = spec->m_flag;
   const type* T = curr->m_type;
+  assert(T->backpatch());
   if ( !spec->m_type ){
     using namespace error::decl;
     no_type(curr);
@@ -644,6 +647,7 @@ c_compiler::decl_impl::install1(const specifier* spec, usr* curr, bool ini)
   else
     curr->m_type = T->patch(spec->m_type,curr);
   T = curr->m_type;
+  assert(!T->backpatch());
   block* b = scope::current->m_id == scope::BLOCK ? static_cast<block*>(scope::current) : 0;
   usr::flag_t& flag = curr->m_flag;
   if (b && T->variably_modified()) {
@@ -806,6 +810,7 @@ c_compiler::usr* c_compiler::decl_impl::install2(usr* curr)
   if ( p != usrs.end() ){
     const vector<usr*>& v = p->second;
     usr* prev = v.back();
+    assert(prev != curr);
     if (conflict(prev, curr)){
       using namespace error::decl;
       redeclaration(prev,curr,false);
@@ -1123,7 +1128,8 @@ void c_compiler::destroy_temporary()
 {
   using namespace std;
   vector<scope*>& children = scope::root.m_children;
-  for (auto p : children) delete p;
+  for (auto p : children)
+	  delete p;
   children.clear();
   for (auto p : garbage) delete p;
   garbage.clear();
@@ -1236,7 +1242,7 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, usr* u)
   auto_ptr<decl_specs> sweeper(ds);
   sort(ds->begin(),ds->end(),comp_spec);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
-  decl_specs::m_curr.clear();
+  decl_specs::s_curr.clear();
   usr::flag_t& flag = spec.m_flag;
   usr::flag_t mask = usr::flag_t(usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO);
   if ( flag & mask ){
@@ -1280,7 +1286,7 @@ c_compiler::parse::parameter_declaration(decl_specs* ds, const type* T)
   auto_ptr<decl_specs> sweeper(ds);
   sort(ds->begin(),ds->end(),comp_spec);
   specifier spec = accumulate(ds->begin(),ds->end(),specifier());
-  decl_specs::m_curr.clear();
+  decl_specs::s_curr.clear();
   usr::flag_t& flag = spec.m_flag;
   usr::flag_t mask = usr::flag_t(usr::TYPEDEF | usr::EXTERN | usr::STATIC | usr::AUTO);
   if ( flag & mask ){
@@ -1454,7 +1460,7 @@ namespace c_compiler {
             info_t* callee = pcallee.second;
             if (fn->m_name == name) {
               int before = vc.size();
-              if (!error::counter)
+              if (!error::counter && !cmdline::no_inline_sub)
                 substitute(vc, n, callee);
               int after = vc.size();
               delta += after - before;
@@ -1783,7 +1789,7 @@ c_compiler::parse::struct_declaration(decl_specs* ds,
   auto_ptr<decl_specs> p(ds);
   sort(p->begin(),p->end(),comp_spec);
   specifier spec = accumulate(p->begin(),p->end(),specifier());
-  decl_specs::m_curr.clear();
+  decl_specs::s_curr.clear();
   struct_declaration_list* ret = new struct_declaration_list;
   auto_ptr<struct_declarator_list> q(sdl);
   if (q.get())
@@ -1815,7 +1821,7 @@ const c_compiler::type* c_compiler::parse::bit_field(const type* T, var* cexpr, 
     negative(u);
     bit = 1;
   }
-  if ( !T->backpatch() ){
+  if (T->m_id != type::BACKPATCH){
     not_integer_type(u);
     T = backpatch_type::create();
   }
@@ -1866,27 +1872,8 @@ c_compiler::parse::type_name(decl_specs* sql, const type* T)
   auto_ptr<decl_specs> sweeper(sql);
   sort(sql->begin(),sql->end(),comp_spec);
   specifier spec = accumulate(sql->begin(),sql->end(),specifier());
-  decl_specs::m_curr.clear();
+  decl_specs::s_curr.clear();
   if (!T)
     return spec.m_type;
   return T->patch(spec.m_type,0);
-}
-
-int c_compiler::parse::guess(int kw)
-{
-  using namespace std;
-  using namespace c_compiler::parse;
-  const vector<int>& v = decl_specs::m_curr;
-  vector<int>::const_iterator p = find(v.begin(),v.end(),TAG_NAME_LEX);
-  if ( p != v.end() ){
-    switch ( kw ){
-    case STRUCT_KW: unputer("struct"); break;
-    case UNION_KW:  unputer("union");  break;
-    case ENUM_KW:   unputer("enum");   break;
-    }
-    error::parse::missing(parse::position,';');
-    return ';';
-  }
-  else
-    return kw;
 }
