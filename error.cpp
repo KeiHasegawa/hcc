@@ -55,12 +55,11 @@ void c_compiler::error::cmdline::generator()
   ++counter;
 }
 
-void c_compiler_error(const char* msg)
+void c_compiler_error(const char*)
 {
   using namespace std;
   using namespace c_compiler;
   switch ( error::lang ){
-#ifndef __GNUC__
   case error::jpn:
     error::header(parse::position,"エラー");
     if (*c_compiler_text) {
@@ -70,7 +69,6 @@ void c_compiler_error(const char* msg)
     }
     cerr << "構文エラーです.";
     break;
-#endif // __GNUC__
   default:
     error::header(parse::position,"error");
     cerr << "syntax error";
