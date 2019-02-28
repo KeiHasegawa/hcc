@@ -481,8 +481,6 @@ c_compiler::usr* c_compiler::integer_impl::ulong_long_(std::string name, unsigne
   return common_long_long(name,value,T,suffix);
 }
 
-// template<class T> std::map<T, c_compiler::constant<T>*> c_compiler::constant<T>::table;
-
 namespace c_compiler { namespace integer {
     template<class T> usr* common(T v, const type* (*pf)())
     {
@@ -769,17 +767,8 @@ c_compiler::usr* c_compiler::character_impl::escape(std::string name)
     n <<= 8;
     n |= (unsigned int)c->m_value;
   }
-  if ( name[0] == 'L' ){
+  if ( name[0] == 'L' )
     return character_impl::cnst(name, n);
-    /*
-    typedef literal::wchar_typedef X;
-    const type* T = generator::wchar::type;
-    T = const_type::create(T);
-    constant<X>* c = new constant<X>(name, T, usr::NONE, parse::position);
-    c->m_value = n;
-    return c;
-    */
-  }
   else {
     typedef char X;
     const type* T = char_type::create();
