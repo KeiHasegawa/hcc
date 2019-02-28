@@ -1129,11 +1129,13 @@ void c_compiler::destroy_temporary()
   using namespace std;
   vector<scope*>& children = scope::root.m_children;
   for (auto p : children)
-	  delete p;
+    delete p;
   children.clear();
-  for (auto p : garbage) delete p;
+  for (auto p : garbage)
+    delete p;
   garbage.clear();
-  for (auto p : code) delete p;
+  for (auto p : code)
+    delete p;
   code.clear();
   error::headered = false;
   stmt::label::data.clear();
@@ -1153,8 +1155,10 @@ void c_compiler::destroy_temporary()
 c_compiler::static_inline::info_t::~info_t()
 {
   using namespace std;
-  for (auto p : m_code) delete p;
-  for (auto p : m_tmp) delete p;
+  for (auto p : m_code)
+    delete p;
+  for (auto p : m_tmp)
+    delete p;
   param_scope* param = m_fundef->m_param;
   delete param;
   delete m_fundef;

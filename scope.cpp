@@ -78,10 +78,9 @@ int c_compiler::parse::identifier::judge(std::string name)
   }
   else if ( !decl_specs::s_stack.empty() && decl_specs::s_stack.top() ){
     if (prev == '(' && scope::current->m_id == scope::PARAM ) {
-      if (int r = lookup(name)) {
-        if (r == TYPEDEF_NAME_LEX)
-          return TYPEDEF_NAME_LEX;
-      }
+      // guess abstract-declarator
+      if (lookup(name) == TYPEDEF_NAME_LEX)
+	return TYPEDEF_NAME_LEX;
     }
     const vector<type_specifier*>& v = *decl_specs::s_stack.top();
     if ( find_if(v.rbegin(),v.rend(),explicit_type) != v.rend() )

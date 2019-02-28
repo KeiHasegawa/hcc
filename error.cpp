@@ -60,6 +60,7 @@ void c_compiler_error(const char*)
   using namespace std;
   using namespace c_compiler;
   switch ( error::lang ){
+#ifndef __GNUC__  // for garbled characters gcc version 7.3.0
   case error::jpn:
     error::header(parse::position,"エラー");
     if (*c_compiler_text) {
@@ -69,6 +70,7 @@ void c_compiler_error(const char*)
     }
     cerr << "構文エラーです.";
     break;
+#endif // __GNUC__ for garbled characters gcc version 7.3.0
   default:
     error::header(parse::position,"error");
     cerr << "syntax error";
@@ -143,14 +145,14 @@ void c_compiler::error::literal::character::invalid(const file_t& file, std::str
 {
   using namespace std;
   switch (lang) {
+#ifndef __GNUC__  // for garbled characters gcc version 7.3.0
   case jpn:
-#ifndef __GNUC__
     header(file,"エラー");
     cerr << "文字 `" << name << "` は型 `";
     T->decl(cerr,"");
     cerr << "' で表現できません.\n";
     break;
-#endif // __GNUC__
+#endif // __GNUC__ for garbled characters gcc version 7.3.0
   default:
     header(file,"error");
     cerr << "character constant `" << name << "` is invalid for `";
