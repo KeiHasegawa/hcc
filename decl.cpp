@@ -297,8 +297,15 @@ c_compiler::decl_impl::operator+(specifier spec, parse::type_specifier* p)
     p->second(&spec);
   }
   else {
-    spec.m_type = p->second;
-    const type* T = spec.m_type->unqualified();
+    const type* T = p->second;
+    if (spec.m_type) {
+      using namespace error::decl;
+      multiple_type(parse::position, spec.m_type, T);
+      if (!T->size())
+	T = spec.m_type;
+    }
+    spec.m_type = T;
+    T = spec.m_type->unqualified();
     if ( T->m_id == type::FUNC )
       spec.m_flag = usr::flag_t(spec.m_flag | usr::FUNCTION);
     else if ( T->m_id == type::VARRAY )
