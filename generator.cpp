@@ -53,8 +53,11 @@ void c_compiler::generator::initialize()
 #ifdef _MSC_VER
   int hcc1_seed = _MSC_VER;
   hcc1_seed += 10000000;
+#ifdef _DEBUG
+  hcc1_seed +=  1000000;
+#endif // _DEBUG
 #ifdef WIN32
-  hcc1_seed += 100000;
+  hcc1_seed +=   100000;
 #endif // WIN32
 #endif // _MSC_VER
 #ifdef __GNUC__

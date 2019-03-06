@@ -344,15 +344,6 @@ c_compiler::long_double_type::decl(std::ostream& os, std::string name) const
 
 c_compiler::backpatch_type c_compiler::backpatch_type::obj;
 
-void c_compiler::backpatch_type::decl(std::ostream& os, std::string name) const
-{
-  // If usr* `u' is installed to symbol table,
-  // assert(!u->m_type->backpatch()) should be passed normally.
-  // However some unexpected error (e.g. syntax error)
-  // may overwrite u->m_type where `u' is already installed to symbol table.
-  assert(error::counter);
-}
-
 namespace c_compiler {
   const_type::table_t const_type::tmp_tbl;
   const_type::table_t const_type::pmt_tbl;
