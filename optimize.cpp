@@ -130,6 +130,7 @@ c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<tac*>&
     vector<scope*>& children = ptr->m_children;
     assert(children.size() == 1);
     ptr = children.back();
+    assert(ptr->m_id == scope::BLOCK);
     symtab::simplify(ptr, &v);
   }
   symtab::literal::simplify(v);

@@ -92,7 +92,6 @@ namespace parameter {
   extern void leave();
   extern void enter2();
   extern bool old_style;
-  extern int depth;
 }
 
 extern const type* parameter_declaration(decl_specs*, usr*);

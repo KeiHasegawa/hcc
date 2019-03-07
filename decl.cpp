@@ -1075,45 +1075,34 @@ void c_compiler::parse::parameter::enter()
   param->m_parent = scope::current;
   children.push_back(param);
   scope::current = param;
-  ++depth;
 }
-
-int c_compiler::parse::parameter::depth;
 
 void c_compiler::parse::parameter::leave()
 {
   if ( scope::current == &scope::root )
     return;
-  struct sweeper {
-    scope* m_scope;
-    sweeper(scope* ptr)
-    {
-      using namespace std;
-      using namespace c_compiler;
-      if ( ptr->m_parent == &scope::root ){
-        vector<scope*>& children = scope::root.m_children;
-        if ( children.size() == 1 )
-          m_scope = 0;
-        else
-          m_scope = ptr;
-      }
-      else
-        m_scope = ptr;
-    }
-    ~sweeper()
-    {
-      using namespace std;
-      using namespace c_compiler;
-      if ( m_scope ){
-        vector<scope*>& children = m_scope->m_parent->m_children;
-        assert(children.back() == m_scope);
-        children.pop_back();
-        delete m_scope;
-      }
-    }
-  } sweeper(scope::current);
+  using namespace std;
+  scope* org = scope::current;
   scope::current = scope::current->m_parent;
-  --depth;
+  vector<scope*>& children = scope::current->m_children;
+  if (org->m_parent == &scope::root) {
+    if (children.size() > 1) {
+      /*
+       * void (*f(int a))(float a)
+       * {
+       *   ...
+       * }
+       */
+      assert(children.back() == org);
+      children.pop_back();
+      delete org;
+    }
+  }
+  else {
+    assert(children.back() == org);
+    children.pop_back();
+    delete org;
+  }
 }
 
 void c_compiler::parse::parameter::enter2()
