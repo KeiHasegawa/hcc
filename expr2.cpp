@@ -105,8 +105,8 @@ c_compiler::var* c_compiler::expr::binary(int op, var* a, var* b)
     if (!T) {
       switch (op) {
       case '*': case '/': case '%': case '&': case '^': case '|':
-	using namespace error::expr::binary;
-	invalid(parse::position, op, y->m_type, z->m_type);
+        using namespace error::expr::binary;
+        invalid(parse::position, op, y->m_type, z->m_type);
       }
     }
   }

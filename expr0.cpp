@@ -1514,17 +1514,17 @@ namespace c_compiler {
     switch (T->m_id) {
     case type::ENUM:
       {
-	typedef const enum_type ET;
-	ET* et = static_cast<ET*>(T);
-	T = et->get_integer();
-	return unsigned_type(T);
+        typedef const enum_type ET;
+        ET* et = static_cast<ET*>(T);
+        T = et->get_integer();
+        return unsigned_type(T);
       }
     case type::CHAR: return uchar_type::create();
     case type::SCHAR: return uchar_type::create();
     case type::SHORT: return ushort_type::create();
     case type::INT: return uint_type::create();
     case type::LONG: return ulong_type::create();
-	default:
+        default:
       assert(T->m_id == type::LONGLONG);
       return ulong_long_type::create();
     }

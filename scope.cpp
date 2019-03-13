@@ -80,7 +80,7 @@ int c_compiler::parse::identifier::judge(std::string name)
     if (prev == '(' && scope::current->m_id == scope::PARAM ) {
       // guess abstract-declarator
       if (lookup(name) == TYPEDEF_NAME_LEX)
-	return TYPEDEF_NAME_LEX;
+        return TYPEDEF_NAME_LEX;
     }
     const vector<type_specifier*>& v = *decl_specs::s_stack.top();
     if ( find_if(v.rbegin(),v.rend(),explicit_type) != v.rend() )

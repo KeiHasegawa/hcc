@@ -1104,7 +1104,7 @@ c_compiler::pointer_type::patch(const type* T, usr* u) const
 {
   T = m_T->patch(T,u);
   if (u)
-	u->m_flag = usr::flag_t(u->m_flag & ~usr::FUNCTION & ~usr::VL);
+    u->m_flag = usr::flag_t(u->m_flag & ~usr::FUNCTION & ~usr::VL);
   return create(T);
 }
 
@@ -1350,7 +1350,7 @@ int c_compiler::record_impl::layouter::operator()(int offset, usr* member)
   using namespace std;
   if ( member->m_flag & usr::BIT_FIELD ){
     const type* T = member->m_type;
-	assert(T->m_id == type::BIT_FIELD);
+    assert(T->m_id == type::BIT_FIELD);
     typedef const bit_field_type BF;
     BF* bf = static_cast<BF*>(T);
     T = bf->integer_type();

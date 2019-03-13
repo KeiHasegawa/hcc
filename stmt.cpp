@@ -435,10 +435,10 @@ namespace c_compiler { namespace stmt {
           : m_label(v), m_to(to), m_file(file), m_scope(s) {}
         static bool cmp(case_t x, var* y)
         {
-	  var* tmp = expr::binary(EQUAL_MK, x.m_label, y);
-	  assert(tmp->isconstant());
-	  return tmp->value() != 0;
-	}
+          var* tmp = expr::binary(EQUAL_MK, x.m_label, y);
+          assert(tmp->isconstant());
+          return tmp->value() != 0;
+        }
       };
       std::vector<case_t> m_cases;
       struct default_t {
@@ -529,7 +529,7 @@ void c_compiler::stmt::_default()
     if ( !ptr->m_default.m_to ){
       to3ac* to = new to3ac;
       code.push_back(to);
-	  ptr->m_default = info::default_t(to,parse::position,scope::current);
+      ptr->m_default = info::default_t(to,parse::position,scope::current);
     }
     else {
       using namespace error::stmt::_default;
