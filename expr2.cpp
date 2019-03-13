@@ -381,14 +381,16 @@ namespace c_compiler { namespace constant_impl {
       return var_impl::div(y, z);
     return floating::create(y->m_value / z->m_value);
   }
-  var* fdiv3(constant<long double>* y, constant<long double>* z)
+  template<> var* fdiv(constant<long double>* y, constant<long double>* z)
   {
-    if (!z->m_value)
-      return var_impl::div(y, z);
     if ( generator::long_double ){
+      if (!z->b)
+        return var_impl::div(y, z);
       if ( var* v = fop3(y,z,generator::long_double->div) )
         return v;
     }
+    if (!z->m_value)
+      return var_impl::div(y, z);
     return floating::create(y->m_value / z->m_value);
   }
 } } // end of namespace constant_impl and c_compiler
@@ -411,7 +413,7 @@ namespace c_compiler {
   var* constant<double>::divr(constant<double>* y)
   { return constant_impl::fdiv(y,this); }
   var* constant<long double>::divr(constant<long double>* y)
-  { return constant_impl::fdiv3(y,this); }
+  { return constant_impl::fdiv(y,this); }
 } // end of namesapce c_compiler
 
 namespace c_compiler { namespace var_impl {
