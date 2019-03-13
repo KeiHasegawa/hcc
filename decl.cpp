@@ -1858,7 +1858,7 @@ void c_compiler::parse::enumerator::action(usr* u, var* v)
   string name = u->m_name;
   u->m_flag = usr::ENUM_MEMBER;
   decl_impl::install2(new enum_member(*u,static_cast<usr*>(v)));
-  v = v->add(integer::create(1));
+  v = expr::binary('+', v, integer::create(1));
   prev = static_cast<usr*>(v);
 }
 

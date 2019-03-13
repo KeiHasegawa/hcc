@@ -93,22 +93,58 @@ namespace c_compiler { namespace var_impl {
   var* opt_mul(var*, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::mul(var* a, var* b)
+c_compiler::var* c_compiler::expr::binary(int op, var* a, var* b)
 {
   decl::check(b);
   var* y = a->rvalue();
   var* z = b->rvalue();
-  const type* T = conversion::arithmetic(&y,&z);
-  if ( !T ){
-    using namespace error::expr::binary;
-    invalid(parse::position,'*',y->m_type,z->m_type);
-    T = int_type::create();
+  y = y->promotion();
+  z = z->promotion();
+  if (op != LSH_MK && op != RSH_MK) {
+    const type* T = conversion::arithmetic(&y,&z);
+    if (!T) {
+      switch (op) {
+      case '*': case '/': case '%': case '&': case '^': case '|':
+	using namespace error::expr::binary;
+	invalid(parse::position, op, y->m_type, z->m_type);
+      }
+    }
   }
+  switch (op) {
+  case '*': return y->mul(z);
+  case '/': return y->div(z);
+  case '%': return y->mod(z);
+  case '+': return y->add(z);
+  case '-': return y->sub(z);
+  case LSH_MK: return y->lsh(z);
+  case RSH_MK: return y->rsh(z);
+  case '<': return y->lt(z);
+  case '>': return y->gt(z);
+  case LESSEQ_MK: return y->le(z);
+  case GREATEREQ_MK: return y->ge(z);
+  case EQUAL_MK: return y->eq(z);
+  case NOTEQ_MK: return y->ne(z);
+  case '&': return y->bit_and(z);
+  case '^': return y->bit_xor(z);
+  default:
+    assert(op == '|');
+    return y->bit_or(z);
+  }
+ }
+
+c_compiler::var* c_compiler::var_impl::mul(var* y, var* z)
+{
+  const type* Ty = y->m_type;
+  const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
+  if (!Ty->arithmetic() || !Tz->arithmetic())
+    Tx = int_type::create();
   if ( var* x = opt_mul(y,z) )
     return x;
   if ( var* x = opt_mul(z,y) )
     return x;
-  var* x = new var(T);
+
+  var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
     b->m_vars.push_back(x);
@@ -166,11 +202,6 @@ int c_compiler::var_impl::log2(unsigned __int64 n)
 }
 
 c_compiler::var* c_compiler::var::mul(var* z){ return var_impl::mul(this,z); }
-c_compiler::var* c_compiler::var::mulr(constant<char>* y){ return var_impl::mul(y,this); }
-c_compiler::var* c_compiler::var::mulr(constant<signed char>* y){ return var_impl::mul(y,this); }
-c_compiler::var* c_compiler::var::mulr(constant<unsigned char>* y){ return var_impl::mul(y,this); }
-c_compiler::var* c_compiler::var::mulr(constant<short int>* y){ return var_impl::mul(y,this); }
-c_compiler::var* c_compiler::var::mulr(constant<unsigned short int>* y){ return var_impl::mul(y,this); }
 c_compiler::var* c_compiler::var::mulr(constant<int>* y){ return var_impl::mul(y,this); }
 c_compiler::var* c_compiler::var::mulr(constant<unsigned int>* y){ return var_impl::mul(y,this); }
 c_compiler::var* c_compiler::var::mulr(constant<long int>* y){ return var_impl::mul(y,this); }
@@ -182,7 +213,7 @@ c_compiler::var* c_compiler::var::mulr(constant<double>* y){ return var_impl::mu
 c_compiler::var* c_compiler::var::mulr(constant<long double>* y){ return var_impl::mul(y,this); }
 
 namespace c_compiler { namespace constant_impl {
-  template<class A, class B> var* mul(constant<A>* y, constant<B>* z)
+  template<class V> var* mul(constant<V>* y, constant<V>* z)
   {
     usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
@@ -194,71 +225,6 @@ namespace c_compiler { namespace constant_impl {
     if (const type* T = SUB_CONST_LONG_impl::propagation(y, z))
       ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
     return ret; 
-  }
-  template<class A, class B> var* fop1(constant<A>* y, constant<B>* z,
-                                       void (*pf)(unsigned char*, const unsigned char*))
-  {
-    using namespace std;
-    const type* Ty = y->m_type;
-    Ty = Ty->unqualified();
-    if (Ty->m_id == type::LONG_DOUBLE) {
-      int sz = long_double_type::create()->size();
-      unsigned char* p = new unsigned char[sz];
-      constant<long double>* yy = reinterpret_cast<constant<long double>*>(y);
-      memcpy(p,yy->b,sz);
-      auto_ptr<unsigned char> q = auto_ptr<unsigned char>(new unsigned char[sz]);
-#ifndef _MSC_VER
-      (*generator::long_double->from_double)(q.get(),z->m_value);
-#else // _MSC_VER
-      (*generator::long_double->from_double)(q.get(),(__int64)z->m_value);
-#endif // _MSC_VER
-      (*pf)(p,q.get());
-      return floating::create(p);
-    }
-    return 0;
-  }
-  template<class A, class B> var* fmul1(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop1(y,z,generator::long_double->mul) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value * z->m_value);
-#else // _MSC_VER
-    return floating::create(y->m_value * (__int64)z->m_value);
-#endif // _MSC_VER
-  }
-  template<class A, class B> var* fop2(constant<A>* y, constant<B>* z,
-                                       void (*pf)(unsigned char*, const unsigned char*))
-  {
-    const type* Tz = z->m_type;
-    Tz = Tz->unqualified();
-    if (Tz->m_id == type::LONG_DOUBLE) {
-      int sz = long_double_type::create()->size();
-      unsigned char* p = new unsigned char[sz];
-#ifndef _MSC_VER
-      (*generator::long_double->from_double)(p,y->m_value);
-#else // _MSC_VER
-      (*generator::long_double->from_double)(p,(__int64)y->m_value);
-#endif // _MSC_VER
-      constant<long double>* zz = reinterpret_cast<constant<long double>*>(z);
-      (*pf)(p,zz->b);
-      return floating::create(p);
-    }
-    return 0;
-  }
-  template<class A, class B> var* fmul2(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop2(y,z,generator::long_double->mul) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value * z->m_value);
-#else // _MSC_VER
-    return floating::create((__int64)y->m_value * z->m_value);
-#endif // _MSC_VER
   }
   template<class A, class B> var* fop3(constant<A>* y, constant<B>* z,
                                        void (*pf)(unsigned char*, const unsigned char*))
@@ -292,436 +258,53 @@ namespace c_compiler { namespace constant_impl {
     }
     return 0;
   }
-  template<class A, class B> var* fmul3(constant<A>* y, constant<B>* z)
+} } // end of namespace constant_impl and c_compiler
+
+namespace c_compiler {
+  var* constant<int>::mulr(constant<int>* y)
+  { return integer::create(y->m_value * m_value); }
+  var* constant<unsigned int>::mulr(constant<unsigned int>* y)
+  { return integer::create(y->m_value * m_value); }
+  var* constant<long int>::mulr(constant<long int>* y)
+  { return integer::create(y->m_value * m_value); }
+  var* constant<unsigned long int>::mulr(constant<unsigned long int>* y)
+  { return integer::create(y->m_value * m_value); }
+  var* constant<__int64>::mulr(constant<__int64>* y)
+  { return constant_impl::mul(y, this); }
+  var* constant<unsigned __int64>::mulr(constant<unsigned __int64>* y)
+  { return constant_impl::mul(y,this); }
+  var* constant<float>::mulr(constant<float>* y)
+  { return floating::create(y->m_value * m_value); }
+  var* constant<double>::mulr(constant<double>* y)
+  { return floating::create(y->m_value * m_value); }
+  var* c_compiler::constant<long double>::mulr(constant<long double>* y)
   {
+    constant<long double>* z = this;
     if ( generator::long_double ){
-      if ( var* v = fop3(y,z,generator::long_double->mul) )
+      using namespace constant_impl;
+      if ( var* v = fop3(y, z, generator::long_double->mul) )
         return v;
     }
     return floating::create(y->m_value * z->m_value);
   }
-} } // end of namespace constant_impl and c_compiler
-
-namespace c_compiler {
-  template<> var* constant<char>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<char>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<char>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<char>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<signed char>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<signed char>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<signed char>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<signed char>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned char>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<short int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<short int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<short int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<short int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned short int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<long int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<long int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<long int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<long int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned long int>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<__int64>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<__int64>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<__int64>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<__int64>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<signed char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<unsigned char>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<unsigned short int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<unsigned int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<unsigned long int>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<__int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<unsigned __int64>* y)
-  { return constant_impl::mul(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<float>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<double>* y)
-  { return constant_impl::fmul1(y,this); }
-  template<> var* constant<unsigned __int64>::mulr(constant<long double>* y)
-  { return constant_impl::fmul1(y,this); }
 } // end of namespace c_compiler
 
-c_compiler::var* c_compiler::constant<float>::mul(var* z){ return z->mulr(this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<signed char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<unsigned char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<unsigned short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<unsigned int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<unsigned long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<__int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<unsigned __int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<float>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<double>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<float>::mulr(constant<long double>* y)
-{ return constant_impl::fmul3(y,this); }
-
-c_compiler::var* c_compiler::constant<double>::mul(var* z){ return z->mulr(this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<signed char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<unsigned char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<unsigned short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<unsigned int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<unsigned long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<__int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<unsigned __int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<float>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<double>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<double>::mulr(constant<long double>* y)
-{ return constant_impl::fmul3(y,this); }
-
-c_compiler::var* c_compiler::constant<long double>::mul(var* z){ return z->mulr(this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<signed char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<unsigned char>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<unsigned short int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<unsigned int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<unsigned long int>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<__int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<unsigned __int64>* y)
-{ return constant_impl::fmul2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<float>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<double>* y)
-{ return constant_impl::fmul3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::mulr(constant<long double>* y)
-{ return constant_impl::fmul3(y,this); }
 
 namespace c_compiler { namespace var_impl {
   var* div(var*, var*);
   var* opt_div(var*, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::div(var* a, var* b)
+c_compiler::var* c_compiler::var_impl::div(var* y, var* z)
 {
-  decl::check(b);
-  var* y = a->rvalue();
-  var* z = b->rvalue();
-  const type* T = conversion::arithmetic(&y,&z);
-  if ( !T ){
-    using namespace error::expr::binary;
-    invalid(parse::position,'/',y->m_type,z->m_type);
-    T = int_type::create();
-  }
+  const type* Ty = y->m_type;
+  const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
+  if (!Ty->arithmetic() || !Tz->arithmetic())
+    Tx = int_type::create();
   if ( var* x = opt_div(y,z) )
     return x;
-  var* x = new var(T);
+  var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
     b->m_vars.push_back(x);
@@ -766,11 +349,6 @@ c_compiler::var* c_compiler::var_impl::opt_div(var* y, var* z)
 }
 
 c_compiler::var* c_compiler::var::div(var* z){ return var_impl::div(this,z); }
-c_compiler::var* c_compiler::var::divr(constant<char>* y){ return var_impl::div(y,this); }
-c_compiler::var* c_compiler::var::divr(constant<signed char>* y){ return var_impl::div(y,this); }
-c_compiler::var* c_compiler::var::divr(constant<unsigned char>* y){ return var_impl::div(y,this); }
-c_compiler::var* c_compiler::var::divr(constant<short int>* y){ return var_impl::div(y,this); }
-c_compiler::var* c_compiler::var::divr(constant<unsigned short int>* y){ return var_impl::div(y,this); }
 c_compiler::var* c_compiler::var::divr(constant<int>* y){ return var_impl::div(y,this); }
 c_compiler::var* c_compiler::var::divr(constant<unsigned int>* y){ return var_impl::div(y,this); }
 c_compiler::var* c_compiler::var::divr(constant<long int>* y){ return var_impl::div(y,this); }
@@ -782,7 +360,7 @@ c_compiler::var* c_compiler::var::divr(constant<double>* y){ return var_impl::di
 c_compiler::var* c_compiler::var::divr(constant<long double>* y){ return var_impl::div(y,this); }
 
 namespace c_compiler { namespace constant_impl {
-  template<class A, class B> var* div(constant<A>* y, constant<B>* z)
+  template<class V> var* div(constant<V>* y, constant<V>* z)
   {
     usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
@@ -797,32 +375,16 @@ namespace c_compiler { namespace constant_impl {
       ret->m_type = T, ret->m_flag = usr::SUB_CONST_LONG;
     return ret;
   }
-  template<class A, class B> var* fdiv1(constant<A>* y, constant<B>* z)
+  template<class V> var* fdiv(constant<V>* y, constant<V>* z)
   {
-    if ( generator::long_double ){
-      if ( var* v = fop1(y,z,generator::long_double->div) )
-        return v;
-    }
-#ifndef _MSC_VER
+    if (!z->m_value)
+      return var_impl::div(y, z);
     return floating::create(y->m_value / z->m_value);
-#else // _MSC_VER
-    return floating::create(y->m_value / (__int64)z->m_value);
-#endif // _MSC_VER
   }
-  template<class A, class B> var* fdiv2(constant<A>* y, constant<B>* z)
+  var* fdiv3(constant<long double>* y, constant<long double>* z)
   {
-    if ( generator::long_double ){
-      if ( var* v = fop2(y,z,generator::long_double->div) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value / z->m_value);
-#else // _MSC_VER
-    return floating::create((__int64)y->m_value / z->m_value);
-#endif // _MSC_VER
-  }
-  template<class A, class B> var* fdiv3(constant<A>* y, constant<B>* z)
-  {
+    if (!z->m_value)
+      return var_impl::div(y, z);
     if ( generator::long_double ){
       if ( var* v = fop3(y,z,generator::long_double->div) )
         return v;
@@ -832,424 +394,48 @@ namespace c_compiler { namespace constant_impl {
 } } // end of namespace constant_impl and c_compiler
 
 namespace c_compiler {
-  template<> var* constant<char>::divr(constant<char>* y)
+  var* constant<int>::divr(constant<int>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<signed char>* y)
+  var* constant<unsigned int>::divr(constant<unsigned int>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<unsigned char>* y)
+  var* constant<long int>::divr(constant<long int>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<short int>* y)
+  var* constant<unsigned long int>::divr(constant<unsigned long int>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<unsigned short int>* y)
+  var* constant<__int64>::divr(constant<__int64>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<int>* y)
+  var* constant<unsigned __int64>::divr(constant<unsigned __int64>* y)
   { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<char>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<char>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<char>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<signed char>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<signed char>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<signed char>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<signed char>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned char>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<short int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<short int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<short int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<short int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned short int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<long int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<long int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<long int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<long int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned long int>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<__int64>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<__int64>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<__int64>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<__int64>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<signed char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<unsigned char>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<unsigned short int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<unsigned int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<unsigned long int>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<__int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<unsigned __int64>* y)
-  { return constant_impl::div(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<float>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<double>* y)
-  { return constant_impl::fdiv1(y,this); }
-  template<> var* constant<unsigned __int64>::divr(constant<long double>* y)
-  { return constant_impl::fdiv1(y,this); }
+  var* constant<float>::divr(constant<float>* y)
+  { return constant_impl::fdiv(y,this); }
+  var* constant<double>::divr(constant<double>* y)
+  { return constant_impl::fdiv(y,this); }
+  var* constant<long double>::divr(constant<long double>* y)
+  { return constant_impl::fdiv3(y,this); }
 } // end of namesapce c_compiler
-
-c_compiler::var* c_compiler::constant<float>::div(var* z){ return z->divr(this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<signed char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<unsigned char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<unsigned short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<unsigned int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<unsigned long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<__int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<unsigned __int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<float>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<double>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<float>::divr(constant<long double>* y)
-{ return constant_impl::fdiv3(y,this); }
-
-c_compiler::var* c_compiler::constant<double>::div(var* z){ return z->divr(this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<signed char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<unsigned char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<unsigned short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<unsigned int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<unsigned long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<__int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<unsigned __int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<float>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<double>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<double>::divr(constant<long double>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::div(var* z){ return z->divr(this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<signed char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<unsigned char>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<unsigned short int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<unsigned int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<unsigned long int>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<__int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<unsigned __int64>* y)
-{ return constant_impl::fdiv2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<float>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<double>* y)
-{ return constant_impl::fdiv3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::divr(constant<long double>* y)
-{ return constant_impl::fdiv3(y,this); }
 
 namespace c_compiler { namespace var_impl {
   var* mod(var*, var*);
   var* opt_mod(var*, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::mod(var* a, var* b)
+c_compiler::var* c_compiler::var_impl::mod(var* y, var* z)
 {
-  decl::check(b);
-  var* y = a->rvalue();
-  var* z = b->rvalue();
-  const type* T = conversion::arithmetic(&y,&z);
-  if ( !T || !T->integer() ){
-    using namespace error::expr::binary;
-    invalid(parse::position,'%',y->m_type,z->m_type);
-    T = int_type::create();
+  const type* Ty = y->m_type;
+  const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
+  if (Ty->arithmetic() && Tz->arithmetic()) {
+    if (!Ty->integer() || !Tz->integer()) {
+      using namespace error::expr::binary;
+      invalid(parse::position,'%', Ty, Tz);
+      Tx = int_type::create();
+    }
   }
+  else
+    Tx = int_type::create();
   if ( var* x = opt_mod(y,z) )
     return x;
-  var* x = new var(T);
+  var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
     b->m_vars.push_back(x);
@@ -1297,11 +483,6 @@ c_compiler::var* c_compiler::var_impl::opt_mod(var* y, var* z)
 }
 
 c_compiler::var* c_compiler::var::mod(var* z){ return var_impl::mod(this,z); }
-c_compiler::var* c_compiler::var::modr(constant<char>* y){ return var_impl::mod(y,this); }
-c_compiler::var* c_compiler::var::modr(constant<signed char>* y){ return var_impl::mod(y,this); }
-c_compiler::var* c_compiler::var::modr(constant<unsigned char>* y){ return var_impl::mod(y,this); }
-c_compiler::var* c_compiler::var::modr(constant<short int>* y){ return var_impl::mod(y,this); }
-c_compiler::var* c_compiler::var::modr(constant<unsigned short int>* y){ return var_impl::mod(y,this); }
 c_compiler::var* c_compiler::var::modr(constant<int>* y){ return var_impl::mod(y,this); }
 c_compiler::var* c_compiler::var::modr(constant<unsigned int>* y){ return var_impl::mod(y,this); }
 c_compiler::var* c_compiler::var::modr(constant<long int>* y){ return var_impl::mod(y,this); }
@@ -1310,7 +491,7 @@ c_compiler::var* c_compiler::var::modr(constant<__int64>* y){ return var_impl::m
 c_compiler::var* c_compiler::var::modr(constant<unsigned __int64>* y){ return var_impl::mod(y,this); }
 
 namespace c_compiler { namespace constant_impl {
-  template<class A, class B> var* mod(constant<A>* y, constant<B>* z)
+  template<class V> var* mod(constant<V>* y, constant<V>* z)
   {
     usr::flag_t fy = y->m_flag;
     if (fy & usr::CONST_PTR)
@@ -1328,247 +509,17 @@ namespace c_compiler { namespace constant_impl {
 } } // end of namespace constant_impl and c_compiler
 
 namespace c_compiler {
-  template<> var* constant<char>::modr(constant<char>* y)
+  var* constant<int>::modr(constant<int>* y)
   { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<signed char>* y)
+  var* constant<unsigned int>::modr(constant<unsigned int>* y)
   { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<unsigned char>* y)
+  var* constant<long int>::modr(constant<long int>* y)
   { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<short int>* y)
+  var* constant<unsigned long int>::modr(constant<unsigned long int>* y)
   { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<unsigned short int>* y)
+  var* constant<__int64>::modr(constant<__int64>* y)
   { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<char>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<signed char>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned char>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<short int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned short int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<long int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned long int>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<__int64>::modr(constant<unsigned __int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<signed char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<unsigned char>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<unsigned short int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<unsigned int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<unsigned long int>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<__int64>* y)
-  { return constant_impl::mod(y,this); }
-  template<> var* constant<unsigned __int64>::modr(constant<unsigned __int64>* y)
+  var* constant<unsigned __int64>::modr(constant<unsigned __int64>* y)
   { return constant_impl::mod(y,this); }
 } // end of namespace c_compiler
 
@@ -1578,28 +529,27 @@ namespace c_compiler { namespace var_impl {
   var* opt_add(var*, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::add(var* a, var* b)
+c_compiler::var* c_compiler::var_impl::add(var* y, var* z)
 {
   using namespace std;
-  decl::check(b);
-  var* y = a->rvalue();
-  var* z = b->rvalue();
-
   if ( var* r = pointer_integer('+',y,z) )
     return r;
   if ( var* r = pointer_integer('+',z,y) )
     return r;
-  const type* T = conversion::arithmetic(&y,&z);
-  if ( !T ){
+  const type* Ty = y->m_type;
+  const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
+  if (!Ty->arithmetic() || !Tz->arithmetic()) {
     using namespace error::expr::binary;
-    invalid(parse::position,'+',y->m_type,z->m_type);
-    T = int_type::create();
+    invalid(parse::position,'+', Ty, Tz);
+    Tx = int_type::create();
   }
   if ( var* x = opt_add(y,z) )
     return x;
   if ( var* x = opt_add(z,y) )
     return x;
-  var* x = new var(T);
+
+  var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
     b->m_vars.push_back(x);
@@ -1634,7 +584,7 @@ c_compiler::var* c_compiler::var_impl::pointer_integer(int op, var* y, var* z)
     }
     size = integer::create(n);
   }
-  z = z->mul(size);
+  z = expr::binary('*', z, size);
   if ( var* x = opt_add(y,z) )
     return x;
   var* x = new var(Ty);
@@ -1670,11 +620,6 @@ c_compiler::var* c_compiler::var_impl::opt_add(var* y, var* z)
 }
 
 c_compiler::var* c_compiler::var::add(var* z){ return var_impl::add(this,z); }
-c_compiler::var* c_compiler::var::addr(constant<char>* y){ return var_impl::add(y,this); }
-c_compiler::var* c_compiler::var::addr(constant<signed char>* y){ return var_impl::add(y,this); }
-c_compiler::var* c_compiler::var::addr(constant<unsigned char>* y){ return var_impl::add(y,this); }
-c_compiler::var* c_compiler::var::addr(constant<short int>* y){ return var_impl::add(y,this); }
-c_compiler::var* c_compiler::var::addr(constant<unsigned short int>* y){ return var_impl::add(y,this); }
 c_compiler::var* c_compiler::var::addr(constant<int>* y){ return var_impl::add(y,this); }
 c_compiler::var* c_compiler::var::addr(constant<unsigned int>* y){ return var_impl::add(y,this); }
 c_compiler::var* c_compiler::var::addr(constant<long int>* y){ return var_impl::add(y,this); }
@@ -1736,30 +681,6 @@ namespace c_compiler { namespace constant_impl {
         return var_impl::add(y,z);
     }
   }
-  template<class A, class B> var* fadd1(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop1(y,z,generator::long_double->add) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value + z->m_value); 
-#else // _MSC_VER
-    return floating::create(y->m_value + (__int64)z->m_value); 
-#endif // _MSC_VER
-  }
-  template<class A, class B> var* fadd2(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop2(y,z,generator::long_double->add) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value + z->m_value);
-#else // _MSC_VER
-    return floating::create((__int64)y->m_value + z->m_value); 
-#endif // _MSC_VER
-  }
   template<class A, class B> var* fadd3(constant<A>* y, constant<B>* z)
   {
     if ( generator::long_double ){
@@ -1789,450 +710,49 @@ namespace c_compiler { namespace constant_impl {
 } } // end of namespace constant_impl and c_compiler
 
 namespace c_compiler {
-  template<> var* constant<char>::addr(constant<char>* y)
+  var* constant<int>::addr(constant<int>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<signed char>* y)
+  var* constant<unsigned int>::addr(constant<unsigned int>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<unsigned char>* y)
+  var* constant<long int>::addr(constant<long int>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<short int>* y)
+  var* constant<unsigned long int>::addr(constant<unsigned long int>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<unsigned short int>* y)
+  var* constant<__int64>::addr(constant<__int64>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<int>* y)
+  var* constant<unsigned __int64>::addr(constant<unsigned __int64>* y)
   { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<char>::addr(constant<void*>* y)
+  var* constant<int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<char>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<char>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<char>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<signed char>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(constant<void*>* y)
+  var* constant<unsigned int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<signed char>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<signed char>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<signed char>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<void*>* y)
+  var* constant<long int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned char>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<short int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<short int>::addr(constant<void*>* y)
+  var* constant<unsigned long int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<short int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<short int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<short int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<void*>* y)
+  var* constant<__int64>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned short int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<int>::addr(constant<void*>* y)
+  var* constant<unsigned __int64>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
-  template<> var* constant<int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<void*>* y)
-  { return constant_impl::padd(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<long int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<long int>::addr(constant<void*>* y)
-  { return constant_impl::padd(y,this); }
-  template<> var* constant<long int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<long int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<long int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<void*>* y)
-  { return constant_impl::padd(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned long int>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<__int64>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(constant<void*>* y)
-  { return constant_impl::padd(y,this); }
-  template<> var* constant<__int64>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<__int64>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<__int64>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<signed char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<unsigned char>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<unsigned short int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<unsigned int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<unsigned long int>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<__int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<unsigned __int64>* y)
-  { return constant_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<void*>* y)
-  { return constant_impl::padd(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<float>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<double>* y)
-  { return constant_impl::fadd1(y,this); }
-  template<> var* constant<unsigned __int64>::addr(constant<long double>* y)
-  { return constant_impl::fadd1(y,this); }
+  var* constant<float>::addr(constant<float>* y)
+  { return constant_impl::fadd3(y,this); }
+  var* constant<double>::addr(constant<double>* y)
+  { return constant_impl::fadd3(y,this); }
+  var* constant<long double>::addr(constant<long double>* y)
+  { return constant_impl::fadd3(y,this); }
+  var* constant<void*>::addr(constant<int>* y)
+  { return constant_impl::padd(this,y); }
+  var* constant<void*>::addr(constant<unsigned int>* y)
+  { return constant_impl::padd(this,y); }
+  var* constant<void*>::addr(constant<long int>* y)
+  { return constant_impl::padd(this,y); }
+  var* constant<void*>::addr(constant<unsigned long int>* y)
+  { return constant_impl::padd(this,y); }
+  var* constant<void*>::addr(constant<__int64>* y)
+  { return constant_impl::padd(this,y); }
+  var* constant<void*>::addr(constant<unsigned __int64>* y)
+  { return constant_impl::padd(this,y); }
 } // end of namespace c_compiler
-
-c_compiler::var* c_compiler::constant<float>::add(var* z){ return z->addr(this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<signed char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<unsigned char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<unsigned short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<unsigned int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<unsigned long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<__int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<unsigned __int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<float>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<double>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<float>::addr(constant<long double>* y)
-{ return constant_impl::fadd3(y,this); }
-
-c_compiler::var* c_compiler::constant<double>::add(var* z){ return z->addr(this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<signed char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<unsigned char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<unsigned short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<unsigned int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<unsigned long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<__int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<unsigned __int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<float>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<double>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<double>::addr(constant<long double>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::add(var* z){ return z->addr(this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<signed char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<unsigned char>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<unsigned short int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<unsigned int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<unsigned long int>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<__int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<unsigned __int64>* y)
-{ return constant_impl::fadd2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<float>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<double>* y)
-{ return constant_impl::fadd3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::addr(constant<long double>* y)
-{ return constant_impl::fadd3(y,this); }
-
-
-c_compiler::var* c_compiler::constant<void*>::addr(constant<char>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<signed char>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<unsigned char>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<short int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<unsigned short int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<unsigned int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<long int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<unsigned long int>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<__int64>* y)
-{ return constant_impl::padd(this,y); }
-c_compiler::var* c_compiler::constant<void*>::addr(constant<unsigned __int64>* y)
-{ return constant_impl::padd(this,y); }
 
 namespace c_compiler { namespace addrof_impl {
   template<class T> var* add(addrof* y, constant<T>* z)
@@ -2258,38 +778,21 @@ namespace c_compiler { namespace addrof_impl {
   }
 } } // end of namespace addrof_impl and c_compiler
 
-c_compiler::var* c_compiler::addrof::add(var* z){ return z->addr(this); }
-
 namespace c_compiler {
-  template<> var* constant<char>::addr(addrof* y)
+  var* constant<int>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
-  template<> var* constant<signed char>::addr(addrof* y)
+  var* constant<unsigned int>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
-  template<> var* constant<unsigned char>::addr(addrof* y)
+  var* constant<long int>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
-  template<> var* constant<short int>::addr(addrof* y)
+  var* constant<unsigned long int>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
-  template<> var* constant<unsigned short int>::addr(addrof* y)
+  var* constant<__int64>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
-  template<> var* constant<int>::addr(addrof* y)
-  { return addrof_impl::add(y,this); }
-  template<> var* constant<unsigned int>::addr(addrof* y)
-  { return addrof_impl::add(y,this); }
-  template<> var* constant<long int>::addr(addrof* y)
-  { return addrof_impl::add(y,this); }
-  template<> var* constant<unsigned long int>::addr(addrof* y)
-  { return addrof_impl::add(y,this); }
-  template<> var* constant<__int64>::addr(addrof* y)
-  { return addrof_impl::add(y,this); }
-  template<> var* constant<unsigned __int64>::addr(addrof* y)
+  var* constant<unsigned __int64>::addr(addrof* y)
   { return addrof_impl::add(y,this); }
 } // end of namespace c_compiler
 
-c_compiler::var* c_compiler::addrof::addr(constant<char>* y){ return addrof_impl::add(this,y); }
-c_compiler::var* c_compiler::addrof::addr(constant<signed char>* y){ return addrof_impl::add(this,y); }
-c_compiler::var* c_compiler::addrof::addr(constant<unsigned char>* y){ return addrof_impl::add(this,y); }
-c_compiler::var* c_compiler::addrof::addr(constant<short int>* y){ return addrof_impl::add(this,y); }
-c_compiler::var* c_compiler::addrof::addr(constant<unsigned short int>* y){ return addrof_impl::add(this,y); }
 c_compiler::var* c_compiler::addrof::addr(constant<int>* y){ return addrof_impl::add(this,y); }
 c_compiler::var* c_compiler::addrof::addr(constant<unsigned int>* y){ return addrof_impl::add(this,y); }
 c_compiler::var* c_compiler::addrof::addr(constant<long int>* y){ return addrof_impl::add(this,y); }
@@ -2303,24 +806,24 @@ namespace c_compiler { namespace var_impl {
   var* opt_sub(var*, var*);
 } } // end of namespace var_impl and c_compiler
 
-c_compiler::var* c_compiler::var_impl::sub(var* a, var* b)
+c_compiler::var* c_compiler::var_impl::sub(var* y, var* z)
 {
-  decl::check(b);
-  var* y = a->rvalue();
-  var* z = b->rvalue();
   if (var* r = pointer_pointer(y,z))
     return r;
   if (var* r = pointer_integer('-',y,z))
     return r;
-  const type* T = conversion::arithmetic(&y,&z);
-  if ( !T ){
+  const type* Ty = y->m_type;
+  const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
+  if (!Ty->arithmetic() || !Tz->arithmetic()) {
     using namespace error::expr::binary;
-    invalid(parse::position,'-',y->m_type,z->m_type);
-    T = int_type::create();
+    invalid(parse::position,'-', Ty, Tz);
+    Tx = int_type::create();
   }
   if ( var* x = opt_sub(y,z) )
     return x;
-  var* x = new var(T);
+
+  var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
     b->m_vars.push_back(x);
@@ -2441,11 +944,6 @@ c_compiler::var* c_compiler::var_impl::opt_sub(var* y, var* z)
 }
 
 c_compiler::var* c_compiler::var::sub(var* z){ return var_impl::sub(this,z); }
-c_compiler::var* c_compiler::var::subr(constant<char>* y){ return var_impl::sub(y,this); }
-c_compiler::var* c_compiler::var::subr(constant<signed char>* y){ return var_impl::sub(y,this); }
-c_compiler::var* c_compiler::var::subr(constant<unsigned char>* y){ return var_impl::sub(y,this); }
-c_compiler::var* c_compiler::var::subr(constant<short int>* y){ return var_impl::sub(y,this); }
-c_compiler::var* c_compiler::var::subr(constant<unsigned short int>* y){ return var_impl::sub(y,this); }
 c_compiler::var* c_compiler::var::subr(constant<int>* y){ return var_impl::sub(y,this); }
 c_compiler::var* c_compiler::var::subr(constant<unsigned int>* y){ return var_impl::sub(y,this); }
 c_compiler::var* c_compiler::var::subr(constant<long int>* y){ return var_impl::sub(y,this); }
@@ -2457,11 +955,6 @@ c_compiler::var* c_compiler::var::subr(constant<float>* y){ return var_impl::sub
 c_compiler::var* c_compiler::var::subr(constant<double>* y){ return var_impl::sub(y,this); }
 c_compiler::var* c_compiler::var::subr(constant<long double>* y){ return var_impl::sub(y,this); }
 c_compiler::var* c_compiler::var::subr(addrof* y){ return var_impl::sub(y,this); }
-
-c_compiler::var* c_compiler::addrof::sub(var* z)
-{
-  return z->subr(this);
-}
 
 c_compiler::var* c_compiler::addrof::subr(addrof* y)
 {
@@ -2501,27 +994,17 @@ namespace c_compiler { namespace addrof_impl {
 } } // end of namespace addrof_impl and c_compiler
 
 namespace c_compiler {
-  template<> var* constant<char>::subr(addrof* y)
+  var* constant<int>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(addrof* y)
+  var* constant<unsigned int>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(addrof* y)
+  var* constant<long int>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(addrof* y)
+  var* constant<unsigned long int>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(addrof* y)
+  var* constant<__int64>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
-  template<> var* constant<int>::subr(addrof* y)
-  { return addrof_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(addrof* y)
-  { return addrof_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(addrof* y)
-  { return addrof_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(addrof* y)
-  { return addrof_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(addrof* y)
-  { return addrof_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(addrof* y)
+  var* constant<unsigned __int64>::subr(addrof* y)
   { return addrof_impl::sub(y,this); }
 } // end of namespace c_compiler
 
@@ -2566,30 +1049,6 @@ namespace c_compiler { namespace constant_impl {
     else
       return var_impl::sub(y, z);
   }
-  template<class A, class B> var* fsub1(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop1(y,z,generator::long_double->sub) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value - z->m_value);
-#else // _MSC_VER
-    return floating::create(y->m_value - (__int64)z->m_value);
-#endif // _MSC_VER
-  }
-  template<class A, class B> var* fsub2(constant<A>* y, constant<B>* z)
-  {
-    if ( generator::long_double ){
-      if ( var* v = fop2(y,z,generator::long_double->sub) )
-        return v;
-    }
-#ifndef _MSC_VER
-    return floating::create(y->m_value - z->m_value);
-#else // _MSC_VER
-    return floating::create((__int64)y->m_value - z->m_value);
-#endif // _MSC_VER
-  }
   template<class A, class B> var* fsub3(constant<A>* y, constant<B>* z)
   {
     if ( generator::long_double ){
@@ -2618,426 +1077,43 @@ namespace c_compiler { namespace constant_impl {
 } } // end of namespace constant_impl and c_compiler
 
 namespace c_compiler {
-  template<> var* constant<char>::subr(constant<char>* y)
+  var* constant<int>::subr(constant<int>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<char>::subr(constant<void*>* y)
+  var* constant<int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<char>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<char>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<char>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<signed char>::subr(constant<char>* y)
+
+  var* constant<unsigned int>::subr(constant<unsigned int>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<signed char>::subr(constant<void*>* y)
+  var* constant<unsigned int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<signed char>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<signed char>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<signed char>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<char>* y)
+
+  var* constant<long int>::subr(constant<long int>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<void*>* y)
+  var* constant<long int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned char>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<short int>::subr(constant<char>* y)
+
+  var* constant<unsigned long int>::subr(constant<unsigned long int>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<short int>::subr(constant<void*>* y)
+  var* constant<unsigned long int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<short int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<short int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<short int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<char>* y)
+
+  var* constant<__int64>::subr(constant<__int64>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<void*>* y)
+  var* constant<__int64>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned short int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<int>::subr(constant<char>* y)
+
+  var* constant<unsigned  __int64>::subr(constant<unsigned __int64>* y)
   { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<int>::subr(constant<void*>* y)
+  var* constant<unsigned  __int64>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
-  template<> var* constant<int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<void*>* y)
-  { return constant_impl::psub(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<long int>::subr(constant<char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<long int>::subr(constant<void*>* y)
-  { return constant_impl::psub(y,this); }
-  template<> var* constant<long int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<long int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<long int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<void*>* y)
-  { return constant_impl::psub(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned long int>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<__int64>::subr(constant<char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<__int64>::subr(constant<void*>* y)
-  { return constant_impl::psub(y,this); }
-  template<> var* constant<__int64>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<__int64>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<__int64>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<signed char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<unsigned char>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<unsigned short int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<unsigned int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<unsigned long int>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<__int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<unsigned __int64>* y)
-  { return constant_impl::sub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<void*>* y)
-  { return constant_impl::psub(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<float>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<double>* y)
-  { return constant_impl::fsub1(y,this); }
-  template<> var* constant<unsigned __int64>::subr(constant<long double>* y)
-  { return constant_impl::fsub1(y,this); }
+
+  var* constant<float>::subr(constant<float>* y)
+  { return constant_impl::fsub3(y,this); }
+  var* constant<double>::subr(constant<double>* y)
+  { return constant_impl::fsub3(y,this); }
+  var* constant<long double>::subr(constant<long double>* y)
+  { return constant_impl::fsub3(y,this); }
 } // end of namespace c_compiler
-
-c_compiler::var* c_compiler::constant<float>::sub(var* z){ return z->subr(this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<signed char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<unsigned char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<unsigned short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<unsigned int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<unsigned long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<__int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<unsigned __int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<float>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<double>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<float>::subr(constant<long double>* y)
-{ return constant_impl::fsub3(y,this); }
-
-c_compiler::var* c_compiler::constant<double>::sub(var* z){ return z->subr(this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<signed char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<unsigned char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<unsigned short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<unsigned int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<unsigned long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<__int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<unsigned __int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<float>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<double>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<double>::subr(constant<long double>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::sub(var* z){ return z->subr(this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<signed char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<unsigned char>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<unsigned short int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<unsigned int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<unsigned long int>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<__int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<unsigned __int64>* y)
-{ return constant_impl::fsub2(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<float>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<double>* y)
-{ return constant_impl::fsub3(y,this); }
-c_compiler::var* c_compiler::constant<long double>::subr(constant<long double>* y)
-{ return constant_impl::fsub3(y,this); }
 
 c_compiler::var* c_compiler::constant<void*>::subr(constant<void*>* that)
 {

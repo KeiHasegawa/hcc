@@ -57,7 +57,7 @@ struct tag {
   }
 };
 
-template<class T> struct constant;
+template<class V> struct constant;
 struct addrof;
 struct generated;
 struct genaddr;
@@ -93,11 +93,6 @@ struct var {
   virtual var* cast(const type*);
 
   virtual var* mul(var*);
-  virtual var* mulr(constant<char>*);
-  virtual var* mulr(constant<signed char>*);
-  virtual var* mulr(constant<unsigned char>*);
-  virtual var* mulr(constant<short int>*);
-  virtual var* mulr(constant<unsigned short int>*);
   virtual var* mulr(constant<int>*);
   virtual var* mulr(constant<unsigned int>*);
   virtual var* mulr(constant<long int>*);
@@ -108,11 +103,6 @@ struct var {
   virtual var* mulr(constant<double>*);
   virtual var* mulr(constant<long double>*);
   virtual var* div(var*);
-  virtual var* divr(constant<char>*);
-  virtual var* divr(constant<signed char>*);
-  virtual var* divr(constant<unsigned char>*);
-  virtual var* divr(constant<short int>*);
-  virtual var* divr(constant<unsigned short int>*);
   virtual var* divr(constant<int>*);
   virtual var* divr(constant<unsigned int>*);
   virtual var* divr(constant<long int>*);
@@ -123,11 +113,6 @@ struct var {
   virtual var* divr(constant<double>*);
   virtual var* divr(constant<long double>*);
   virtual var* mod(var*);
-  virtual var* modr(constant<char>*);
-  virtual var* modr(constant<signed char>*);
-  virtual var* modr(constant<unsigned char>*);
-  virtual var* modr(constant<short int>*);
-  virtual var* modr(constant<unsigned short int>*);
   virtual var* modr(constant<int>*);
   virtual var* modr(constant<unsigned int>*);
   virtual var* modr(constant<long int>*);
@@ -135,11 +120,6 @@ struct var {
   virtual var* modr(constant<__int64>*);
   virtual var* modr(constant<unsigned __int64>*);
   virtual var* add(var*);
-  virtual var* addr(constant<char>*);
-  virtual var* addr(constant<signed char>*);
-  virtual var* addr(constant<unsigned char>*);
-  virtual var* addr(constant<short int>*);
-  virtual var* addr(constant<unsigned short int>*);
   virtual var* addr(constant<int>*);
   virtual var* addr(constant<unsigned int>*);
   virtual var* addr(constant<long int>*);
@@ -152,11 +132,6 @@ struct var {
   virtual var* addr(constant<void*>*);
   virtual var* addr(addrof*);
   virtual var* sub(var*);
-  virtual var* subr(constant<char>*);
-  virtual var* subr(constant<signed char>*);
-  virtual var* subr(constant<unsigned char>*);
-  virtual var* subr(constant<short int>*);
-  virtual var* subr(constant<unsigned short int>*);
   virtual var* subr(constant<int>*);
   virtual var* subr(constant<unsigned int>*);
   virtual var* subr(constant<long int>*);
@@ -169,11 +144,6 @@ struct var {
   virtual var* subr(constant<long double>*);
   virtual var* subr(addrof*);
   virtual var* lsh(var*);
-  virtual var* lshr(constant<char>*);
-  virtual var* lshr(constant<signed char>*);
-  virtual var* lshr(constant<unsigned char>*);
-  virtual var* lshr(constant<short int>*);
-  virtual var* lshr(constant<unsigned short int>*);
   virtual var* lshr(constant<int>*);
   virtual var* lshr(constant<unsigned int>*);
   virtual var* lshr(constant<long int>*);
@@ -181,11 +151,6 @@ struct var {
   virtual var* lshr(constant<__int64>*);
   virtual var* lshr(constant<unsigned __int64>*);
   virtual var* rsh(var*);
-  virtual var* rshr(constant<char>*);
-  virtual var* rshr(constant<signed char>*);
-  virtual var* rshr(constant<unsigned char>*);
-  virtual var* rshr(constant<short int>*);
-  virtual var* rshr(constant<unsigned short int>*);
   virtual var* rshr(constant<int>*);
   virtual var* rshr(constant<unsigned int>*);
   virtual var* rshr(constant<long int>*);
@@ -193,11 +158,6 @@ struct var {
   virtual var* rshr(constant<__int64>*);
   virtual var* rshr(constant<unsigned __int64>*);
   virtual var* lt(var*);
-  virtual var* ltr(constant<char>*);
-  virtual var* ltr(constant<signed char>*);
-  virtual var* ltr(constant<unsigned char>*);
-  virtual var* ltr(constant<short int>*);
-  virtual var* ltr(constant<unsigned short int>*);
   virtual var* ltr(constant<int>*);
   virtual var* ltr(constant<unsigned int>*);
   virtual var* ltr(constant<long int>*);
@@ -210,11 +170,6 @@ struct var {
   virtual var* ltr(constant<void*>*);
   virtual var* ltr(addrof*);
   virtual var* gt(var*);
-  virtual var* gtr(constant<char>*);
-  virtual var* gtr(constant<signed char>*);
-  virtual var* gtr(constant<unsigned char>*);
-  virtual var* gtr(constant<short int>*);
-  virtual var* gtr(constant<unsigned short int>*);
   virtual var* gtr(constant<int>*);
   virtual var* gtr(constant<unsigned int>*);
   virtual var* gtr(constant<long int>*);
@@ -227,11 +182,6 @@ struct var {
   virtual var* gtr(constant<void*>*);
   virtual var* gtr(addrof*);
   virtual var* le(var*);
-  virtual var* ler(constant<char>*);
-  virtual var* ler(constant<signed char>*);
-  virtual var* ler(constant<unsigned char>*);
-  virtual var* ler(constant<short int>*);
-  virtual var* ler(constant<unsigned short int>*);
   virtual var* ler(constant<int>*);
   virtual var* ler(constant<unsigned int>*);
   virtual var* ler(constant<long int>*);
@@ -244,11 +194,6 @@ struct var {
   virtual var* ler(constant<void*>*);
   virtual var* ler(addrof*);
   virtual var* ge(var*);
-  virtual var* ger(constant<char>*);
-  virtual var* ger(constant<signed char>*);
-  virtual var* ger(constant<unsigned char>*);
-  virtual var* ger(constant<short int>*);
-  virtual var* ger(constant<unsigned short int>*);
   virtual var* ger(constant<int>*);
   virtual var* ger(constant<unsigned int>*);
   virtual var* ger(constant<long int>*);
@@ -261,11 +206,6 @@ struct var {
   virtual var* ger(constant<void*>*);
   virtual var* ger(addrof*);
   virtual var* eq(var*);
-  virtual var* eqr(constant<char>*);
-  virtual var* eqr(constant<signed char>*);
-  virtual var* eqr(constant<unsigned char>*);
-  virtual var* eqr(constant<short int>*);
-  virtual var* eqr(constant<unsigned short int>*);
   virtual var* eqr(constant<int>*);
   virtual var* eqr(constant<unsigned int>*);
   virtual var* eqr(constant<long int>*);
@@ -278,11 +218,6 @@ struct var {
   virtual var* eqr(constant<void*>*);
   virtual var* eqr(addrof*);
   virtual var* ne(var*);
-  virtual var* ner(constant<char>*);
-  virtual var* ner(constant<signed char>*);
-  virtual var* ner(constant<unsigned char>*);
-  virtual var* ner(constant<short int>*);
-  virtual var* ner(constant<unsigned short int>*);
   virtual var* ner(constant<int>*);
   virtual var* ner(constant<unsigned int>*);
   virtual var* ner(constant<long int>*);
@@ -295,11 +230,6 @@ struct var {
   virtual var* ner(constant<void*>*);
   virtual var* ner(addrof*);
   virtual var* bit_and(var*);
-  virtual var* bit_andr(constant<char>*);
-  virtual var* bit_andr(constant<signed char>*);
-  virtual var* bit_andr(constant<unsigned char>*);
-  virtual var* bit_andr(constant<short int>*);
-  virtual var* bit_andr(constant<unsigned short int>*);
   virtual var* bit_andr(constant<int>*);
   virtual var* bit_andr(constant<unsigned int>*);
   virtual var* bit_andr(constant<long int>*);
@@ -307,11 +237,6 @@ struct var {
   virtual var* bit_andr(constant<__int64>*);
   virtual var* bit_andr(constant<unsigned __int64>*);
   virtual var* bit_xor(var*);
-  virtual var* bit_xorr(constant<char>*);
-  virtual var* bit_xorr(constant<signed char>*);
-  virtual var* bit_xorr(constant<unsigned char>*);
-  virtual var* bit_xorr(constant<short int>*);
-  virtual var* bit_xorr(constant<unsigned short int>*);
   virtual var* bit_xorr(constant<int>*);
   virtual var* bit_xorr(constant<unsigned int>*);
   virtual var* bit_xorr(constant<long int>*);
@@ -319,11 +244,6 @@ struct var {
   virtual var* bit_xorr(constant<__int64>*);
   virtual var* bit_xorr(constant<unsigned __int64>*);
   virtual var* bit_or(var*);
-  virtual var* bit_orr(constant<char>*);
-  virtual var* bit_orr(constant<signed char>*);
-  virtual var* bit_orr(constant<unsigned char>*);
-  virtual var* bit_orr(constant<short int>*);
-  virtual var* bit_orr(constant<unsigned short int>*);
   virtual var* bit_orr(constant<int>*);
   virtual var* bit_orr(constant<unsigned int>*);
   virtual var* bit_orr(constant<long int>*);
@@ -388,93 +308,52 @@ struct usr : var {
     : var(type), m_name(name), m_flag(flag), m_file(file) {}
 };
 
+// For char, signed char, unsinged char, short int, unsigned short int
 template<class V> struct constant : usr {
   V m_value;
   bool lvalue() const { return false; }
-  var* offref(const type* T, var* v);
-  var* indirection();
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return promotion(); }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<int> : usr {
+  int m_value;
+  bool lvalue() const { return false; }
   var* mul(var* z){ return z->mulr(this); }
-  var* mulr(constant<char>*);
-  var* mulr(constant<signed char>*);
-  var* mulr(constant<unsigned char>*);
-  var* mulr(constant<short int>*);
-  var* mulr(constant<unsigned short int>*);
   var* mulr(constant<int>*);
-  var* mulr(constant<unsigned int>*);
-  var* mulr(constant<long int>*);
-  var* mulr(constant<unsigned long int>*);
-  var* mulr(constant<__int64>*);
-  var* mulr(constant<unsigned __int64>*);
-  var* mulr(constant<float>*);
-  var* mulr(constant<double>*);
-  var* mulr(constant<long double>*);
   var* div(var* z){ return z->divr(this); }
-  var* divr(constant<char>*);
-  var* divr(constant<signed char>*);
-  var* divr(constant<unsigned char>*);
-  var* divr(constant<short int>*);
-  var* divr(constant<unsigned short int>*);
   var* divr(constant<int>*);
-  var* divr(constant<unsigned int>*);
-  var* divr(constant<long int>*);
-  var* divr(constant<unsigned long int>*);
-  var* divr(constant<__int64>*);
-  var* divr(constant<unsigned __int64>*);
-  var* divr(constant<float>*);
-  var* divr(constant<double>*);
-  var* divr(constant<long double>*);
   var* mod(var* z){ return z->modr(this); }
-  var* modr(constant<char>*);
-  var* modr(constant<signed char>*);
-  var* modr(constant<unsigned char>*);
-  var* modr(constant<short int>*);
-  var* modr(constant<unsigned short int>*);
   var* modr(constant<int>*);
-  var* modr(constant<unsigned int>*);
-  var* modr(constant<long int>*);
-  var* modr(constant<unsigned long int>*);
-  var* modr(constant<__int64>*);
-  var* modr(constant<unsigned __int64>*);
   var* add(var* z){ return z->addr(this); }
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
   var* addr(constant<int>*);
-  var* addr(constant<unsigned int>*);
-  var* addr(constant<long int>*);
-  var* addr(constant<unsigned long int>*);
-  var* addr(constant<__int64>*);
-  var* addr(constant<unsigned __int64>*);
-  var* addr(constant<float>*);
-  var* addr(constant<double>*);
-  var* addr(constant<long double>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
-  var* subr(constant<char>*);
-  var* subr(constant<signed char>*);
-  var* subr(constant<unsigned char>*);
-  var* subr(constant<short int>*);
-  var* subr(constant<unsigned short int>*);
   var* subr(constant<int>*);
-  var* subr(constant<unsigned int>*);
-  var* subr(constant<long int>*);
-  var* subr(constant<unsigned long int>*);
-  var* subr(constant<__int64>*);
-  var* subr(constant<unsigned __int64>*);
   var* subr(constant<void*>*);
-  var* subr(constant<float>*);
-  var* subr(constant<double>*);
-  var* subr(constant<long double>*);
   var* subr(addrof*);
   var* lsh(var* z){ return z->lshr(this); }
-  var* lshr(constant<char>*);
-  var* lshr(constant<signed char>*);
-  var* lshr(constant<unsigned char>*);
-  var* lshr(constant<short int>*);
-  var* lshr(constant<unsigned short int>*);
   var* lshr(constant<int>*);
   var* lshr(constant<unsigned int>*);
   var* lshr(constant<long int>*);
@@ -482,11 +361,6 @@ template<class V> struct constant : usr {
   var* lshr(constant<__int64>*);
   var* lshr(constant<unsigned __int64>*);
   var* rsh(var* z){ return z->rshr(this); }
-  var* rshr(constant<char>*);
-  var* rshr(constant<signed char>*);
-  var* rshr(constant<unsigned char>*);
-  var* rshr(constant<short int>*);
-  var* rshr(constant<unsigned short int>*);
   var* rshr(constant<int>*);
   var* rshr(constant<unsigned int>*);
   var* rshr(constant<long int>*);
@@ -494,140 +368,409 @@ template<class V> struct constant : usr {
   var* rshr(constant<__int64>*);
   var* rshr(constant<unsigned __int64>*);
   var* lt(var* z){ return z->ltr(this); }
-  var* ltr(constant<char>*);
-  var* ltr(constant<signed char>*);
-  var* ltr(constant<unsigned char>*);
-  var* ltr(constant<short int>*);
-  var* ltr(constant<unsigned short int>*);
   var* ltr(constant<int>*);
-  var* ltr(constant<unsigned int>*);
-  var* ltr(constant<long int>*);
-  var* ltr(constant<unsigned long int>*);
-  var* ltr(constant<__int64>*);
-  var* ltr(constant<unsigned __int64>*);
-  var* ltr(constant<float>*);
-  var* ltr(constant<double>*);
-  var* ltr(constant<long double>*);
   var* gt(var* z){ return z->gtr(this); }
-  var* gtr(constant<char>*);
-  var* gtr(constant<signed char>*);
-  var* gtr(constant<unsigned char>*);
-  var* gtr(constant<short int>*);
-  var* gtr(constant<unsigned short int>*);
   var* gtr(constant<int>*);
-  var* gtr(constant<unsigned int>*);
-  var* gtr(constant<long int>*);
-  var* gtr(constant<unsigned long int>*);
-  var* gtr(constant<__int64>*);
-  var* gtr(constant<unsigned __int64>*);
-  var* gtr(constant<float>*);
-  var* gtr(constant<double>*);
-  var* gtr(constant<long double>*);
   var* le(var* z){ return z->ler(this); }
-  var* ler(constant<char>*);
-  var* ler(constant<signed char>*);
-  var* ler(constant<unsigned char>*);
-  var* ler(constant<short int>*);
-  var* ler(constant<unsigned short int>*);
   var* ler(constant<int>*);
-  var* ler(constant<unsigned int>*);
-  var* ler(constant<long int>*);
-  var* ler(constant<unsigned long int>*);
-  var* ler(constant<__int64>*);
-  var* ler(constant<unsigned __int64>*);
-  var* ler(constant<float>*);
-  var* ler(constant<double>*);
-  var* ler(constant<long double>*);
   var* ge(var* z){ return z->ger(this); }
-  var* ger(constant<char>*);
-  var* ger(constant<signed char>*);
-  var* ger(constant<unsigned char>*);
-  var* ger(constant<short int>*);
-  var* ger(constant<unsigned short int>*);
   var* ger(constant<int>*);
-  var* ger(constant<unsigned int>*);
-  var* ger(constant<long int>*);
-  var* ger(constant<unsigned long int>*);
-  var* ger(constant<__int64>*);
-  var* ger(constant<unsigned __int64>*);
-  var* ger(constant<float>*);
-  var* ger(constant<double>*);
-  var* ger(constant<long double>*);
   var* eq(var* z){ return z->eqr(this); }
-  var* eqr(constant<char>*);
-  var* eqr(constant<signed char>*);
-  var* eqr(constant<unsigned char>*);
-  var* eqr(constant<short int>*);
-  var* eqr(constant<unsigned short int>*);
   var* eqr(constant<int>*);
-  var* eqr(constant<unsigned int>*);
-  var* eqr(constant<long int>*);
-  var* eqr(constant<unsigned long int>*);
-  var* eqr(constant<__int64>*);
-  var* eqr(constant<unsigned __int64>*);
-  var* eqr(constant<float>*);
-  var* eqr(constant<double>*);
-  var* eqr(constant<long double>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
-  var* ner(constant<char>*);
-  var* ner(constant<signed char>*);
-  var* ner(constant<unsigned char>*);
-  var* ner(constant<short int>*);
-  var* ner(constant<unsigned short int>*);
   var* ner(constant<int>*);
-  var* ner(constant<unsigned int>*);
-  var* ner(constant<long int>*);
-  var* ner(constant<unsigned long int>*);
-  var* ner(constant<__int64>*);
-  var* ner(constant<unsigned __int64>*);
-  var* ner(constant<float>*);
-  var* ner(constant<double>*);
-  var* ner(constant<long double>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
-  var* bit_andr(constant<char>*);
-  var* bit_andr(constant<signed char>*);
-  var* bit_andr(constant<unsigned char>*);
-  var* bit_andr(constant<short int>*);
-  var* bit_andr(constant<unsigned short int>*);
   var* bit_andr(constant<int>*);
-  var* bit_andr(constant<unsigned int>*);
-  var* bit_andr(constant<long int>*);
-  var* bit_andr(constant<unsigned long int>*);
-  var* bit_andr(constant<__int64>*);
-  var* bit_andr(constant<unsigned __int64>*);
   var* bit_xor(var* z){ return z->bit_xorr(this); }
-  var* bit_xorr(constant<char>*);
-  var* bit_xorr(constant<signed char>*);
-  var* bit_xorr(constant<unsigned char>*);
-  var* bit_xorr(constant<short int>*);
-  var* bit_xorr(constant<unsigned short int>*);
   var* bit_xorr(constant<int>*);
-  var* bit_xorr(constant<unsigned int>*);
-  var* bit_xorr(constant<long int>*);
-  var* bit_xorr(constant<unsigned long int>*);
-  var* bit_xorr(constant<__int64>*);
-  var* bit_xorr(constant<unsigned __int64>*);
   var* bit_or(var* z){ return z->bit_orr(this); }
-  var* bit_orr(constant<char>*);
-  var* bit_orr(constant<signed char>*);
-  var* bit_orr(constant<unsigned char>*);
-  var* bit_orr(constant<short int>*);
-  var* bit_orr(constant<unsigned short int>*);
   var* bit_orr(constant<int>*);
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return this; }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<unsigned int> : usr {
+  unsigned int m_value;
+  bool lvalue() const { return false; }
+  var* mul(var* z){ return z->mulr(this); }
+  var* mulr(constant<unsigned int>*);
+  var* div(var* z){ return z->divr(this); }
+  var* divr(constant<unsigned int>*);
+  var* mod(var* z){ return z->modr(this); }
+  var* modr(constant<unsigned int>*);
+  var* add(var* z){ return z->addr(this); }
+  var* addr(constant<unsigned int>*);
+  var* addr(constant<void*>*);
+  var* addr(addrof*);
+  var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<unsigned int>*);
+  var* subr(constant<void*>*);
+  var* subr(addrof*);
+  var* lsh(var* z){ return z->lshr(this); }
+  var* lshr(constant<int>*);
+  var* lshr(constant<unsigned int>*);
+  var* lshr(constant<long int>*);
+  var* lshr(constant<unsigned long int>*);
+  var* lshr(constant<__int64>*);
+  var* lshr(constant<unsigned __int64>*);
+  var* rsh(var* z){ return z->rshr(this); }
+  var* rshr(constant<int>*);
+  var* rshr(constant<unsigned int>*);
+  var* rshr(constant<long int>*);
+  var* rshr(constant<unsigned long int>*);
+  var* rshr(constant<__int64>*);
+  var* rshr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
+  var* ltr(constant<unsigned int>*);
+  var* gt(var* z){ return z->gtr(this); }
+  var* gtr(constant<unsigned int>*);
+  var* le(var* z){ return z->ler(this); }
+  var* ler(constant<unsigned int>*);
+  var* ge(var* z){ return z->ger(this); }
+  var* ger(constant<unsigned int>*);
+  var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<unsigned int>*);
+  var* eqr(constant<void*>*);
+  var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<unsigned int>*);
+  var* ner(constant<void*>*);
+  var* bit_and(var* z){ return z->bit_andr(this); }
+  var* bit_andr(constant<unsigned int>*);
+  var* bit_xor(var* z){ return z->bit_xorr(this); }
+  var* bit_xorr(constant<unsigned int>*);
+  var* bit_or(var* z){ return z->bit_orr(this); }
   var* bit_orr(constant<unsigned int>*);
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return this; }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<long int> : usr {
+  long int m_value;
+  bool lvalue() const { return false; }
+  var* mul(var* z){ return z->mulr(this); }
+  var* mulr(constant<long int>*);
+  var* div(var* z){ return z->divr(this); }
+  var* divr(constant<long int>*);
+  var* mod(var* z){ return z->modr(this); }
+  var* modr(constant<long int>*);
+  var* add(var* z){ return z->addr(this); }
+  var* addr(constant<long int>*);
+  var* addr(constant<void*>*);
+  var* addr(addrof*);
+  var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<long int>*);
+  var* subr(constant<void*>*);
+  var* subr(addrof*);
+  var* lsh(var* z){ return z->lshr(this); }
+  var* lshr(constant<int>*);
+  var* lshr(constant<unsigned int>*);
+  var* lshr(constant<long int>*);
+  var* lshr(constant<unsigned long int>*);
+  var* lshr(constant<__int64>*);
+  var* lshr(constant<unsigned __int64>*);
+  var* rsh(var* z){ return z->rshr(this); }
+  var* rshr(constant<int>*);
+  var* rshr(constant<unsigned int>*);
+  var* rshr(constant<long int>*);
+  var* rshr(constant<unsigned long int>*);
+  var* rshr(constant<__int64>*);
+  var* rshr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
+  var* ltr(constant<long int>*);
+  var* gt(var* z){ return z->gtr(this); }
+  var* gtr(constant<long int>*);
+  var* le(var* z){ return z->ler(this); }
+  var* ler(constant<long int>*);
+  var* ge(var* z){ return z->ger(this); }
+  var* ger(constant<long int>*);
+  var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<long int>*);
+  var* eqr(constant<void*>*);
+  var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<long int>*);
+  var* ner(constant<void*>*);
+  var* bit_and(var* z){ return z->bit_andr(this); }
+  var* bit_andr(constant<long int>*);
+  var* bit_xor(var* z){ return z->bit_xorr(this); }
+  var* bit_xorr(constant<long int>*);
+  var* bit_or(var* z){ return z->bit_orr(this); }
   var* bit_orr(constant<long int>*);
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return this; }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<unsigned long int> : usr {
+  unsigned long int m_value;
+  bool lvalue() const { return false; }
+  var* mul(var* z){ return z->mulr(this); }
+  var* mulr(constant<unsigned long int>*);
+  var* div(var* z){ return z->divr(this); }
+  var* divr(constant<unsigned long int>*);
+  var* mod(var* z){ return z->modr(this); }
+  var* modr(constant<unsigned long int>*);
+  var* add(var* z){ return z->addr(this); }
+  var* addr(constant<unsigned long int>*);
+  var* addr(constant<void*>*);
+  var* addr(addrof*);
+  var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<unsigned long int>*);
+  var* subr(constant<void*>*);
+  var* subr(addrof*);
+  var* lsh(var* z){ return z->lshr(this); }
+  var* lshr(constant<int>*);
+  var* lshr(constant<unsigned int>*);
+  var* lshr(constant<long int>*);
+  var* lshr(constant<unsigned long int>*);
+  var* lshr(constant<__int64>*);
+  var* lshr(constant<unsigned __int64>*);
+  var* rsh(var* z){ return z->rshr(this); }
+  var* rshr(constant<int>*);
+  var* rshr(constant<unsigned int>*);
+  var* rshr(constant<long int>*);
+  var* rshr(constant<unsigned long int>*);
+  var* rshr(constant<__int64>*);
+  var* rshr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
+  var* ltr(constant<unsigned long int>*);
+  var* gt(var* z){ return z->gtr(this); }
+  var* gtr(constant<unsigned long int>*);
+  var* le(var* z){ return z->ler(this); }
+  var* ler(constant<unsigned long int>*);
+  var* ge(var* z){ return z->ger(this); }
+  var* ger(constant<unsigned long int>*);
+  var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<unsigned long int>*);
+  var* eqr(constant<void*>*);
+  var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<unsigned long int>*);
+  var* ner(constant<void*>*);
+  var* bit_and(var* z){ return z->bit_andr(this); }
+  var* bit_andr(constant<unsigned long int>*);
+  var* bit_xor(var* z){ return z->bit_xorr(this); }
+  var* bit_xorr(constant<unsigned long int>*);
+  var* bit_or(var* z){ return z->bit_orr(this); }
   var* bit_orr(constant<unsigned long int>*);
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return this; }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<__int64> : usr {
+  __int64 m_value;
+  bool lvalue() const { return false; }
+  var* offref(const type* T, var* v);
+  var* indirection();
+  var* mul(var* z){ return z->mulr(this); }
+  var* mulr(constant<__int64>*);
+  var* div(var* z){ return z->divr(this); }
+  var* divr(constant<__int64>*);
+  var* mod(var* z){ return z->modr(this); }
+  var* modr(constant<__int64>*);
+  var* add(var* z){ return z->addr(this); }
+  var* addr(constant<__int64>*);
+  var* addr(constant<void*>*);
+  var* addr(addrof*);
+  var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<__int64>*);
+  var* subr(constant<void*>*);
+  var* subr(addrof*);
+  var* lsh(var* z){ return z->lshr(this); }
+  var* lshr(constant<int>*);
+  var* lshr(constant<unsigned int>*);
+  var* lshr(constant<long int>*);
+  var* lshr(constant<unsigned long int>*);
+  var* lshr(constant<__int64>*);
+  var* lshr(constant<unsigned __int64>*);
+  var* rsh(var* z){ return z->rshr(this); }
+  var* rshr(constant<int>*);
+  var* rshr(constant<unsigned int>*);
+  var* rshr(constant<long int>*);
+  var* rshr(constant<unsigned long int>*);
+  var* rshr(constant<__int64>*);
+  var* rshr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
+  var* ltr(constant<__int64>*);
+  var* gt(var* z){ return z->gtr(this); }
+  var* gtr(constant<__int64>*);
+  var* le(var* z){ return z->ler(this); }
+  var* ler(constant<__int64>*);
+  var* ge(var* z){ return z->ger(this); }
+  var* ger(constant<__int64>*);
+  var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<__int64>*);
+  var* eqr(constant<void*>*);
+  var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<__int64>*);
+  var* ner(constant<void*>*);
+  var* bit_and(var* z){ return z->bit_andr(this); }
+  var* bit_andr(constant<__int64>*);
+  var* bit_xor(var* z){ return z->bit_xorr(this); }
+  var* bit_xorr(constant<__int64>*);
+  var* bit_or(var* z){ return z->bit_orr(this); }
   var* bit_orr(constant<__int64>*);
-  var* bit_orr(constant<unsigned __int64>*);
   var* logic1(bool, int, var*);
   var* logic2(bool, const type*);
   var* cond(int, int, var*, var*);
   var* plus()
   {
-    return (m_flag & CONST_PTR) ? var::plus() : promotion();
+    return m_flag & CONST_PTR ? var::plus() : this;
   }
+  var* minus();
+  var* tilde();
+  var* cast(const type*);
+  bool zero() const { return m_value == 0; }
+  var* _not();
+  bool isconstant(bool = false) const { return true; }
+  var* size(int);
+  __int64 value() const { return m_value; }
+  void if_expr();
+  void else_action();
+  void end_if();
+  void while_expr(to3ac*);
+  void end_while();
+  void for_expr2();
+  void end_for(int);
+  void end_do(to3ac*);
+  constant(std::string name, const type* type, flag_t flag, const file_t& file)
+    : usr(name,type,flag,file), m_value(0) {}
+};
+
+template<> struct constant<unsigned __int64> : usr {
+  unsigned __int64 m_value;
+  bool lvalue() const { return false; }
+  var* mul(var* z){ return z->mulr(this); }
+  var* mulr(constant<unsigned __int64>*);
+  var* div(var* z){ return z->divr(this); }
+  var* divr(constant<unsigned __int64>*);
+  var* mod(var* z){ return z->modr(this); }
+  var* modr(constant<unsigned __int64>*);
+  var* add(var* z){ return z->addr(this); }
+  var* addr(constant<unsigned __int64>*);
+  var* addr(constant<void*>*);
+  var* addr(addrof*);
+  var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<unsigned __int64>*);
+  var* subr(constant<void*>*);
+  var* subr(addrof*);
+  var* lsh(var* z){ return z->lshr(this); }
+  var* lshr(constant<int>*);
+  var* lshr(constant<unsigned int>*);
+  var* lshr(constant<long int>*);
+  var* lshr(constant<unsigned long int>*);
+  var* lshr(constant<__int64>*);
+  var* lshr(constant<unsigned __int64>*);
+  var* rsh(var* z){ return z->rshr(this); }
+  var* rshr(constant<int>*);
+  var* rshr(constant<unsigned int>*);
+  var* rshr(constant<long int>*);
+  var* rshr(constant<unsigned long int>*);
+  var* rshr(constant<__int64>*);
+  var* rshr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
+  var* ltr(constant<unsigned __int64>*);
+  var* gt(var* z){ return z->gtr(this); }
+  var* gtr(constant<unsigned __int64>*);
+  var* le(var* z){ return z->ler(this); }
+  var* ler(constant<unsigned __int64>*);
+  var* ge(var* z){ return z->ger(this); }
+  var* ger(constant<unsigned __int64>*);
+  var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<unsigned __int64>*);
+  var* eqr(constant<void*>*);
+  var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<unsigned __int64>*);
+  var* ner(constant<void*>*);
+  var* bit_and(var* z){ return z->bit_andr(this); }
+  var* bit_andr(constant<unsigned __int64>*);
+  var* bit_xor(var* z){ return z->bit_xorr(this); }
+  var* bit_xorr(constant<unsigned __int64>*);
+  var* bit_or(var* z){ return z->bit_orr(this); }
+  var* bit_orr(constant<unsigned __int64>*);
+  var* logic1(bool, int, var*);
+  var* logic2(bool, const type*);
+  var* cond(int, int, var*, var*);
+  var* plus(){ return this; }
   var* minus();
   var* tilde();
   var* cast(const type*);
@@ -655,156 +798,26 @@ template<> struct constant<float> : usr {
   var* minus();
   var* cast(const type*);
 
-  var* mul(var*);
-  var* mulr(constant<char>*);
-  var* mulr(constant<signed char>*);
-  var* mulr(constant<unsigned char>*);
-  var* mulr(constant<short int>*);
-  var* mulr(constant<unsigned short int>*);
-  var* mulr(constant<int>*);
-  var* mulr(constant<unsigned int>*);
-  var* mulr(constant<long int>*);
-  var* mulr(constant<unsigned long int>*);
-  var* mulr(constant<__int64>*);
-  var* mulr(constant<unsigned __int64>*);
+  var* mul(var* z){ return z->mulr(this); }
   var* mulr(constant<float>*);
-  var* mulr(constant<double>*);
-  var* mulr(constant<long double>*);
-  var* div(var*);
-  var* divr(constant<char>*);
-  var* divr(constant<signed char>*);
-  var* divr(constant<unsigned char>*);
-  var* divr(constant<short int>*);
-  var* divr(constant<unsigned short int>*);
-  var* divr(constant<int>*);
-  var* divr(constant<unsigned int>*);
-  var* divr(constant<long int>*);
-  var* divr(constant<unsigned long int>*);
-  var* divr(constant<__int64>*);
-  var* divr(constant<unsigned __int64>*);
+  var* div(var* z){ return z->divr(this); }
   var* divr(constant<float>*);
-  var* divr(constant<double>*);
-  var* divr(constant<long double>*);
-  var* add(var*);
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
-  var* addr(constant<int>*);
-  var* addr(constant<unsigned int>*);
-  var* addr(constant<long int>*);
-  var* addr(constant<unsigned long int>*);
-  var* addr(constant<__int64>*);
-  var* addr(constant<unsigned __int64>*);
+  var* add(var* z){ return z->addr(this); }
   var* addr(constant<float>*);
-  var* addr(constant<double>*);
-  var* addr(constant<long double>*);
-  var* sub(var*);
-  var* subr(constant<char>*);
-  var* subr(constant<signed char>*);
-  var* subr(constant<unsigned char>*);
-  var* subr(constant<short int>*);
-  var* subr(constant<unsigned short int>*);
-  var* subr(constant<int>*);
-  var* subr(constant<unsigned int>*);
-  var* subr(constant<long int>*);
-  var* subr(constant<unsigned long int>*);
-  var* subr(constant<__int64>*);
-  var* subr(constant<unsigned __int64>*);
+  var* sub(var* z){ return z->subr(this); }
   var* subr(constant<float>*);
-  var* subr(constant<double>*);
-  var* subr(constant<long double>*);
-  var* lt(var*);
-  var* ltr(constant<char>*);
-  var* ltr(constant<signed char>*);
-  var* ltr(constant<unsigned char>*);
-  var* ltr(constant<short int>*);
-  var* ltr(constant<unsigned short int>*);
-  var* ltr(constant<int>*);
-  var* ltr(constant<unsigned int>*);
-  var* ltr(constant<long int>*);
-  var* ltr(constant<unsigned long int>*);
-  var* ltr(constant<__int64>*);
-  var* ltr(constant<unsigned __int64>*);
+  var* lt(var* z){ return z->ltr(this); }
   var* ltr(constant<float>*);
-  var* ltr(constant<double>*);
-  var* ltr(constant<long double>*);
-  var* gt(var*);
-  var* gtr(constant<char>*);
-  var* gtr(constant<signed char>*);
-  var* gtr(constant<unsigned char>*);
-  var* gtr(constant<short int>*);
-  var* gtr(constant<unsigned short int>*);
-  var* gtr(constant<int>*);
-  var* gtr(constant<unsigned int>*);
-  var* gtr(constant<long int>*);
-  var* gtr(constant<unsigned long int>*);
-  var* gtr(constant<__int64>*);
-  var* gtr(constant<unsigned __int64>*);
+  var* gt(var* z){ return z->gtr(this); }
   var* gtr(constant<float>*);
-  var* gtr(constant<double>*);
-  var* gtr(constant<long double>*);
-  var* le(var*);
-  var* ler(constant<char>*);
-  var* ler(constant<signed char>*);
-  var* ler(constant<unsigned char>*);
-  var* ler(constant<short int>*);
-  var* ler(constant<unsigned short int>*);
-  var* ler(constant<int>*);
-  var* ler(constant<unsigned int>*);
-  var* ler(constant<long int>*);
-  var* ler(constant<unsigned long int>*);
-  var* ler(constant<__int64>*);
-  var* ler(constant<unsigned __int64>*);
+  var* le(var* z){ return z->ler(this); }
   var* ler(constant<float>*);
-  var* ler(constant<double>*);
-  var* ler(constant<long double>*);
-  var* ge(var*);
-  var* ger(constant<char>*);
-  var* ger(constant<signed char>*);
-  var* ger(constant<unsigned char>*);
-  var* ger(constant<short int>*);
-  var* ger(constant<unsigned short int>*);
-  var* ger(constant<int>*);
-  var* ger(constant<unsigned int>*);
-  var* ger(constant<long int>*);
-  var* ger(constant<unsigned long int>*);
-  var* ger(constant<__int64>*);
-  var* ger(constant<unsigned __int64>*);
+  var* ge(var* z){ return z->ger(this); }
   var* ger(constant<float>*);
-  var* ger(constant<double>*);
-  var* ger(constant<long double>*);
-  var* eq(var*);
-  var* eqr(constant<char>*);
-  var* eqr(constant<signed char>*);
-  var* eqr(constant<unsigned char>*);
-  var* eqr(constant<short int>*);
-  var* eqr(constant<unsigned short int>*);
-  var* eqr(constant<int>*);
-  var* eqr(constant<unsigned int>*);
-  var* eqr(constant<long int>*);
-  var* eqr(constant<unsigned long int>*);
-  var* eqr(constant<__int64>*);
-  var* eqr(constant<unsigned __int64>*);
+  var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<float>*);
-  var* eqr(constant<double>*);
-  var* eqr(constant<long double>*);
-  var* ne(var*);
-  var* ner(constant<char>*);
-  var* ner(constant<signed char>*);
-  var* ner(constant<unsigned char>*);
-  var* ner(constant<short int>*);
-  var* ner(constant<unsigned short int>*);
-  var* ner(constant<int>*);
-  var* ner(constant<unsigned int>*);
-  var* ner(constant<long int>*);
-  var* ner(constant<unsigned long int>*);
-  var* ner(constant<__int64>*);
-  var* ner(constant<unsigned __int64>*);
+  var* ne(var* z){ return z->ner(this); }
   var* ner(constant<float>*);
-  var* ner(constant<double>*);
-  var* ner(constant<long double>*);
   var* logic1(bool, int, var*);
   var* logic2(bool, const type*);
   var* cond(int, int, var*, var*);
@@ -831,156 +844,26 @@ template<> struct constant<double> : usr {
   var* minus();
   var* cast(const type*);
 
-  var* mul(var*);
-  var* mulr(constant<char>*);
-  var* mulr(constant<signed char>*);
-  var* mulr(constant<unsigned char>*);
-  var* mulr(constant<short int>*);
-  var* mulr(constant<unsigned short int>*);
-  var* mulr(constant<int>*);
-  var* mulr(constant<unsigned int>*);
-  var* mulr(constant<long int>*);
-  var* mulr(constant<unsigned long int>*);
-  var* mulr(constant<__int64>*);
-  var* mulr(constant<unsigned __int64>*);
-  var* mulr(constant<float>*);
+  var* mul(var* z){ return z->mulr(this); }
   var* mulr(constant<double>*);
-  var* mulr(constant<long double>*);
-  var* div(var*);
-  var* divr(constant<char>*);
-  var* divr(constant<signed char>*);
-  var* divr(constant<unsigned char>*);
-  var* divr(constant<short int>*);
-  var* divr(constant<unsigned short int>*);
-  var* divr(constant<int>*);
-  var* divr(constant<unsigned int>*);
-  var* divr(constant<long int>*);
-  var* divr(constant<unsigned long int>*);
-  var* divr(constant<__int64>*);
-  var* divr(constant<unsigned __int64>*);
-  var* divr(constant<float>*);
+  var* div(var* z){ return z->divr(this); }
   var* divr(constant<double>*);
-  var* divr(constant<long double>*);
-  var* add(var*);
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
-  var* addr(constant<int>*);
-  var* addr(constant<unsigned int>*);
-  var* addr(constant<long int>*);
-  var* addr(constant<unsigned long int>*);
-  var* addr(constant<__int64>*);
-  var* addr(constant<unsigned __int64>*);
-  var* addr(constant<float>*);
+  var* add(var* z){ return z->addr(this); }
   var* addr(constant<double>*);
-  var* addr(constant<long double>*);
-  var* sub(var*);
-  var* subr(constant<char>*);
-  var* subr(constant<signed char>*);
-  var* subr(constant<unsigned char>*);
-  var* subr(constant<short int>*);
-  var* subr(constant<unsigned short int>*);
-  var* subr(constant<int>*);
-  var* subr(constant<unsigned int>*);
-  var* subr(constant<long int>*);
-  var* subr(constant<unsigned long int>*);
-  var* subr(constant<__int64>*);
-  var* subr(constant<unsigned __int64>*);
-  var* subr(constant<float>*);
+  var* sub(var* z){ return z->subr(this); }
   var* subr(constant<double>*);
-  var* subr(constant<long double>*);
-  var* lt(var*);
-  var* ltr(constant<char>*);
-  var* ltr(constant<signed char>*);
-  var* ltr(constant<unsigned char>*);
-  var* ltr(constant<short int>*);
-  var* ltr(constant<unsigned short int>*);
-  var* ltr(constant<int>*);
-  var* ltr(constant<unsigned int>*);
-  var* ltr(constant<long int>*);
-  var* ltr(constant<unsigned long int>*);
-  var* ltr(constant<__int64>*);
-  var* ltr(constant<unsigned __int64>*);
-  var* ltr(constant<float>*);
+  var* lt(var* z){ return z->ltr(this); }
   var* ltr(constant<double>*);
-  var* ltr(constant<long double>*);
-  var* gt(var*);
-  var* gtr(constant<char>*);
-  var* gtr(constant<signed char>*);
-  var* gtr(constant<unsigned char>*);
-  var* gtr(constant<short int>*);
-  var* gtr(constant<unsigned short int>*);
-  var* gtr(constant<int>*);
-  var* gtr(constant<unsigned int>*);
-  var* gtr(constant<long int>*);
-  var* gtr(constant<unsigned long int>*);
-  var* gtr(constant<__int64>*);
-  var* gtr(constant<unsigned __int64>*);
-  var* gtr(constant<float>*);
+  var* gt(var* z){ return z->gtr(this); }
   var* gtr(constant<double>*);
-  var* gtr(constant<long double>*);
-  var* le(var*);
-  var* ler(constant<char>*);
-  var* ler(constant<signed char>*);
-  var* ler(constant<unsigned char>*);
-  var* ler(constant<short int>*);
-  var* ler(constant<unsigned short int>*);
-  var* ler(constant<int>*);
-  var* ler(constant<unsigned int>*);
-  var* ler(constant<long int>*);
-  var* ler(constant<unsigned long int>*);
-  var* ler(constant<__int64>*);
-  var* ler(constant<unsigned __int64>*);
-  var* ler(constant<float>*);
+  var* le(var* z){ return z->ler(this); }
   var* ler(constant<double>*);
-  var* ler(constant<long double>*);
-  var* ge(var*);
-  var* ger(constant<char>*);
-  var* ger(constant<signed char>*);
-  var* ger(constant<unsigned char>*);
-  var* ger(constant<short int>*);
-  var* ger(constant<unsigned short int>*);
-  var* ger(constant<int>*);
-  var* ger(constant<unsigned int>*);
-  var* ger(constant<long int>*);
-  var* ger(constant<unsigned long int>*);
-  var* ger(constant<__int64>*);
-  var* ger(constant<unsigned __int64>*);
-  var* ger(constant<float>*);
+  var* ge(var* z){ return z->ger(this); }
   var* ger(constant<double>*);
-  var* ger(constant<long double>*);
-  var* eq(var*);
-  var* eqr(constant<char>*);
-  var* eqr(constant<signed char>*);
-  var* eqr(constant<unsigned char>*);
-  var* eqr(constant<short int>*);
-  var* eqr(constant<unsigned short int>*);
-  var* eqr(constant<int>*);
-  var* eqr(constant<unsigned int>*);
-  var* eqr(constant<long int>*);
-  var* eqr(constant<unsigned long int>*);
-  var* eqr(constant<__int64>*);
-  var* eqr(constant<unsigned __int64>*);
-  var* eqr(constant<float>*);
+  var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<double>*);
-  var* eqr(constant<long double>*);
-  var* ne(var*);
-  var* ner(constant<char>*);
-  var* ner(constant<signed char>*);
-  var* ner(constant<unsigned char>*);
-  var* ner(constant<short int>*);
-  var* ner(constant<unsigned short int>*);
-  var* ner(constant<int>*);
-  var* ner(constant<unsigned int>*);
-  var* ner(constant<long int>*);
-  var* ner(constant<unsigned long int>*);
-  var* ner(constant<__int64>*);
-  var* ner(constant<unsigned __int64>*);
-  var* ner(constant<float>*);
+  var* ne(var* z){ return z->ner(this); }
   var* ner(constant<double>*);
-  var* ner(constant<long double>*);
   var* logic1(bool, int, var*);
   var* logic2(bool, const type*);
   var* cond(int, int, var*, var*);
@@ -1008,155 +891,25 @@ template<> struct constant<long double> : usr {
   var* minus();
   var* cast(const type*);
 
-  var* mul(var*);
-  var* mulr(constant<char>*);
-  var* mulr(constant<signed char>*);
-  var* mulr(constant<unsigned char>*);
-  var* mulr(constant<short int>*);
-  var* mulr(constant<unsigned short int>*);
-  var* mulr(constant<int>*);
-  var* mulr(constant<unsigned int>*);
-  var* mulr(constant<long int>*);
-  var* mulr(constant<unsigned long int>*);
-  var* mulr(constant<__int64>*);
-  var* mulr(constant<unsigned __int64>*);
-  var* mulr(constant<float>*);
-  var* mulr(constant<double>*);
+  var* mul(var* z){ return z->mulr(this); }
   var* mulr(constant<long double>*);
-  var* div(var*);
-  var* divr(constant<char>*);
-  var* divr(constant<signed char>*);
-  var* divr(constant<unsigned char>*);
-  var* divr(constant<short int>*);
-  var* divr(constant<unsigned short int>*);
-  var* divr(constant<int>*);
-  var* divr(constant<unsigned int>*);
-  var* divr(constant<long int>*);
-  var* divr(constant<unsigned long int>*);
-  var* divr(constant<__int64>*);
-  var* divr(constant<unsigned __int64>*);
-  var* divr(constant<float>*);
-  var* divr(constant<double>*);
+  var* div(var* z){ return z->divr(this); }
   var* divr(constant<long double>*);
-  var* add(var*);
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
-  var* addr(constant<int>*);
-  var* addr(constant<unsigned int>*);
-  var* addr(constant<long int>*);
-  var* addr(constant<unsigned long int>*);
-  var* addr(constant<__int64>*);
-  var* addr(constant<unsigned __int64>*);
-  var* addr(constant<float>*);
-  var* addr(constant<double>*);
+  var* add(var* z){ return z->addr(this); }
   var* addr(constant<long double>*);
-  var* sub(var*);
-  var* subr(constant<char>*);
-  var* subr(constant<signed char>*);
-  var* subr(constant<unsigned char>*);
-  var* subr(constant<short int>*);
-  var* subr(constant<unsigned short int>*);
-  var* subr(constant<int>*);
-  var* subr(constant<unsigned int>*);
-  var* subr(constant<long int>*);
-  var* subr(constant<unsigned long int>*);
-  var* subr(constant<__int64>*);
-  var* subr(constant<unsigned __int64>*);
-  var* subr(constant<float>*);
-  var* subr(constant<double>*);
+  var* sub(var* z){ return z->subr(this); }
   var* subr(constant<long double>*);
-  var* lt(var*);
-  var* ltr(constant<char>*);
-  var* ltr(constant<signed char>*);
-  var* ltr(constant<unsigned char>*);
-  var* ltr(constant<short int>*);
-  var* ltr(constant<unsigned short int>*);
-  var* ltr(constant<int>*);
-  var* ltr(constant<unsigned int>*);
-  var* ltr(constant<long int>*);
-  var* ltr(constant<unsigned long int>*);
-  var* ltr(constant<__int64>*);
-  var* ltr(constant<unsigned __int64>*);
-  var* ltr(constant<float>*);
-  var* ltr(constant<double>*);
+  var* lt(var* z){ return z->ltr(this); }
   var* ltr(constant<long double>*);
-  var* gt(var*);
-  var* gtr(constant<char>*);
-  var* gtr(constant<signed char>*);
-  var* gtr(constant<unsigned char>*);
-  var* gtr(constant<short int>*);
-  var* gtr(constant<unsigned short int>*);
-  var* gtr(constant<int>*);
-  var* gtr(constant<unsigned int>*);
-  var* gtr(constant<long int>*);
-  var* gtr(constant<unsigned long int>*);
-  var* gtr(constant<__int64>*);
-  var* gtr(constant<unsigned __int64>*);
-  var* gtr(constant<float>*);
-  var* gtr(constant<double>*);
+  var* gt(var* z){ return z->gtr(this); }
   var* gtr(constant<long double>*);
-  var* le(var*);
-  var* ler(constant<char>*);
-  var* ler(constant<signed char>*);
-  var* ler(constant<unsigned char>*);
-  var* ler(constant<short int>*);
-  var* ler(constant<unsigned short int>*);
-  var* ler(constant<int>*);
-  var* ler(constant<unsigned int>*);
-  var* ler(constant<long int>*);
-  var* ler(constant<unsigned long int>*);
-  var* ler(constant<__int64>*);
-  var* ler(constant<unsigned __int64>*);
-  var* ler(constant<float>*);
-  var* ler(constant<double>*);
+  var* le(var* z){ return z->ler(this); }
   var* ler(constant<long double>*);
-  var* ge(var*);
-  var* ger(constant<char>*);
-  var* ger(constant<signed char>*);
-  var* ger(constant<unsigned char>*);
-  var* ger(constant<short int>*);
-  var* ger(constant<unsigned short int>*);
-  var* ger(constant<int>*);
-  var* ger(constant<unsigned int>*);
-  var* ger(constant<long int>*);
-  var* ger(constant<unsigned long int>*);
-  var* ger(constant<__int64>*);
-  var* ger(constant<unsigned __int64>*);
-  var* ger(constant<float>*);
-  var* ger(constant<double>*);
+  var* ge(var* z){ return z->ger(this); }
   var* ger(constant<long double>*);
-  var* eq(var*);
-  var* eqr(constant<char>*);
-  var* eqr(constant<signed char>*);
-  var* eqr(constant<unsigned char>*);
-  var* eqr(constant<short int>*);
-  var* eqr(constant<unsigned short int>*);
-  var* eqr(constant<int>*);
-  var* eqr(constant<unsigned int>*);
-  var* eqr(constant<long int>*);
-  var* eqr(constant<unsigned long int>*);
-  var* eqr(constant<__int64>*);
-  var* eqr(constant<unsigned __int64>*);
-  var* eqr(constant<float>*);
-  var* eqr(constant<double>*);
+  var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<long double>*);
-  var* ne(var*);
-  var* ner(constant<char>*);
-  var* ner(constant<signed char>*);
-  var* ner(constant<unsigned char>*);
-  var* ner(constant<short int>*);
-  var* ner(constant<unsigned short int>*);
-  var* ner(constant<int>*);
-  var* ner(constant<unsigned int>*);
-  var* ner(constant<long int>*);
-  var* ner(constant<unsigned long int>*);
-  var* ner(constant<__int64>*);
-  var* ner(constant<unsigned __int64>*);
-  var* ner(constant<float>*);
-  var* ner(constant<double>*);
+  var* ne(var* z){ return z->ner(this); }
   var* ner(constant<long double>*);
   var* logic1(bool, int, var*);
   var* logic2(bool, const type*);
@@ -1183,11 +936,6 @@ template<> struct constant<void*> : usr {
   var* offref(const type*, var*);
   var* indirection();
   var* add(var* z){ return z->addr(this); }
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
   var* addr(constant<int>*);
   var* addr(constant<unsigned int>*);
   var* addr(constant<long int>*);
@@ -1196,20 +944,15 @@ template<> struct constant<void*> : usr {
   var* addr(constant<unsigned __int64>*);
   var* sub(var* z){ return z->subr(this); }
   var* subr(constant<void*>*);
-  var* lt(var*);
+  var* lt(var* z){ return z->ltr(this); }
   var* ltr(constant<void*>*);
-  var* gt(var*);
+  var* gt(var* z){ return z->gtr(this); }
   var* gtr(constant<void*>*);
-  var* le(var*);
+  var* le(var* z){ return z->ler(this); }
   var* ler(constant<void*>*);
-  var* ge(var*);
+  var* ge(var* z){ return z->ger(this); }
   var* ger(constant<void*>*);
-  var* eq(var*);
-  var* eqr(constant<char>*);
-  var* eqr(constant<signed char>*);
-  var* eqr(constant<unsigned char>*);
-  var* eqr(constant<short int>*);
-  var* eqr(constant<unsigned short int>*);
+  var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<int>*);
   var* eqr(constant<unsigned int>*);
   var* eqr(constant<long int>*);
@@ -1217,12 +960,7 @@ template<> struct constant<void*> : usr {
   var* eqr(constant<__int64>*);
   var* eqr(constant<unsigned __int64>*);
   var* eqr(constant<void*>*);
-  var* ne(var*);
-  var* ner(constant<char>*);
-  var* ner(constant<signed char>*);
-  var* ner(constant<unsigned char>*);
-  var* ner(constant<short int>*);
-  var* ner(constant<unsigned short int>*);
+  var* ne(var* z){ return z->ner(this); }
   var* ner(constant<int>*);
   var* ner(constant<unsigned int>*);
   var* ner(constant<long int>*);
@@ -1252,7 +990,7 @@ template<> struct constant<void*> : usr {
 };
 
 struct with_initial : usr {
-  std::map<int,var*> m_value;
+  std::map<int, var*> m_value;
 
   // T obj = ...;
   with_initial(const usr& u) : usr(u) { m_flag = flag_t(m_flag|usr::WITH_INI);  }
@@ -1281,31 +1019,26 @@ struct addrof : virtual var {
   addrof(const type*, var*, int);
   var* rvalue();
   var* indirection();
-  var* add(var*);
-  var* addr(constant<char>*);
-  var* addr(constant<signed char>*);
-  var* addr(constant<unsigned char>*);
-  var* addr(constant<short int>*);
-  var* addr(constant<unsigned short int>*);
+  var* add(var* z){ return z->addr(this); }
   var* addr(constant<int>*);
   var* addr(constant<unsigned int>*);
   var* addr(constant<long int>*);
   var* addr(constant<unsigned long int>*);
   var* addr(constant<__int64>*);
   var* addr(constant<unsigned __int64>*);
-  var* sub(var*);
+  var* sub(var* z){ return z->subr(this); }
   var* subr(addrof*);
-  var* lt(var*);
+  var* lt(var* z){ return z->ltr(this); }
   var* ltr(addrof*);
-  var* gt(var*);
+  var* gt(var* z){ return z->gtr(this); }
   var* gtr(addrof*);
-  var* le(var*);
+  var* le(var* z){ return z->ler(this); }
   var* ler(addrof*);
-  var* ge(var*);
+  var* ge(var* z){ return z->ger(this); }
   var* ger(addrof*);
-  var* eq(var*);
+  var* eq(var* z){ return z->eqr(this); }
   var* eqr(addrof*);
-  var* ne(var*);
+  var* ne(var* z){ return z->ner(this); }
   var* ner(addrof*);
   var* cast(const type*);
   var* offref(const type*, var*);

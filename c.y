@@ -163,50 +163,66 @@ cast_expression
 
 multiplicative_expression
   : cast_expression
-  | multiplicative_expression '*' cast_expression  { $$ = $1->mul($3); }
-  | multiplicative_expression '/' cast_expression  { $$ = $1->div($3); }
-  | multiplicative_expression '%' cast_expression  { $$ = $1->mod($3); }
+  | multiplicative_expression '*' cast_expression
+    { $$ = expr::binary('*', $1, $3); }
+  | multiplicative_expression '/' cast_expression
+    { $$ = expr::binary('/', $1, $3); }
+  | multiplicative_expression '%' cast_expression
+    { $$ = expr::binary('%', $1, $3); }
   ;
 
 additive_expression
   : multiplicative_expression
-  | additive_expression '+' multiplicative_expression  { $$ = $1->add($3); }
-  | additive_expression '-' multiplicative_expression  { $$ = $1->sub($3); }
+  | additive_expression '+' multiplicative_expression
+    { $$ = expr::binary('+', $1, $3); }
+  | additive_expression '-' multiplicative_expression
+    { $$ = expr::binary('-', $1, $3); }
   ;
 
 shift_expression
   : additive_expression
-  | shift_expression LSH_MK additive_expression  { $$ = $1->lsh($3); }
-  | shift_expression RSH_MK additive_expression  { $$ = $1->rsh($3); }
+  | shift_expression LSH_MK additive_expression
+    { $$ = expr::binary(LSH_MK, $1, $3); }
+  | shift_expression RSH_MK additive_expression
+    { $$ = expr::binary(RSH_MK, $1, $3); }
   ;
 
 relational_expression
   : shift_expression
-  | relational_expression '<' shift_expression           { $$ = $1->lt($3); }
-  | relational_expression '>' shift_expression           { $$ = $1->gt($3); }
-  | relational_expression LESSEQ_MK shift_expression     { $$ = $1->le($3); }
-  | relational_expression GREATEREQ_MK shift_expression  { $$ = $1->ge($3); }
+  | relational_expression '<' shift_expression
+    { $$ = expr::binary('<', $1, $3); }
+  | relational_expression '>' shift_expression
+    { $$ = expr::binary('>', $1, $3); }
+  | relational_expression LESSEQ_MK shift_expression
+    { $$ = expr::binary(LESSEQ_MK, $1, $3); }
+  | relational_expression GREATEREQ_MK shift_expression
+    { $$ = expr::binary(GREATEREQ_MK, $1, $3); }
   ;
 
 equality_expression
   : relational_expression
-  | equality_expression EQUAL_MK relational_expression  { $$ = $1->eq($3); }
-  | equality_expression NOTEQ_MK relational_expression  { $$ = $1->ne($3); }
+  | equality_expression EQUAL_MK relational_expression
+    { $$ = expr::binary(EQUAL_MK, $1, $3); }
+  | equality_expression NOTEQ_MK relational_expression
+    { $$ = expr::binary(NOTEQ_MK, $1, $3); }
   ;
 
 AND_expression
   : equality_expression
-  | AND_expression '&' equality_expression  { $$ = $1->bit_and($3); }
+  | AND_expression '&' equality_expression
+    { $$ = expr::binary('&', $1, $3); }
   ;
 
 exclusive_OR_expression
   : AND_expression
-  | exclusive_OR_expression '^' AND_expression  { $$ = $1->bit_xor($3); }
+  | exclusive_OR_expression '^' AND_expression 
+    { $$ = expr::binary('^', $1,$3); }
   ;
 
 inclusive_OR_expression
   : exclusive_OR_expression
-  | inclusive_OR_expression '|' exclusive_OR_expression  { $$ = $1->bit_or($3); }
+  | inclusive_OR_expression '|' exclusive_OR_expression
+    { $$ = expr::binary('|', $1, $3); }
   ;
 
 logical_AND_expression
@@ -242,17 +258,28 @@ cond2nd
 
 assignment_expression
   : conditional_expression
-  | unary_expression      '='      assignment_expression  { $$ = $1->assign($3); }
-  | unary_expression MUL_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->mul($3)); }
-  | unary_expression DIV_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->div($3)); }
-  | unary_expression MOD_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->mod($3)); }
-  | unary_expression ADD_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->add($3)); }
-  | unary_expression SUB_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->sub($3)); }
-  | unary_expression LSH_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->lsh($3)); }
-  | unary_expression RSH_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->rsh($3)); }
-  | unary_expression AND_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->bit_and($3)); }
-  | unary_expression XOR_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->bit_xor($3)); }
-  | unary_expression  OR_ASSIGN_MK assignment_expression  { $$ = $1->assign($1->bit_or($3)); }
+  | unary_expression      '='      assignment_expression
+    { $$ = $1->assign($3); }
+  | unary_expression MUL_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('*', $1, $3)); }
+  | unary_expression DIV_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('/', $1, $3)); }
+  | unary_expression MOD_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('%', $1, $3)); }
+  | unary_expression ADD_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('+', $1, $3)); }
+  | unary_expression SUB_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('-', $1, $3)); }
+  | unary_expression LSH_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary(LSH_MK, $1, $3)); }
+  | unary_expression RSH_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary(RSH_MK, $1, $3)); }
+  | unary_expression AND_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('&', $1, $3)); }
+  | unary_expression XOR_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('^', $1, $3)); }
+  | unary_expression  OR_ASSIGN_MK assignment_expression
+    { $$ = $1->assign(expr::binary('|', $1, $3)); }
   ;
 
 expression

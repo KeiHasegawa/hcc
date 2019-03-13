@@ -1047,7 +1047,7 @@ c_compiler::var* c_compiler::array_type::vsize() const
   if ( !size )
     return 0;
   usr* dim = integer::create(m_dim);
-  return size->mul(dim);
+  return expr::binary('*', size, dim);
 }
 
 const c_compiler::array_type*
@@ -1823,11 +1823,11 @@ c_compiler::var* c_compiler::varray_type::vsize() const
   using namespace std;
   const type* T = m_T->complete_type();
   if ( var* vs = T->vsize() )
-    return m_dim->mul(vs);
+    return expr::binary('*', m_dim, vs);
 
   int n = T->size();
   usr* size = integer::create(n);
-  return m_dim->mul(size);
+  return expr::binary('*', m_dim, size);
 }
 
 const c_compiler::varray_type*

@@ -55,7 +55,7 @@ namespace conversion {
 }
 
 namespace expr {
-  var* binary(int op, var&, var&);
+  var* binary(int op, var*, var*);
   var* compound_literal(const type*, parse::initializer_list*);
   var* size(const type*);
   var* cast(const type*, var*);

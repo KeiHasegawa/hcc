@@ -180,44 +180,44 @@ namespace c_compiler {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<int>::logic1(bool ANDAND, int n, var* z)
+  var* constant<int>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<int>::logic2(bool, const type*)
+  var* constant<int>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<unsigned int>::logic1(bool ANDAND, int n, var* z)
+  var* constant<unsigned int>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<unsigned int>::logic2(bool, const type*)
+  var* constant<unsigned int>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<long int>::logic1(bool ANDAND, int n, var* z)
+  var* constant<long int>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<long int>::logic2(bool, const type*)
+  var* constant<long int>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<unsigned long int>::logic1(bool ANDAND, int n, var* z)
+  var* constant<unsigned long int>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<unsigned long int>::logic2(bool, const type*)
+  var* constant<unsigned long int>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<__int64>::logic1(bool ANDAND, int n, var* z)
+  var* constant<__int64>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<__int64>::logic2(bool, const type*)
+  var* constant<__int64>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
   
-  template<> var* constant<unsigned __int64>::logic1(bool ANDAND, int n, var* z)
+  var* constant<unsigned __int64>::logic1(bool ANDAND, int n, var* z)
   { return constant_impl::logic1(ANDAND,n,this,z); }
-  template<> var* constant<unsigned __int64>::logic2(bool, const type*)
+  var* constant<unsigned __int64>::logic2(bool, const type*)
   {
     return zero() ? integer::create(0) : integer::create(1);
   }
@@ -449,22 +449,22 @@ namespace c_compiler {
   template<> var* constant<unsigned short int>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<int>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<int>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<unsigned int>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<unsigned int>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<long int>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<long int>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<unsigned long int>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<unsigned long int>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<__int64>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<__int64>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
   
-  template<> var* constant<unsigned __int64>::cond(int n, int m, var* expr2, var* expr3)
+  var* constant<unsigned __int64>::cond(int n, int m, var* expr2, var* expr3)
   { return constant_impl::cond(this,n,expr2,m,expr3); }
 } // end of namespace c_compiler
 

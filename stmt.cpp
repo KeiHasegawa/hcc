@@ -170,17 +170,17 @@ namespace c_compiler {
   void constant<short int>::if_expr(){ stmt::if_impl::expr(this); }
   template<>
   void constant<unsigned short int>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<int>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<unsigned int>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<long int>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<unsigned long int>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<__int64>::if_expr(){ stmt::if_impl::expr(this); }
-  template<>
+
   void constant<unsigned __int64>::if_expr(){ stmt::if_impl::expr(this); }
 } // end of namespace c_compiler
 
@@ -236,17 +236,17 @@ namespace c_compiler {
   void constant<short int>::else_action(){ stmt::if_impl::_else(this); }
   template<>
   void constant<unsigned short int>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<int>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<unsigned int>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<long int>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<unsigned long int>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<__int64>::else_action(){ stmt::if_impl::_else(this); }
-  template<>
+
   void constant<unsigned __int64>::else_action(){ stmt::if_impl::_else(this); }
 } // end of namespace c_compiler
 
@@ -332,17 +332,17 @@ namespace c_compiler {
   void constant<short int>::end_if(){ stmt::if_impl::end(this); }
   template<>
   void constant<unsigned short int>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<int>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<unsigned int>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<long int>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<unsigned long int>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<__int64>::end_if(){ stmt::if_impl::end(this); }
-  template<>
+
   void constant<unsigned __int64>::end_if(){ stmt::if_impl::end(this); }
 } // end of namespace c_compiler
 
@@ -434,7 +434,11 @@ namespace c_compiler { namespace stmt {
         case_t(var* v, to3ac* to, const file_t& file, scope* s)
           : m_label(v), m_to(to), m_file(file), m_scope(s) {}
         static bool cmp(case_t x, var* y)
-        { return x.m_label->eq(y)->value() != 0; }
+        {
+	  var* tmp = expr::binary(EQUAL_MK, x.m_label, y);
+	  assert(tmp->isconstant());
+	  return tmp->value() != 0;
+	}
       };
       std::vector<case_t> m_cases;
       struct default_t {
@@ -674,17 +678,17 @@ namespace c_compiler {
   void constant<short int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
   template<>
   void constant<unsigned short int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<unsigned int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<long int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<unsigned long int>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<__int64>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
-  template<>
+
   void constant<unsigned __int64>::while_expr(to3ac* to){ stmt::while_impl::expr(this,to); }
 } // end of namespace c_compiler
 
@@ -790,17 +794,17 @@ namespace c_compiler {
   void constant<short int>::end_while(){ stmt::while_impl::end(this); }
   template<>
   void constant<unsigned short int>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<int>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<unsigned int>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<long int>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<unsigned long int>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<__int64>::end_while(){ stmt::while_impl::end(this); }
-  template<>
+
   void constant<unsigned __int64>::end_while(){ stmt::while_impl::end(this); }
 } // end of namespace c_compiler
 
@@ -974,17 +978,17 @@ namespace c_compiler {
   void constant<short int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
   template<>
   void constant<unsigned short int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<unsigned int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<long int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<unsigned long int>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<__int64>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
-  template<>
+
   void constant<unsigned __int64>::end_do(to3ac* to){ stmt::do_impl::end(this,to); }
 } // end of namespace c_compiler
 
@@ -1172,17 +1176,17 @@ namespace c_compiler {
   void constant<short int>::for_expr2(){ stmt::for_impl::expr(this); }
   template<>
   void constant<unsigned short int>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<int>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<unsigned int>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<long int>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<unsigned long int>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<__int64>::for_expr2(){ stmt::for_impl::expr(this); }
-  template<>
+
   void constant<unsigned __int64>::for_expr2(){ stmt::for_impl::expr(this); }
 } // end of namespace c_compiler
 
@@ -1305,17 +1309,17 @@ namespace c_compiler {
   void constant<short int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
   template<>
   void constant<unsigned short int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<unsigned int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<long int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<unsigned long int>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<__int64>::end_for(int leave){ stmt::for_impl::end(this,leave); }
-  template<>
+
   void constant<unsigned __int64>::end_for(int leave){ stmt::for_impl::end(this,leave); }
 } // end of namespace c_compiler
 

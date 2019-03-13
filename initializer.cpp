@@ -621,7 +621,7 @@ int c_compiler::initializer::bit_field(var* y, argument& arg)
   const type* T = bf->integer_type();
   y = y->cast(T);
   usr* a = refbit::mask(bf->bit());
-  y = y->bit_and(a);
+  y = expr::binary('&', y, a);
   int pos = rec->position(member);
   var* p = integer::create(pos);
   y = y->lsh(p);
@@ -632,8 +632,8 @@ int c_compiler::initializer::bit_field(var* y, argument& arg)
     return arg.off;
   }
   usr* b = refbit::mask(bf->bit(),pos);
-  x = x->bit_and(b);
-  x = x->bit_or(y);
+  x = expr::binary('&', x, b);
+  x = expr::binary('|', x, y);
   arg.nth_max = max(arg.nth_max,++arg.nth);
   const usr::flag_t& flag = member->m_flag;
   if ( flag & usr::MSB_FIELD )

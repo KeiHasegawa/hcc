@@ -371,17 +371,18 @@ namespace c_compiler {
   { return constant_impl::cast(type,this); }
   template<> var* constant<unsigned short int>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<int>::cast(const type* type)
+
+  var* constant<int>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<unsigned int>::cast(const type* type)
+  var* constant<unsigned int>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<long int>::cast(const type* type)
+  var* constant<long int>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<unsigned long int>::cast(const type* type)
+  var* constant<unsigned long int>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<__int64>::cast(const type* type)
+  var* constant<__int64>::cast(const type* type)
   { return constant_impl::cast(type,this); }
-  template<> var* constant<unsigned __int64>::cast(const type* type)
+  var* constant<unsigned __int64>::cast(const type* type)
   { return constant_impl::cast(type,this); }
 } // end of namespace c_compiler
 
