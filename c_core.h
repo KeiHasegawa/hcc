@@ -332,8 +332,8 @@ template<class V> struct constant : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<int> : usr {
@@ -407,8 +407,8 @@ template<> struct constant<int> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<unsigned int> : usr {
@@ -482,8 +482,8 @@ template<> struct constant<unsigned int> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<long int> : usr {
@@ -557,8 +557,8 @@ template<> struct constant<long int> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<unsigned long int> : usr {
@@ -632,8 +632,8 @@ template<> struct constant<unsigned long int> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<__int64> : usr {
@@ -712,8 +712,8 @@ template<> struct constant<__int64> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<unsigned __int64> : usr {
@@ -787,8 +787,8 @@ template<> struct constant<unsigned __int64> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<float> : usr {
@@ -833,8 +833,8 @@ template<> struct constant<float> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<double> : usr {
@@ -879,8 +879,8 @@ template<> struct constant<double> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 template<> struct constant<long double> : usr {
@@ -926,8 +926,8 @@ template<> struct constant<long double> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0), b(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0), b(0) {}
 };
 
 template<> struct constant<void*> : usr {
@@ -985,8 +985,8 @@ template<> struct constant<void*> : usr {
   void for_expr2();
   void end_for(int);
   void end_do(to3ac*);
-  constant(std::string name, const type* type, flag_t flag, const file_t& file)
-    : usr(name,type,flag,file), m_value(0) {}
+  constant(std::string name, const type* T, flag_t flag, const file_t& file)
+    : usr(name,T,flag,file), m_value(0) {}
 };
 
 struct with_initial : usr {

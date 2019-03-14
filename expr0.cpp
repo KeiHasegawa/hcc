@@ -1687,12 +1687,18 @@ namespace c_compiler { namespace constant_impl {
     using namespace std;
     const type* Ty = y->m_type;
     Ty = Ty->unqualified();
-    if (Ty->m_id == type::CHAR) {
-      unsigned int n = int_type::create()->size();
-      return integer::create(n);
-    }
-    else
+    type::id_t id = Ty->m_id;
+    switch(id) {
+    case type::CHAR:
+    case type::SCHAR:
+    case type::UCHAR:
+      {
+	unsigned int n = int_type::create()->size();
+	return integer::create(n);
+      }
+    default:
       return y->var::size(n);
+    }
   }
 } } // end of namespace constant_impl and c_compiler
 
