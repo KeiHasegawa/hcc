@@ -13,12 +13,13 @@ c_compiler::var* c_compiler::var_impl::lsh(var* y, var* z)
 {
   const type* Ty = y->m_type;
   const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();  
   if ( !Ty->integer() || !Tz->integer() ){
     using namespace error::expr::binary;
     invalid(parse::position,LSH_MK, Ty, Tz);
-    Ty = int_type::create();
+    Tx = int_type::create();
   }
-  const type* Tx = Ty->unqualified();
+
   var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);
@@ -144,12 +145,13 @@ c_compiler::var* c_compiler::var_impl::rsh(var* y, var* z)
 {
   const type* Ty = y->m_type;
   const type* Tz = z->m_type;
+  const type* Tx = Ty->unqualified();
   if ( !Ty->integer() || !Tz->integer()) {
     using namespace error::expr::binary;
     invalid(parse::position,RSH_MK, Ty, Tz);
-    Ty = int_type::create();
+    Tx = int_type::create();
   }
-  const type* Tx = Ty->unqualified();
+
   var* x = new var(Tx);
   if ( scope::current->m_id == scope::BLOCK ){
     block* b = static_cast<block*>(scope::current);

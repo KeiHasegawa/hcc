@@ -1681,50 +1681,20 @@ c_compiler::var* c_compiler::generated::size()
   return expr::size(m_org);
 }
 
-namespace c_compiler { namespace constant_impl {
-  template<class T> var* size(constant<T>* y, int n)
-  {
-    using namespace std;
-    const type* Ty = y->m_type;
-    Ty = Ty->unqualified();
-    type::id_t id = Ty->m_id;
-    switch(id) {
-    case type::CHAR:
-    case type::SCHAR:
-    case type::UCHAR:
-      {
-	unsigned int n = int_type::create()->size();
-	return integer::create(n);
-      }
-    default:
-      return y->var::size(n);
-    }
-  }
-} } // end of namespace constant_impl and c_compiler
-
 namespace c_compiler {
-  template<> var* constant<char>::size(int n)
-  { return constant_impl::size(this,n); }
+  template<> var* constant<char>::size(int)
+  {
+    unsigned int n = int_type::create()->size();
+    return integer::create(n);
+  }
   template<> var* constant<signed char>::size(int n)
-  { return constant_impl::size(this,n); }
+  { return var::size(n); }
   template<> var* constant<unsigned char>::size(int n)
-  { return constant_impl::size(this,n); }
+  { return var::size(n); }
   template<> var* constant<short int>::size(int n)
-  { return constant_impl::size(this,n); }
+  { return var::size(n); }
   template<> var* constant<unsigned short int>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<int>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<unsigned int>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<long int>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<unsigned long int>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<__int64>::size(int n)
-  { return constant_impl::size(this,n); }
-  var* constant<unsigned __int64>::size(int n)
-  { return constant_impl::size(this,n); }
+  { return var::size(n); }
 } // end of namespace c_compiler
 
 c_compiler::var* c_compiler::refbit::size(int n)

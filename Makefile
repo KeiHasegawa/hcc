@@ -81,7 +81,7 @@ $(PROG):$(OBJS)
 	$(CXX) $(DEBUG_FLAG) -o $(PROG) $(OBJS) $(DYNAMIC_LOADING_LIBRARY_FLAGS)
 
 clean:
-	$(RM) $(PROG) *.o gmon.out c_y.cpp* c_y.h* c_l.cpp* *~
+	$(RM) $(PROG) *.o gmon.out c_y.cpp* c_y.h* c_l.cpp* c.output *~
 	$(RM) error_euc.* warning_euc.* error_utf.* warning_utf.*
 	$(RM) -r .vs x64 Debug Release
 

@@ -397,7 +397,6 @@ template<> struct constant<int> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
@@ -472,7 +471,6 @@ template<> struct constant<unsigned int> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
@@ -547,7 +545,6 @@ template<> struct constant<long int> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
@@ -622,7 +619,6 @@ template<> struct constant<unsigned long int> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
@@ -702,7 +698,6 @@ template<> struct constant<__int64> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
@@ -777,7 +772,6 @@ template<> struct constant<unsigned __int64> : usr {
   bool zero() const { return m_value == 0; }
   var* _not();
   bool isconstant(bool = false) const { return true; }
-  var* size(int);
   __int64 value() const { return m_value; }
   void if_expr();
   void else_action();
