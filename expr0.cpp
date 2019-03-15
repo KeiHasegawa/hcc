@@ -1503,6 +1503,9 @@ c_compiler::var* c_compiler::refaddr::rvalue()
   else
     garbage.push_back(ret);
   var* off = integer::create(m_addrof.m_offset);
+  const type* Tr = m_addrof.m_ref->m_type;
+  Tr = Tr->complete_type();
+  assert(Tr->aggregate());
   code.push_back(new roff3ac(ret,m_addrof.m_ref,off));
   return ret;
 }
