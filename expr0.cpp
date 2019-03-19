@@ -1575,7 +1575,7 @@ c_compiler::var* c_compiler::refbit::rvalue()
   b->m_vars.push_back(tmp);
   code.push_back(new and3ac(tmp,ret,m));
   ret = tmp;
-  if ( T->_signed() ){
+  if (T->_signed() && m_bit > 1) {
     usr* m = integer::create(1 << (m_bit-1));
     var* tmp = new var(T);
     b->m_vars.push_back(tmp);
