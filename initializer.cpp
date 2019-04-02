@@ -5,11 +5,13 @@
 #include "yy.h"
 #include "c_y.h"
 
-namespace c_compiler { namespace initializer {
-  usr* argument::dst;
-  int assign(var*, argument&);
-  int lst(parse::initializer_list*, argument&);
-} } // end of namespace initializer and c_compiler
+namespace c_compiler {
+  namespace initializer {
+    usr* argument::dst;
+    int assign(var*, argument&);
+    int lst(parse::initializer_list*, argument&);
+  }  // end of namespace initializer
+}  // end of namespace c_compiler
 
 int c_compiler::initializer::eval(parse::initializer* ini, argument& arg)
 {
@@ -17,23 +19,22 @@ int c_compiler::initializer::eval(parse::initializer* ini, argument& arg)
     initializer::lst(ini->second,arg);
 }
 
-namespace c_compiler { namespace initializer {
-  int char_array_string(var*, argument&);
-  struct merge {
-    std::map<int,var*>& v;
-    int offset;
-    merge(std::map<int,var*>& vv, int o) : v(vv), offset(o) {}
-    void operator()(const std::pair<int,var*>& p)
-    {
-      v[p.first+offset] = p.second;
-    }
-  };
-  int bit_field(var*, argument&);
-} } // end of namespace initializer and c_compiler
-
-namespace c_compiler { namespace initializer {
-  int assign_special(var*, argument&);
-} } // end of namespace initializer and c_compiler
+namespace c_compiler {
+  namespace initializer {
+    int char_array_string(var*, argument&);
+    struct merge {
+      std::map<int,var*>& v;
+      int offset;
+      merge(std::map<int,var*>& vv, int o) : v(vv), offset(o) {}
+      void operator()(const std::pair<int,var*>& p)
+      {
+        v[p.first+offset] = p.second;
+      }
+    };
+    int assign_special(var*, argument&);
+    int bit_field(var*, argument&);
+  }  // end of namespace initializer
+}  // end of namespace c_compiler
 
 int c_compiler::initializer::assign(var* y, argument& arg)
 {
@@ -84,24 +85,28 @@ int c_compiler::initializer::assign(var* y, argument& arg)
   return arg.off;
 }
 
-namespace c_compiler { namespace initializer { namespace char_array_string_impl {
-  usr* is_string(var*);
-  const array_type* char_array(const type*, int, bool*);
-  struct eval {
-    argument& arg;
-    bool m_wide;
-    bool m_escape;
-    int m_hex_mode;
-    char m_prev;
-    bool m_shiftjis_state;
-    int m_jis_state;
-    int m_euc_state;
-    eval(argument& a, bool wide)
-      : arg(a), m_wide(wide), m_escape(false), m_hex_mode(0), m_prev(0),
-        m_shiftjis_state(false), m_jis_state(0), m_euc_state(0) {}
-    int operator()(int);
-  };
-} } } // end of namespace char_array_string_impl, initializer and c_compiler
+namespace c_compiler {
+  namespace initializer {
+    namespace char_array_string_impl {
+      usr* is_string(var*);
+      const array_type* char_array(const type*, int, bool*);
+      struct eval {
+        argument& arg;
+        bool m_wide;
+        bool m_escape;
+        int m_hex_mode;
+        char m_prev;
+        bool m_shiftjis_state;
+        int m_jis_state;
+        int m_euc_state;
+        eval(argument& a, bool wide)
+          : arg(a), m_wide(wide), m_escape(false), m_hex_mode(0), m_prev(0),
+            m_shiftjis_state(false), m_jis_state(0), m_euc_state(0) {}
+        int operator()(int);
+      };
+    }  // end of namespace char_array_string_impl
+  }  // end of namespace initializer
+}  // end of namespace c_compiler
 
 int c_compiler::initializer::char_array_string(var* y, argument& arg)
 {
@@ -152,13 +157,16 @@ c_compiler::initializer::char_array_string_impl::is_string(var* y)
   return 0;
 }
 
-namespace c_compiler { namespace initializer {
-  namespace char_array_string_impl {
-    const array_type* char_array(const type*);
-  }
-} } // end of namespace initializer and c_compiler
+namespace c_compiler {
+  namespace initializer {
+    namespace char_array_string_impl {
+      const array_type* char_array(const type*);
+    }  // end of namespace char_array_string_impl
+  }  // end of namespace initializer
+}  // end of namespace c_compiler
 
-const c_compiler::array_type* c_compiler::initializer::char_array_string_impl::char_array(const type* T)
+const c_compiler::array_type*
+c_compiler::initializer::char_array_string_impl::char_array(const type* T)
 {
   if ( T->m_id != type::ARRAY )
     return 0;
@@ -172,7 +180,8 @@ const c_compiler::array_type* c_compiler::initializer::char_array_string_impl::c
 }
 
 const c_compiler::array_type*
-c_compiler::initializer::char_array_string_impl::char_array(const type* T, int nth, bool* brace)
+c_compiler::initializer::char_array_string_impl::
+char_array(const type* T, int nth, bool* brace)
 {
   using namespace std;
   if ( nth < 0 )
@@ -333,10 +342,12 @@ int c_compiler::initializer::char_array_string_impl::eval::operator()(int c)
   return arg.off;
 }
 
-namespace c_compiler { namespace initializer {
-  int order(const record_type*, int);
-  int member_size(const record_type*);
-} } // end of namespace initializer and c_compiler
+namespace c_compiler {
+  namespace initializer {
+    int order(const record_type*, int);
+    int member_size(const record_type*);
+  }  // end of namespace initializer
+}  // end of namespace c_compiler
 
 int c_compiler::initializer::assign_special(var* y, argument& arg)
 {
@@ -421,11 +432,15 @@ int c_compiler::initializer::lst(parse::initializer_list* y, argument& arg)
   return arg.off;
 }
 
-namespace c_compiler { namespace initializer_list {
-  int designation_handler(parse::designation*, parse::initializer*, initializer::argument&);
-} } // end of namespace initializer_list and c_compiler
+namespace c_compiler {
+  namespace initializer_list {
+  int designation_handler(parse::designation*, parse::initializer*,
+                          initializer::argument&);
+  }  // end of namespace initializer_list
+}  // end of namespace c_compiler
 
-int c_compiler::initializer_list::eval::operator()(parse::ppair<parse::designation*, parse::initializer*>* p)
+int c_compiler::initializer_list::eval::
+operator()(parse::ppair<parse::designation*, parse::initializer*>* p)
 {
   using namespace initializer;
   if ( parse::designation* d = p->first )
@@ -434,10 +449,12 @@ int c_compiler::initializer_list::eval::operator()(parse::ppair<parse::designati
     return ++arg.list_pos, initializer::eval(p->second,arg);
 }
 
-namespace c_compiler { namespace initializer_list {
-  int designator(parse::designator*, initializer::argument*);
-  const type* complete(const type*, int);
-} } // end of namespace initializer_list and c_compiler
+namespace c_compiler {
+  namespace initializer_list {
+    int designator(parse::designator*, initializer::argument*);
+    const type* complete(const type*, int);
+  }  // end of namespace initializer_list
+}  // end of namespace c_compiler
 
 int
 c_compiler::initializer_list::designation_handler(parse::designation* des,
@@ -462,7 +479,8 @@ c_compiler::initializer_list::designation_handler(parse::designation* des,
   arg.off_max = max(arg.off_max, arg.off = tmp1.off + tmp2.off);
   
   map<int, var*> u3;
-  argument tmp3(complete(arg.T,arg.off_max),u3,0,0,0,0,arg.list_pos,arg.list_len);
+  const type* T = complete(arg.T,arg.off_max);
+  argument tmp3(T,u3,0,0,0,0,arg.list_pos,arg.list_len);
   fill_zero(tmp3);
   u3.erase(u3.begin(),u3.lower_bound(arg.off_max));
   for_each(u3.begin(),u3.end(),initializer::merge(arg.V,0));
@@ -472,14 +490,17 @@ c_compiler::initializer_list::designation_handler(parse::designation* des,
   return arg.off;
 }
 
-namespace c_compiler { namespace initializer_list {
-  namespace designator_impl {
-    int subscripting(var*, initializer::argument&);
-    int dot(usr*, initializer::argument&);
-  }
-} } // end of namespace initializer_list and c_compiler
+namespace c_compiler {
+  namespace initializer_list {
+    namespace designator_impl {
+      int subscripting(var*, initializer::argument&);
+      int dot(usr*, initializer::argument&);
+    }  // end of namespace designator_impl
+  }  // end of namespace initializer_list
+}  // end of namespace c_compiler
 
-int c_compiler::initializer_list::designator(parse::designator* d, initializer::argument* arg)
+int c_compiler::initializer_list::
+designator(parse::designator* d, initializer::argument* arg)
 {
   using namespace std;
   var* cexpr = d->first;
@@ -487,7 +508,8 @@ int c_compiler::initializer_list::designator(parse::designator* d, initializer::
     : designator_impl::dot(d->second,*arg);
 }
 
-int c_compiler::initializer_list::designator_impl::subscripting(var* cexpr, initializer::argument& arg)
+int c_compiler::initializer_list::designator_impl::
+subscripting(var* cexpr, initializer::argument& arg)
 {
   using namespace std;
   using namespace initializer;
@@ -520,7 +542,8 @@ int c_compiler::initializer_list::designator_impl::subscripting(var* cexpr, init
   return arg.off;
 }
 
-int c_compiler::initializer_list::designator_impl::dot(usr* member, initializer::argument& arg)
+int c_compiler::initializer_list::designator_impl::
+dot(usr* member, initializer::argument& arg)
 {
   using namespace std;
   using namespace initializer;
@@ -552,7 +575,8 @@ int c_compiler::initializer_list::designator_impl::dot(usr* member, initializer:
   return arg.off;
 }
 
-const c_compiler::type* c_compiler::initializer_list::complete(const type* T, int offset)
+const c_compiler::type* c_compiler::initializer_list::
+complete(const type* T, int offset)
 {
   if ( T->m_id != type::ARRAY )
     return T;

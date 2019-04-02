@@ -302,7 +302,7 @@ c_compiler::decl_impl::operator+(specifier spec, parse::type_specifier* p)
       using namespace error::decl;
       multiple_type(parse::position, spec.m_type, T);
       if (!T->size())
-	T = spec.m_type;
+        T = spec.m_type;
     }
     spec.m_type = T;
     T = spec.m_type->unqualified();
