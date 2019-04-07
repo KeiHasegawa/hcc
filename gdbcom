@@ -1,9 +1,0 @@
-#b generator.cpp:34
-#command
-#b scope.cpp:375
-#c
-#end
-
-run --no-generator sample.txt --output-medium --simple-medium
-
-

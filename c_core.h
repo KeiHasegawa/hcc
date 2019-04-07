@@ -347,10 +347,12 @@ template<> struct constant<int> : usr {
   var* modr(constant<int>*);
   var* add(var* z){ return z->addr(this); }
   var* addr(constant<int>*);
+  var* addr(constant<__int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
   var* subr(constant<int>*);
+  var* subr(constant<__int64>*);
   var* subr(constant<void*>*);
   var* subr(addrof*);
   var* lsh(var* z){ return z->lshr(this); }
@@ -377,9 +379,11 @@ template<> struct constant<int> : usr {
   var* ger(constant<int>*);
   var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<int>*);
+  var* eqr(constant<__int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
   var* ner(constant<int>*);
+  var* ner(constant<__int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
   var* bit_andr(constant<int>*);
@@ -421,10 +425,12 @@ template<> struct constant<unsigned int> : usr {
   var* modr(constant<unsigned int>*);
   var* add(var* z){ return z->addr(this); }
   var* addr(constant<unsigned int>*);
+  var* addr(constant<__int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
   var* subr(constant<unsigned int>*);
+  var* subr(constant<__int64>*);
   var* subr(constant<void*>*);
   var* subr(addrof*);
   var* lsh(var* z){ return z->lshr(this); }
@@ -451,9 +457,11 @@ template<> struct constant<unsigned int> : usr {
   var* ger(constant<unsigned int>*);
   var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<unsigned int>*);
+  var* eqr(constant<__int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
   var* ner(constant<unsigned int>*);
+  var* ner(constant<__int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
   var* bit_andr(constant<unsigned int>*);
@@ -495,10 +503,12 @@ template<> struct constant<long int> : usr {
   var* modr(constant<long int>*);
   var* add(var* z){ return z->addr(this); }
   var* addr(constant<long int>*);
+  var* addr(constant<__int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
   var* subr(constant<long int>*);
+  var* subr(constant<__int64>*);
   var* subr(constant<void*>*);
   var* subr(addrof*);
   var* lsh(var* z){ return z->lshr(this); }
@@ -525,9 +535,11 @@ template<> struct constant<long int> : usr {
   var* ger(constant<long int>*);
   var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<long int>*);
+  var* eqr(constant<__int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
   var* ner(constant<long int>*);
+  var* ner(constant<__int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
   var* bit_andr(constant<long int>*);
@@ -569,10 +581,12 @@ template<> struct constant<unsigned long int> : usr {
   var* modr(constant<unsigned long int>*);
   var* add(var* z){ return z->addr(this); }
   var* addr(constant<unsigned long int>*);
+  var* addr(constant<__int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
   var* subr(constant<unsigned long int>*);
+  var* subr(constant<__int64>*);
   var* subr(constant<void*>*);
   var* subr(addrof*);
   var* lsh(var* z){ return z->lshr(this); }
@@ -599,9 +613,11 @@ template<> struct constant<unsigned long int> : usr {
   var* ger(constant<unsigned long int>*);
   var* eq(var* z){ return z->eqr(this); }
   var* eqr(constant<unsigned long int>*);
+  var* eqr(constant<__int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
   var* ner(constant<unsigned long int>*);
+  var* ner(constant<__int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
   var* bit_andr(constant<unsigned long int>*);
@@ -644,7 +660,12 @@ template<> struct constant<__int64> : usr {
   var* mod(var* z){ return z->modr(this); }
   var* modr(constant<__int64>*);
   var* add(var* z){ return z->addr(this); }
+  var* addr(constant<int>*);
+  var* addr(constant<unsigned int>*);
+  var* addr(constant<long int>*);
+  var* addr(constant<unsigned long int>*);
   var* addr(constant<__int64>*);
+  var* addr(constant<unsigned __int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
@@ -674,10 +695,20 @@ template<> struct constant<__int64> : usr {
   var* ge(var* z){ return z->ger(this); }
   var* ger(constant<__int64>*);
   var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<int>*);
+  var* eqr(constant<unsigned int>*);
+  var* eqr(constant<long int>*);
+  var* eqr(constant<unsigned long int>*);
   var* eqr(constant<__int64>*);
+  var* eqr(constant<unsigned __int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<int>*);
+  var* ner(constant<unsigned int>*);
+  var* ner(constant<long int>*);
+  var* ner(constant<unsigned long int>*);
   var* ner(constant<__int64>*);
+  var* ner(constant<unsigned __int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }
   var* bit_andr(constant<__int64>*);
@@ -722,9 +753,11 @@ template<> struct constant<unsigned __int64> : usr {
   var* modr(constant<unsigned __int64>*);
   var* add(var* z){ return z->addr(this); }
   var* addr(constant<unsigned __int64>*);
+  var* addr(constant<__int64>*);
   var* addr(constant<void*>*);
   var* addr(addrof*);
   var* sub(var* z){ return z->subr(this); }
+  var* subr(constant<__int64>*);
   var* subr(constant<unsigned __int64>*);
   var* subr(constant<void*>*);
   var* subr(addrof*);
@@ -751,9 +784,11 @@ template<> struct constant<unsigned __int64> : usr {
   var* ge(var* z){ return z->ger(this); }
   var* ger(constant<unsigned __int64>*);
   var* eq(var* z){ return z->eqr(this); }
+  var* eqr(constant<__int64>*);
   var* eqr(constant<unsigned __int64>*);
   var* eqr(constant<void*>*);
   var* ne(var* z){ return z->ner(this); }
+  var* ner(constant<__int64>*);
   var* ner(constant<unsigned __int64>*);
   var* ner(constant<void*>*);
   var* bit_and(var* z){ return z->bit_andr(this); }

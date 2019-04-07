@@ -720,22 +720,50 @@ namespace c_compiler {
   { return constant_impl::add(y,this); }
   var* constant<unsigned long int>::addr(constant<unsigned long int>* y)
   { return constant_impl::add(y,this); }
+
+  var* constant<__int64>::addr(constant<int>* y)
+  { return constant_impl::add(y,this); }
+  var* constant<__int64>::addr(constant<unsigned int>* y)
+  { return constant_impl::add(y,this); }
+  var* constant<__int64>::addr(constant<long int>* y)
+  { return constant_impl::add(y,this); }
+  var* constant<__int64>::addr(constant<unsigned long int>* y)
+  { return constant_impl::add(y,this); }
   var* constant<__int64>::addr(constant<__int64>* y)
   { return constant_impl::add(y,this); }
+  var* constant<__int64>::addr(constant<unsigned __int64>* y)
+  { return constant_impl::add(y,this); }
+
   var* constant<unsigned __int64>::addr(constant<unsigned __int64>* y)
   { return constant_impl::add(y,this); }
   var* constant<int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+  var* constant<int>::addr(constant<__int64>* y)
+  { return constant_impl::padd(y,this); }
+
   var* constant<unsigned int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+  var* constant<unsigned int>::addr(constant<__int64>* y)
+  { return constant_impl::padd(y,this); }
+
   var* constant<long int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+  var* constant<long int>::addr(constant<__int64>* y)
+  { return constant_impl::padd(y,this); }
+
   var* constant<unsigned long int>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+  var* constant<unsigned long int>::addr(constant<__int64>* y)
+  { return constant_impl::padd(y,this); }
+
   var* constant<__int64>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+
   var* constant<unsigned __int64>::addr(constant<void*>* y)
   { return constant_impl::padd(y,this); }
+  var* constant<unsigned __int64>::addr(constant<__int64>* y)
+  { return constant_impl::padd(y,this); }
+
   var* constant<float>::addr(constant<float>* y)
   { return constant_impl::fadd3(y,this); }
   var* constant<double>::addr(constant<double>* y)
@@ -1083,20 +1111,28 @@ namespace c_compiler {
   { return constant_impl::sub(y,this); }
   var* constant<int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
+  var* constant<int>::subr(constant<__int64>* y)
+  { return constant_impl::psub(y,this); }
 
   var* constant<unsigned int>::subr(constant<unsigned int>* y)
   { return constant_impl::sub(y,this); }
   var* constant<unsigned int>::subr(constant<void*>* y)
+  { return constant_impl::psub(y,this); }
+  var* constant<unsigned int>::subr(constant<__int64>* y)
   { return constant_impl::psub(y,this); }
 
   var* constant<long int>::subr(constant<long int>* y)
   { return constant_impl::sub(y,this); }
   var* constant<long int>::subr(constant<void*>* y)
   { return constant_impl::psub(y,this); }
+  var* constant<long int>::subr(constant<__int64>* y)
+  { return constant_impl::psub(y,this); }
 
   var* constant<unsigned long int>::subr(constant<unsigned long int>* y)
   { return constant_impl::sub(y,this); }
   var* constant<unsigned long int>::subr(constant<void*>* y)
+  { return constant_impl::psub(y,this); }
+  var* constant<unsigned long int>::subr(constant<__int64>* y)
   { return constant_impl::psub(y,this); }
 
   var* constant<__int64>::subr(constant<__int64>* y)
@@ -1107,6 +1143,8 @@ namespace c_compiler {
   var* constant<unsigned  __int64>::subr(constant<unsigned __int64>* y)
   { return constant_impl::sub(y,this); }
   var* constant<unsigned  __int64>::subr(constant<void*>* y)
+  { return constant_impl::psub(y,this); }
+  var* constant<unsigned  __int64>::subr(constant<__int64>* y)
   { return constant_impl::psub(y,this); }
 
   var* constant<float>::subr(constant<float>* y)
