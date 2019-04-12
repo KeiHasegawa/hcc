@@ -287,7 +287,7 @@ c_compiler::expr::assign_impl::valid(const type* T, var* src, bool* discard)
       }
       if (compatible(Ty, v)) {
         if (include(cvr_x, cvr_y) )
-          return py;
+          return px;
         else {
           if (discard)
             *discard = true;
