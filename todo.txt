@@ -84,6 +84,54 @@ x := y op z
 で y も z も x とは異なることを仮定した上で成立しているのかどうか不明.
 もしそうなら, 他にもこの仮定を満たしていないコード生成の箇所がある.
 (それとも単なる実装のバグなのかも不明).
+
+追加情報 2019.04.16
+hcxx1 expr00.cpp cxx_compiler::unqualified_id::from_member(usr* u)
+で this ポインタからのオフセットが 0 の場合に add3ac を生成しないように
+していたところ最適化ルーチンのバグが発生している.
+
+struct S {
+  int a;
+  int b;
+  int c;
+  void f();
+}; 
+
+void S::f()
+{
+  a = 1;
+  b = 2;
+  c = 3;
+}
+
+最適化なし
+	t0 := (int *)this
+	t1 := (int *)this
+	t1 := t1 + 4
+	t2 := (int *)this
+	t2 := t2 + 8
+	*t0 := 1
+	t3 := 1
+	*t1 := 2
+	t4 := 2
+	*t2 := 3
+	t5 := 3
+
+
+最適化あり
+	t0 := (int *)this
+	t0 := t0 + 4
+	t1 := t0 + 8
+	*t0 := 1
+	*t0 := 2
+	*t1 := 3
+
+refsomewhere::offref と同じような回避策を
+cxx_compiler::unqualified_id::from_member(usr* u) でも行っている
+refsomewhere::offref でも m_offset メンバが 0 の場合でも add3ac を
+生成しているようにしているが, おそらくここが回避策の肝なのだろう.
+
+というより..., 直せよ.
 ----------------------------------------------------------------------------
 int x, y;
 ...
