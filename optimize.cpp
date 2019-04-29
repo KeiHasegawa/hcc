@@ -259,17 +259,18 @@ int c_compiler::optimize::basic_block::dag::action(basic_block::info_t* B,
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag {
+  using namespace std;
   struct info_t {
     tac* m_tac;
-    std::vector<var*> m_vars;
-    std::vector<info_t*> m_parents;
+    vector<var*> m_vars;
+    vector<info_t*> m_parents;
     info_t* m_left;
     info_t* m_right;
-    static std::vector<info_t*> all;
+    static vector<info_t*> all;
     info_t() : m_tac(0), m_left(0), m_right(0) { all.push_back(this); }
   };
-  std::vector<dag::info_t*> info_t::all;
-  info_t* get(tac*, std::map<var*, dag::info_t*>*, bool*);
+  vector<dag::info_t*> info_t::all;
+  info_t* get(tac*, map<var*, dag::info_t*>*, bool*);
 } } } } // end of namespace dag, basic_block, optimize and c_compiler
 
 int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
@@ -327,7 +328,7 @@ int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
   vector<var*>& v = n->m_vars;
   v.push_back(x);
   (*node)[x] = n;
-  if ( id ==  tac::ADDR )
+  if (id == tac::ADDR)
     mt->pa->addr.insert(y);
   return 0;
 }

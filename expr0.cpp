@@ -341,8 +341,9 @@ c_compiler::var* c_compiler::refaddr::offref(const type* T, var* offset)
 
 c_compiler::var* c_compiler::refsomewhere::offref(const type* T, var* offset)
 {
-  offset = expr::binary('+', offset, m_offset);
-  var* ret = new refsomewhere(pointer_type::create(T),m_ref,offset);
+  offset = expr::binary('+', m_offset, offset);
+  const pointer_type* pt = pointer_type::create(T);
+  var* ret = new refsomewhere(pt, m_ref, offset);
   garbage.push_back(ret);
   return ret;
 }
