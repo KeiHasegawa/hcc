@@ -266,8 +266,10 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
     vector<info_t*> m_parents;
     info_t* m_left;
     info_t* m_right;
+    var* m_rep;  // work-around. see 46_optimization/test136.c
     static vector<info_t*> all;
-    info_t() : m_tac(0), m_left(0), m_right(0) { all.push_back(this); }
+    info_t()
+      : m_tac(0), m_left(0), m_right(0), m_rep(0) { all.push_back(this); }
   };
   vector<dag::info_t*> info_t::all;
   info_t* get(tac*, map<var*, dag::info_t*>*, bool*);
@@ -387,6 +389,26 @@ c_compiler::optimize::basic_block::dag::get(tac* ptr, std::map<var*, dag::info_t
     i->m_parents.push_back(ret);
     ret->m_right = i;
   }
+
+  if (id == tac::LOFF) {
+    var* x = ptr->x;
+    map<var*, info_t*>::const_iterator q = node->find(x);
+    if (q != node->end()) {
+      info_t* i = q->second;
+      if (tac* ptr = i->m_tac) {
+	tac::id_t id = ptr->m_id;
+	if (id != tac::LOFF) {
+	  i->m_parents.push_back(ret);
+	  vector<var*>& v = i->m_vars;
+	  typedef vector<var*>::const_iterator IT;
+	  IT p = find(begin(v), end(v), x);
+	  assert(p != end(v));
+	  i->m_rep = x;
+	}
+      }
+    }
+  }
+
   return ret;
 }
 
@@ -771,6 +793,10 @@ c_compiler::optimize::basic_block::dag::generate::assigns(dag::info_t* d, action
           p = q;
           special2(*v.begin(),*p,mt);
         }
+	else if (var* x = d->m_rep) {
+	  p = find(v.begin(), v.end(), x);
+	  assert(p != v.end());
+	}
       }
     }
     if ( p != v.end() ){
