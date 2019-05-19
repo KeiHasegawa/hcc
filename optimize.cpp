@@ -83,7 +83,7 @@ namespace c_compiler { namespace optimize { namespace basic_block {
       vector<tac*> conv;
       set<var*> addr;
     };
-    extern int action(info_t*, action_t*);
+    extern void action(info_t*, action_t*);
   } // end of namespace dag
 } } } // end of namespace basic_block, optimize and c_compiler
 
@@ -227,7 +227,7 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
     mknode_t(std::map<var*, dag::info_t*>* n, std::map<dag::info_t*, var*>* r, basic_block::info_t* b, action_t* a)
       : node(n), result(r), B(b), pa(a), ret(false) {}
   };
-  int mknode(tac**, mknode_t*);
+  void mknode(tac**, mknode_t*);
   namespace generate {
     struct action_t {
       mknode_t* mt;
@@ -238,8 +238,8 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
   } // end of namespace generate
 } } } } // end of namespace dag, basic_block, optimize and c_compiler
 
-int c_compiler::optimize::basic_block::dag::action(basic_block::info_t* B,
-  action_t* pa)
+void c_compiler::optimize::basic_block::dag::action(basic_block::info_t* B,
+						    action_t* pa)
 {
   using namespace std;
   tac** begin = B->m_leader;
@@ -251,7 +251,6 @@ int c_compiler::optimize::basic_block::dag::action(basic_block::info_t* B,
     mknode(p,&mt);
   generate::action_t act(&mt,end-1);
   generate::action(&act);
-  return 0;
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag {
@@ -271,7 +270,7 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
   info_t* get(tac*, map<var*, dag::info_t*>*, bool*);
 } } } } // end of namespace dag, basic_block, optimize and c_compiler
 
-int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
+void c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
 {
   using namespace std;
   tac* ptr = *pp;
@@ -279,27 +278,27 @@ int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
   if ( mt->ret ){
     if (id != tac::TO && id != tac::GOTO) {
       delete ptr;
-      return 0;
+      return;
     }
     mt->ret = false;
   }
   if ( id == tac::RETURN )
     mt->ret = true;
   var* y = ptr->y;
-  if ( !y ){
+  if (!y) {
     // Special case. return3ac, goto3ac, to3ac or asm3ac.
     dag::info_t* p = new dag::info_t;
     p->m_tac = ptr;
-    return 0;
+    return;
   }
   map<var*, dag::info_t*>* node = mt->node;
-  if ( node->find(y) == node->end() ){
+  if (node->find(y) == node->end()) {
     dag::info_t* leaf = new dag::info_t;
     leaf->m_vars.push_back(y);
     (*node)[y] = leaf;
   }
-  if ( var* z = ptr->z ){
-    if ( node->find(z) == node->end() ){
+  if (var* z = ptr->z) {
+    if (node->find(z) == node->end()) {
       dag::info_t* leaf = new dag::info_t;
       leaf->m_vars.push_back(z);
       (*node)[z] = leaf;
@@ -317,18 +316,17 @@ int c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
     generate::action(&act);
     node->clear();
     mt->result->clear();
-    return 0;
+    return;
   }
   var* x = ptr->x;
-  if ( !x )
-    return 0;
+  if (!x)
+    return;
   auto_ptr<tac> sweper(found ? ptr : 0);
   vector<var*>& v = n->m_vars;
   v.push_back(x);
   (*node)[x] = n;
   if (id == tac::ADDR)
     mt->pa->addr.insert(y);
-  return 0;
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag {
@@ -351,7 +349,8 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
 } } } } // end of namespace dag, basic_block, optimize and c_compiler
 
 c_compiler::optimize::basic_block::dag::info_t*
-c_compiler::optimize::basic_block::dag::get(tac* ptr, std::map<var*, dag::info_t*>* node, bool* found)
+c_compiler::optimize::basic_block::
+dag::get(tac* ptr, std::map<var*, dag::info_t*>* node, bool* found)
 {
   using namespace std;
   tac::id_t id = ptr->m_id;
@@ -370,16 +369,17 @@ c_compiler::optimize::basic_block::dag::get(tac* ptr, std::map<var*, dag::info_t
   case tac::CALL: case tac::VAARG:
     break;
   default:
-    if ( ptr->x ){
+    if (ptr->x) {
       const vector<dag::info_t*>& v = dag::info_t::all;
       vector<dag::info_t*>::const_iterator p =
         find_if(v.begin(),v.end(),bind2nd(ptr_fun(match),make_pair(ptr,node)));
-      if ( p != v.end() ){
+      if (p != v.end()) {
         *found = true;
         return *p;
       }
-      if ( id == tac::ROFF ){
-        p = find_if(v.begin(),v.end(),bind2nd(ptr_fun(roff_match_loff),make_pair(ptr,node)));
+      if (id == tac::ROFF) {
+        p = find_if(v.begin(),v.end(),
+		    bind2nd(ptr_fun(roff_match_loff),make_pair(ptr,node)));
         if ( p != v.end() ){
           *found = true;
           return (*p)->m_right;
@@ -705,41 +705,42 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
 } } } } } // end of namespace generate, dag, basic_block, optimize and c_compiler
 
 c_compiler::var*
-c_compiler::optimize::basic_block::dag::generate::inorder(dag::info_t* d, action_t* act)
+c_compiler::optimize::basic_block::
+dag::generate::inorder(dag::info_t* d, action_t* act)
 {
   using namespace std;
   map<dag::info_t*, var*>& result = *act->mt->result;
   tac* ptr = d->m_tac;
-  if ( !ptr )
+  if (!ptr)
     return result[d] = assigns(d,act);
-  tac::id_t id = ptr->m_id;
   dag::action_t* pa = act->mt->pa;
   vector<tac*>& conv = pa->conv;
-  if ( dag::info_t* i = d->m_left ){
-    map<dag::info_t*, var*>::const_iterator p = result.find(i);
+  if (dag::info_t* left = d->m_left) {
+    map<dag::info_t*, var*>::const_iterator p = result.find(left);
     assert(p != result.end());
     ptr->y = p->second;
   }
-  if ( dag::info_t* i = d->m_right ){
-    map<dag::info_t*, var*>::const_iterator p = result.find(i);
+  if (dag::info_t* right = d->m_right) {
+    map<dag::info_t*, var*>::const_iterator p = result.find(right);
     assert(p != result.end());
     ptr->z = p->second;
   }
   int n = conv.size();
   conv.push_back(ptr);
   var* x = ptr->x = assigns(d,act);
-  if ( !x || !d->m_parents.empty() )
+  if (!x || !d->m_parents.empty())
     return result[d] = x;
   basic_block::info_t* B = act->mt->B;
-  if ( liveout(x,B) )
+  if (liveout(x,B))
     return result[d] = x;
   bool b = use_after(x,act);
-  if ( b && resident(x,make_pair(d,act->mt->node)) )
+  if (b  && resident(x,make_pair(d,act->mt->node)))
     return result[d] = x;
   const set<var*>& addr = pa->addr;
-  if ( addr.find(x) != addr.end() )
+  if (addr.find(x) != addr.end())
     return result[d] = x;
-  switch ( id ){
+  tac::id_t id = ptr->m_id;
+  switch (id) {
   case tac::CALL:
     if ( !b ){
       ptr->x = 0;
@@ -754,7 +755,7 @@ c_compiler::optimize::basic_block::dag::generate::inorder(dag::info_t* d, action
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag { namespace generate {
-  var* special1(dag::info_t*, action_t*);
+  var* special_case(dag::info_t*, action_t*);
   struct assign_t {
     action_t* act;
     var* y;
@@ -793,31 +794,34 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
 } } } } } // end of namespace generate, dag, basic_block, optimize and c_compiler
 
 c_compiler::var*
-c_compiler::optimize::basic_block::dag::generate::assigns(dag::info_t* d, action_t* act)
+c_compiler::optimize::basic_block::
+dag::generate::assigns(dag::info_t* d, action_t* act)
 {
   using namespace std;
   vector<var*>& v = d->m_vars;
-  if ( v.empty() )
+  if (v.empty())
     return 0;
-  if ( var* ret = special1(d,act) )
+  if (var* ret = special_case(d,act))
     return ret;
   vector<var*>::iterator p = chose(v, d, act);
   var* y = *p;
   assign_t arg(act,y,d);
   for_each(p+1,v.end(),bind2nd(ptr_fun(assign),&arg));
-  if ( var* ret = arg.addrrefed )
+  if (var* ret = arg.addrrefed)
     return ret;
   return y;
 }
 
 c_compiler::var*
-c_compiler::optimize::basic_block::dag::generate::special1(dag::info_t* d, action_t* act)
+c_compiler::optimize::basic_block::
+dag::generate::special_case(dag::info_t* d, action_t* act)
 {
   using namespace std;
   mknode_t* mt = act->mt;
   vector<var*>& v = d->m_vars;
   vector<var*>::iterator p =
-    find_if(v.begin(),v.end(),bind2nd(ptr_fun(resident),make_pair(d,mt->node)));
+    find_if(v.begin(),v.end(),
+	    bind2nd(ptr_fun(resident),make_pair(d,mt->node)));
   if ( p == v.end() )
     return 0;
   if ( p == v.begin() )
