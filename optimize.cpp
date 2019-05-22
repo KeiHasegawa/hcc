@@ -332,20 +332,6 @@ void c_compiler::optimize::basic_block::dag::mknode(tac** pp, mknode_t* mt)
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag {
   bool match(info_t*, std::pair<tac*, std::map<var*, dag::info_t*>*>);
   bool roff_match_loff(info_t*, std::pair<tac*, std::map<var*, dag::info_t*>*>);
-  void extra(info_t* info, var* x)
-  {
-    tac* ptr = info->m_tac;
-    if (!ptr)
-      return;
-    tac::id_t id = ptr->m_id;
-    if (id != tac::LOFF)
-      return;
-    info_t* extra = info->m_extra;
-    if (!extra)
-      return;
-    vector<var*>& v = extra->m_vars;
-    v.push_back(x);
-  }
 } } } } // end of namespace dag, basic_block, optimize and c_compiler
 
 c_compiler::optimize::basic_block::dag::info_t*
@@ -362,8 +348,6 @@ dag::get(tac* ptr, std::map<var*, dag::info_t*>* node, bool* found)
       assert(p != node->end());
       *found = true;
       info_t* info = p->second;
-      var* x = ptr->x;
-      extra(info, x);
       return info;
     }
   case tac::CALL: case tac::VAARG:
@@ -409,10 +393,6 @@ dag::get(tac* ptr, std::map<var*, dag::info_t*>* node, bool* found)
       info_t* i = q->second;
       i->m_parents.push_back(ret);
       ret->m_extra = i;
-      vector<var*>& v = i->m_vars;
-      vector<var*>::const_iterator p = find(begin(v), end(v), x);
-      assert(p != end(v));
-      v.erase(begin(v), p);
     }
   }
   return ret;
@@ -713,8 +693,6 @@ dag::generate::inorder(dag::info_t* d, action_t* act)
   tac* ptr = d->m_tac;
   if (!ptr)
     return result[d] = assigns(d,act);
-  dag::action_t* pa = act->mt->pa;
-  vector<tac*>& conv = pa->conv;
   if (dag::info_t* left = d->m_left) {
     map<dag::info_t*, var*>::const_iterator p = result.find(left);
     assert(p != result.end());
@@ -725,6 +703,8 @@ dag::generate::inorder(dag::info_t* d, action_t* act)
     assert(p != result.end());
     ptr->z = p->second;
   }
+  dag::action_t* pa = act->mt->pa;
+  vector<tac*>& conv = pa->conv;
   int n = conv.size();
   conv.push_back(ptr);
   var* x = ptr->x = assigns(d,act);
@@ -734,7 +714,7 @@ dag::generate::inorder(dag::info_t* d, action_t* act)
   if (liveout(x,B))
     return result[d] = x;
   bool b = use_after(x,act);
-  if (b  && resident(x,make_pair(d,act->mt->node)))
+  if (b && resident(x,make_pair(d,act->mt->node)))
     return result[d] = x;
   const set<var*>& addr = pa->addr;
   if (addr.find(x) != addr.end())
@@ -742,12 +722,23 @@ dag::generate::inorder(dag::info_t* d, action_t* act)
   tac::id_t id = ptr->m_id;
   switch (id) {
   case tac::CALL:
-    if ( !b ){
+    if (!b) {
       ptr->x = 0;
       return result[d] = 0;
     }
   case tac::ALLOCA:
     return result[d] = x;
+  case tac::LOFF:
+    {
+      const vector<var*>& v = d->m_vars;
+      typedef vector<var*>::const_iterator IT;
+      IT p = find_if(begin(v), end(v), bind2nd(ptr_fun(liveout), B));
+      if (p != end(v))
+	return result[d] = x;
+      p = find_if(begin(v), end(v), bind2nd(ptr_fun(use_after), act));
+      if (p != end(v))
+	return result[d] = x;
+    }
   }
   conv.erase(conv.begin()+n);
   delete ptr;
@@ -762,14 +753,23 @@ namespace c_compiler { namespace optimize { namespace basic_block { namespace da
     var* x;
     info_t* d;
     var* addrrefed;
-    assign_t(action_t* a, var* yy, info_t* dd) : act(a), y(yy), x(yy), d(dd), addrrefed(0) {}
+    assign_t(action_t* a, var* yy, info_t* dd)
+      : act(a), y(yy), x(yy), d(dd), addrrefed(0) {}
   };
-  int assign(var*, assign_t*);
+  void assign(var*, assign_t*);
   typedef vector<var*>::iterator IT;
   IT chose(vector<var*>& v, dag::info_t* d, action_t* act)
   {
-    if (!d->m_left)
+    if (!d->m_left) {
+      assert(!d->m_right);
+      assert(!d->m_extra);
       return v.begin();
+    }
+    if (tac* ptr = d->m_tac) {
+      tac::id_t id = ptr->m_id;
+      if (id == tac::LOFF)
+	return v.begin();
+    }
     mknode_t* mt = act->mt;
     basic_block::info_t* B = mt->B;
     IT p = find_if(v.begin(),v.end(),bind2nd(ptr_fun(liveout),B));
@@ -804,6 +804,7 @@ dag::generate::assigns(dag::info_t* d, action_t* act)
   if (var* ret = special_case(d,act))
     return ret;
   vector<var*>::iterator p = chose(v, d, act);
+  assert(p != v.end());
   var* y = *p;
   assign_t arg(act,y,d);
   for_each(p+1,v.end(),bind2nd(ptr_fun(assign),&arg));
@@ -890,32 +891,49 @@ bool c_compiler::optimize::basic_block::dag::generate::use_after(var* x, action_
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag { namespace generate {
   bool addrrefs(var*, assign_t*);
-  int gen_assign(var*, assign_t*);
+  void gen_assign(var*, assign_t*);
 } } } } } // end of namespace generate, dag, basic_block, optimize and c_compiler
 
-int
-c_compiler::optimize::basic_block::dag::generate::assign(var* x, assign_t* arg)
+void
+c_compiler::optimize::basic_block::
+dag::generate::assign(var* x, assign_t* arg)
 {
   using namespace std;
-  var* y = arg->y;
-  usr* uy = y->usr_cast();
+  if (tac* ptr = arg->d->m_tac) {
+    tac::id_t id = ptr->m_id;
+    if (id == tac::LOFF)
+      return gen_assign(x,arg);
+  }
   if ( addrrefs(x,arg) ){
     arg->addrrefed = x;
     if ( arg->d->m_left )
-      return 0;
+      return;
     return gen_assign(x,arg);
   }
+  const vector<dag::info_t*>& parents = arg->d->m_parents;
+  typedef vector<dag::info_t*>::const_iterator IT;
+  IT p = find_if(begin(parents), end(parents), [x](dag::info_t* parent)
+		 {
+		   if (parent->m_tac->m_id != tac::LOFF)
+		     return false;
+		   dag::info_t* extra = parent->m_extra;
+		   if (!extra)
+		     return false;
+		   const vector<var*>& v = extra->m_vars;
+		   return find(begin(v), end(v), x) != end(v);
+		 });
+  if (p != end(parents))
+    return gen_assign(x, arg);
   if ( !resident(x,make_pair(arg->d,arg->act->mt->node)) )
-    return 0;
+    return;
   basic_block::info_t* B = arg->act->mt->B;
-  if ( liveout(x,B) )
+  if (liveout(x,B))
     return gen_assign(x,arg);
   set<var*>& addr = arg->act->mt->pa->addr;
   if ( addr.find(x) != addr.end() )
     return gen_assign(x,arg);
   if ( use_after(x,arg->act) )
     return gen_assign(x,arg);
-  return 0;
 }
 
 namespace c_compiler { namespace optimize { namespace basic_block { namespace dag { namespace generate {
@@ -940,7 +958,7 @@ c_compiler::optimize::basic_block::dag::generate::addrref(var* x, dag::info_t* p
   return ptr->m_id == tac::ADDR && ptr->y == x;
 }
 
-int
+void
 c_compiler::optimize::basic_block::dag::generate::gen_assign(var* x, assign_t* arg)
 {
   using namespace std;
@@ -948,7 +966,6 @@ c_compiler::optimize::basic_block::dag::generate::gen_assign(var* x, assign_t* a
   var* y = arg->y;
   conv.push_back(new assign3ac(x,y));
   arg->x = x;
-  return 0;
 }
 
 namespace c_compiler { namespace optimize { namespace symtab {
