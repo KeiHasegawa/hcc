@@ -1141,6 +1141,8 @@ void c_compiler::destroy_temporary()
   if ( !v.empty() ){
     using namespace error::decl::declarator::func;
     invalid_identifier_list(parse::position);
+    for (auto s : v)
+      scope::root.m_usrs.erase(s);  // work-around
     v.clear();
   }
   stmt::label::vm.clear();
