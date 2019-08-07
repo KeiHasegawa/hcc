@@ -1296,7 +1296,7 @@ namespace c_compiler {
     };
     bool comp_size(usr*, usr*);
     bool comp_align(usr*, usr*);
-    bool member_modifiable(usr*);
+    bool member_modifiable(usr*, bool);
   } // end of namespace record_impl
 } // end of namespace c_compiler
 
@@ -1336,8 +1336,13 @@ c_compiler::record_type::record_type(tag* tag, const std::vector<usr*>& member)
       m_size = T->size();
     }
   }
-  m_modifiable =
-    find_if(m_member.begin(),m_member.end(),not1(ptr_fun(member_modifiable))) == m_member.end();
+  typedef vector<usr*>::const_iterator IT;
+  IT p = find_if(m_member.begin(),m_member.end(),
+		 not1(bind2nd(ptr_fun(member_modifiable), false)));
+  m_modifiable = (p == m_member.end());
+  IT q = find_if(m_member.begin(),m_member.end(),
+		 bind2nd(ptr_fun(member_modifiable), true));
+  m_partially_modifiable = (q != m_member.end());
 
   int al = align();
   if ( int n = m_size % al ) {
@@ -1480,9 +1485,9 @@ bool c_compiler::record_impl::comp_align(usr* x, usr* y)
   return xx->align() < yy->align();
 }
 
-bool c_compiler::record_impl::member_modifiable(usr* member)
+bool c_compiler::record_impl::member_modifiable(usr* member, bool partially)
 {
-  return member->m_type->modifiable();
+  return member->m_type->modifiable(partially);
 }
 
 void c_compiler::record_type::decl(std::ostream& os, std::string name) const

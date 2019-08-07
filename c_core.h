@@ -1100,7 +1100,7 @@ struct type {
   virtual bool real() const { return false; }
   virtual bool integer() const { return scalar() && !real(); }
   bool arithmetic() const { return real() || integer(); }
-  virtual bool modifiable() const { return true; }
+  virtual bool modifiable(bool partially = false) const { return true; }
   virtual const type* promotion() const { return this; }
   virtual const type* varg() const { return promotion(); }
   virtual bool _signed() const { return false; }
@@ -1307,7 +1307,7 @@ public:
   const type* unqualified(int* cvr) const { if ( cvr ) *cvr |= 1; return m_T->unqualified(cvr); }
   const type* patch(const type* T, usr* u) const;
   bool backpatch() const { return m_T->backpatch(); }
-  bool modifiable() const { return false; }
+  bool modifiable(bool) const { return false; }
   const type* promotion() const { return create(m_T->promotion()); }
   const type* varg() const { return create(m_T->varg()); }
   bool _signed() const { return m_T->_signed(); }
@@ -1341,7 +1341,7 @@ public:
   bool integer() const { return m_T->integer(); }
   const type* complete_type() const { return create(m_T->complete_type()); }
   const type* unqualified(int* cvr) const { if ( cvr ) *cvr |= 2; return m_T->unqualified(cvr); }
-  bool modifiable() const { return m_T->modifiable(); }
+  bool modifiable(bool partially) const { return m_T->modifiable(partially); }
   const type* promotion() const { return create(m_T->promotion()); }
   const type* varg() const { return create(m_T->varg()); }
   bool _signed() const { return m_T->_signed(); }
@@ -1374,7 +1374,7 @@ public:
   bool real() const { return m_T->real(); }
   const type* complete_type() const { return create(m_T->complete_type()); }
   const type* unqualified(int* cvr) const { if ( cvr ) *cvr |= 4; return m_T->unqualified(cvr); }
-  bool modifiable() const { return m_T->modifiable(); }
+  bool modifiable(bool partially) const { return m_T->modifiable(partially); }
   const type* promotion() const { return create(m_T->promotion()); }
   const type* varg() const { return create(m_T->varg()); }
   bool _signed() const { return m_T->_signed(); }
@@ -1435,7 +1435,7 @@ public:
   int size() const { return m_T->size() * m_dim; }
   int align() const { return m_T->align(); }
   bool scalar() const { return false; }
-  bool modifiable() const { return m_T->modifiable(); }
+  bool modifiable(bool partially) const { return m_T->modifiable(partially); }
   const type* patch(const type* T, usr* u) const;
   bool backpatch() const { return m_T->backpatch(); }  
   const type* qualified(int) const;
@@ -1515,6 +1515,7 @@ class record_type : public type {
   std::map<usr*, int> m_position;
   int m_size;
   bool m_modifiable;
+  bool m_partially_modifiable;
   tag* m_tag;
   typedef std::set<const record_type*> table_t;
   static table_t tmp_tbl;
@@ -1525,7 +1526,8 @@ public:
   const type* composite(const type* T) const;
   int size() const { return m_size; }
   bool scalar() const { return false; }
-  bool modifiable() const { return m_modifiable; }
+  bool modifiable(bool partially) const
+  { return partially ? m_partially_modifiable : m_modifiable; }
   std::pair<int, usr*> offset(std::string) const;
   int position(usr*) const;
   std::pair<int, const type*> current(int) const;
@@ -1590,7 +1592,7 @@ public:
   int size() const { return 0; }
   int align() const { return m_T->align(); }
   bool scalar() const { return false; }
-  bool modifiable() const { return m_T->modifiable(); }
+  bool modifiable(bool partially) const { return m_T->modifiable(partially); }
   const type* patch(const type* T, usr* u) const;
   bool backpatch() const { return m_T->backpatch(); }
   const type* qualified(int) const;
