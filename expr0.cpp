@@ -1752,7 +1752,7 @@ c_compiler::var* c_compiler::constant<long double>::_not()
 c_compiler::var* c_compiler::constant<void*>::_not()
 { return zero() ? integer::create(1) : integer::create(0); }
 
-bool c_compiler::constant<long double>::zero()
+bool c_compiler::constant<long double>::zero() const
 {
   return generator::long_double ?
     (*generator::long_double->zero)(b) : m_value == 0.0L;
