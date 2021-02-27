@@ -105,23 +105,27 @@ namespace c_compiler {
 } // end of namespace c_compiler
 
 void
-c_compiler::optimize::basic_block::action(const fundef* fdef, std::vector<tac*>& v)
+c_compiler::optimize::basic_block::action(const fundef* fdef,
+					  std::vector<tac*>& v)
 {
   using namespace std;
   if (cmdline::output_medium && cmdline::output_optinfo) {
     cout << "Before optimization\n";
     function_definition::dump(fdef, v);
   }
-  for (int i = 0 ; i != 2 ; ++i) {
-    vector<info_t*> bbs;
+  int N = cmdline::optimize_level;
+  for (int i = 0 ; i != N ; ++i) {
+    pvector<info_t> bbs;
     create(v,bbs);
     live_var::analize(bbs);
     if (cmdline::dag_optimize) {
       dag::action_t seed;
       for_each(bbs.begin(),bbs.end(),bind2nd(ptr_fun(dag::action),&seed));
+      int n = v.size();
       v = seed.conv;
+      if (n == v.size())
+	break;
     }
-    for (auto p : bbs) delete p;
   }
   {
     scope* ptr = fdef->m_param;
