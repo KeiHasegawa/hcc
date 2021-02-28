@@ -187,7 +187,7 @@ int c_compiler::parse::identifier::judge_impl::no_spec(std::string name)
     T = array_type::create(T,s.length()+1);
     with_initial* u = new with_initial(name,T,parse::position);
     map<int, var*>& v = u->m_value;
-    accumulate(s.begin(),s.end(),0,func(v));
+    (void)accumulate(s.begin(),s.end(),0,func(v));
     v[s.length()] = integer::create(char(0));
     scope::current->m_usrs[name].push_back(u);
     const pointer_type* G = T->ptr_gen();
@@ -500,8 +500,12 @@ namespace c_compiler { namespace integer {
       using namespace std;
       static map<T, usr*> table;
       typename map<T, usr*>::const_iterator p = table.find(v);
-      if (p != table.end())
-        return p->second;
+      if (p != table.end()) {
+	usr* ret = p->second;
+	usr::flag_t flag = ret->m_flag;
+	if (!(flag & usr::SUB_CONST_LONG))
+	  return ret;
+      }
       return table[v] = common<T>(v,pf);
     }
 } } // end of namespace integer and c_compiler
