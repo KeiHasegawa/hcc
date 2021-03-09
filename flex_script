@@ -2,11 +2,10 @@
 
 set path = ( /bin /usr/bin )
 
-flex -Pc_compiler_ -t -L $argv[1] > "$argv[1]:r"_l.cpp
+flex -Pc_compiler_ -L -T $argv[1] >& "$argv[1]:r"_l.trace
 if ( $status != 0 ) then
   exit 1
 endif
-echo '#include "stdafx.h"' > "$argv[1]:r"_l.cpp.$$
-echo '#include "yy.h"' >> "$argv[1]:r"_l.cpp.$$
-cat "$argv[1]:r"_l.cpp >> "$argv[1]:r"_l.cpp.$$
-mv "$argv[1]:r"_l.cpp.$$ "$argv[1]:r"_l.cpp
+set dq=`perl flex_patch.01.pl "$argv[1]:r"_l.trace`
+perl flex_patch.02.pl $dq "$argv[1]:r"_l.trace > flex_patch.p
+perl flex_conv.pl lex.yy.c > "$argv[1]:r"_l.cpp
