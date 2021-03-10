@@ -83,6 +83,5 @@ $(PROG):$(OBJS)
 clean:
 	$(RM) $(PROG) *.o gmon.out c_y.cpp* c_y.h* c_l.cpp* c.output *~
 	$(RM) error_euc.* warning_euc.* error_utf.* warning_utf.*
-	$(RM) flex_patch.p c_l.trace lex.yy.c
 	$(RM) -r .vs x64 Debug Release
 
