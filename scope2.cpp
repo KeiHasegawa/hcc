@@ -293,6 +293,10 @@ namespace c_compiler { namespace literal { namespace string_impl {
     int m_jis_state;
     int m_euc_state;
     char m_prev;
+    static inline bool shift_jis_first(int c)
+    {
+      return 129 <= c && c <= 159 || 224 <= c && c <= 239;
+    }
   public:
     struct acc_t {
       unsigned int m_hex;
@@ -349,9 +353,11 @@ c_compiler::usr* c_compiler::literal::string_impl::new_obj(std::string name)
 int c_compiler::literal::string_impl::calc::operator()(int n, int c)
 {
   using namespace std;
-  if ( c == '\\' && !m_escape ){
-    m_escape = true;
-    return n;
+  if (c == '\\') {
+    if (!m_shiftjis_state && !m_escape) {
+      m_escape = true;
+      return n;
+    }
   }
   if ( m_escape ){
     if ( c == 'x' && !m_hex_mode && !m_oct_mode ){
@@ -401,7 +407,7 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
   }
   if ( m_wide ){
     c = (unsigned char)c;
-    if ( !m_shiftjis_state && ( 129 <= c && c <= 159 || 224 <= c && c <= 239 ) ){
+    if (!m_shiftjis_state && shift_jis_first(c)){
       m_shiftjis_state = true;
       m_prev = c;
       return n;
@@ -465,6 +471,15 @@ int c_compiler::literal::string_impl::calc::operator()(int n, int c)
       m_value.insert(make_pair(n * generator::wchar::type->size(),u));
       return n + 1;
     }
+  }
+  else {
+    if (!m_shiftjis_state) {
+      c = (unsigned char)c;
+      if (shift_jis_first(c))
+	m_shiftjis_state = true;
+    }
+    else
+      m_shiftjis_state = false;
   }
   int offset = m_wide ? n * generator::wchar::type->size() : n;
   if ( m_escape ){

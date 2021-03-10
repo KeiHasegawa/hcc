@@ -97,7 +97,8 @@ hexadecimal-escape-sequence  \\x{hexadecimal-digit}+
 
 string-literal  L?\"{s-char-sequence}?\"
 s-char-sequence  {s-char}+
-s-char  [^\"\\\n\r]|{escape-sequence}|{universal-character-name}
+shift-jis-char   [\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]
+s-char  [^\"\\\n\r]|{escape-sequence}|{universal-character-name}|{shift-jis-char}
 
 %%
 
