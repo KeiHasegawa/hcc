@@ -88,7 +88,7 @@ long-suffix  l|L
 long-long-suffix  ll|LL
 
 character-constant  L?'{c-char-sequence}'
-c-char-sequence  {c-char}+
+c-char-sequence  {c-char}+|{shift-jis-char}|{jis-char}
 c-char  [^'\\\n\r]|{escape-sequence}|{universal-character-name}
 escape-sequence  {simple-escape-sequence}|{octal-escape-sequence}|{hexadecimal-escape-sequence}
 simple-escape-sequence  \\'|\\\"|\\\?|\\\\|\\a|\\b|\\f|\\n|\\r|\\t|\\v
@@ -98,7 +98,20 @@ hexadecimal-escape-sequence  \\x{hexadecimal-digit}+
 string-literal  L?\"{s-char-sequence}?\"
 s-char-sequence  {s-char}+
 shift-jis-char   [\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]
-s-char  [^\"\\\n\r]|{escape-sequence}|{universal-character-name}|{shift-jis-char}
+jis-kanji-start-old     \x1b\x24\x40
+jis-kanji-start         \x1b\x24\x42
+jis-kanji-start2        \x1b\x26\x40\x1b\x24\x42
+jis-ascii-start         \x1b\x28\x42
+jis-roman-start         \x1b\x28\x4a
+jis-hankaku-kana-start  \x1b\x28\x49
+jis-2byte               [\x21-\x7e][\x21-\x7e]
+jis-p1                  {jis-kanji-start-old}{jis-2byte}+{jis-ascii-start}
+jis-p2                  {jis-kanji-start}{jis-2byte}+{jis-ascii-start}
+jis-p3                  {jis-kanji-start2}{jis-2byte}+{jis-ascii-start}
+jis-p4                  {jis-roman-start}{jis-2byte}+{jis-ascii-start}
+jis-p5                  {jis-hankaku-kana-start}{jis-2byte}+{jis-ascii-start}
+jis-char                {jis-p1}|{jis-p2}|{jis-p3}|{jis-p4}|{jis-p5}
+s-char  [^\"\\\n\r]|{escape-sequence}|{universal-character-name}|{shift-jis-char}|{jis-char}
 
 %%
 
