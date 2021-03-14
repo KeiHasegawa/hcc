@@ -661,6 +661,14 @@ void c_compiler::func_type::decl(std::ostream& os, std::string name) const
     }
     T = T->qualified(cvr);
   }
+  else {
+    if (cvr & 1)
+      os << "const ";
+    if (cvr & 2)
+      os << "volatile ";
+    if (cvr & 4)
+      os << "restrict ";
+  }
   T->decl(os,name);
   post(os);
 }
@@ -948,6 +956,14 @@ void c_compiler::array_type::decl(std::ostream& os, std::string name) const
       return;
     }
     T = T->qualified(cvr);
+  }
+  else {
+    if (cvr & 1)
+      os << "const ";
+    if (cvr & 2)
+      os << "volatile ";
+    if (cvr & 4)
+      os << "restrict ";
   }
   T->decl(os,name);
   post(os);
