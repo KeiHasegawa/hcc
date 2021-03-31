@@ -1,43 +1,14 @@
----------------------------------------------------------------------------
-extern int printf(const char*, ...);
+2021.03.19 15:31
 
-int a = sizeof(int);
+41_ISO_IEC_9899/6_Language/5_Declarations/2_Type_specifiers/1_Structure_and_union_specifiers/1_ok/test010.c
 
-int main(void)
-{
-  unsigned long long int x, y, z;
-  y = 0xffffffffffffff55;
-  z = 4;
-  x = y >> z;
-  printf("%llu >> %llu = %llu\n",y,z,x);
-  return 0;
-}
+だがこれまでは全テストの中でログが出力されず, テスト終了後に, 全テストの中で
+生成された test010.exe を実行すると期待されたログが出ていたので, 放置しておいた.
 
-上のプログラム sample.txt を hcc1.exe sample.txt --generator printf_chk.dll 
-でコンパイルする. ここで printf_chk.dll は x86 環境で GENERAL32BIT_SETTING
-を define しないでビルドする.
-   ^^^^^^^^^^^^^^^
+しかし, 今回 g++ 版で行ったテストではテスト終了後に, 全テストの中で生成された
+test010.exe を実行するとログが全く出ないという現象が再現している.
 
-このとき generator_sizeof_type からは type::ULONG が返されるが
-generator_sizeof(type::LONG) で 8 が返されるので 2 行目の sizeof(int)
-に対しては, 定数 4 が
-
-constant<unsigned __int64> で ulong_type, SUB_CONST_LONG      (1)
-
-で作成される. 一方, z = 4 の 4 は ulogn_long_type にキャストされるので
-
-constant<unsigned __int64> で ulong_long_type, フラグなし
-
-で作成されるのが期待値だが (1) で作成した定数が使いまわされてしまう.
-この結果, printf_chk.dll に z の型が ulong_type でわたってしまい,
-エラーになっている.
-
-同様の問題は constant<__int64> が CONST_PTR のフラグをもって作られた
-場合も起こりそうだが, 再現環境は不明.
-
-intger::create_SUB_CONST_LONG(unsigned __int64 v);
-
-のような別バージョンの integer::create が必要になる.
+残念ながら test010.exe をデバッガから実行すると期待する動作にはなってしまう.
 ---------------------------------------------------------------------------
 d:/home/khasegawa/GNU_LANG
 で, どのプロセッサか忘れたが, cross 環境を構築できていた. そのプロセッサの
