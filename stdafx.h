@@ -1,7 +1,6 @@
 #ifndef _STDAFX_H_
 #define _STDAFX_H_
 
-#pragma warning (disable : 4267 4244 4018 4312 4311 4302 4290)
 #include <vector>
 #include <string>
 #include <map>
@@ -34,5 +33,10 @@
 #include <unistd.h>
 #define __int64 long long int
 #endif // _MSC_VER
+
+#ifdef DEBUG_HEAP
+void* operator new(size_t sz);
+void operator delete(void* p, size_t);
+#endif // DEBUG_HEAP
 
 #endif // _STDAFX_H_

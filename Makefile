@@ -22,6 +22,7 @@ SRCS =	c_l.cpp \
 	c_y.cpp \
 	cmdline.cpp \
 	decl.cpp \
+	debug_heap.cpp \
 	dump.cpp \
 	$(ERROR_CPP) \
 	expr0.cpp \
